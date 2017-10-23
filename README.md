@@ -12,13 +12,18 @@ Congratulation to DeepMind to pierce the frontier once again! AlphaGO Zero (full
 
 I downloaded the paper Mastering the Game of Go without Human Knowledge in the first place, but only found myself lack prior knowledge in Monte Carlo Search Tree (MCST). I tried my best to highlight what is interesting.
 
-This time's AlphaGo uses combined policy & value network (final fc diverges to two branches) to cope with training stability. 
+This time's AlphaGo uses combined policy & value network (final fc diverges to two branches) to cope with training stability.
+From Paper:
 ![](/figure/dual_network.png)
-Innovation (annealing & Dirichlet noise) in MCTS has enabled exploration 
+Innovation (annealing & Dirichlet noise) in MCTS has enabled exploration
+From Paper:
 ![](/figure/MCTS.png)
 And exploration leads to learning more and more complex movings, making the game at the end of training (~70h) both competitive and balanced.
+From Paper:
 ![](/figure/learning_go.png)
 The input is still raw stones but normal CNN has been replaced by RES-50NET
+From Paper:
 ![](/figure/cnn_archi.png)
 And finally pure RL has outperformed supervised learning+RL agent
+From Paper:
 ![](/figure/rl_vs_sl.png)
