@@ -302,13 +302,13 @@ class ResNet(object):
         # return tf.select(tf.less(x, 0.0), leakiness * x, x, name='leaky_relu')
         return tf.nn.relu(x)
 
-    def _fully_connected(self, x, out_dim):
+    def _fully_connected(self, x, out_dim, name=''):
         """FullyConnected layer for final output."""
         x = tf.reshape(x, [self.hps.batch_size, -1])
         w = tf.get_variable(
-            'DW', [x.get_shape()[1], out_dim],
+            name+'DW', [x.get_shape()[1], out_dim],
             initializer=tf.uniform_unit_scaling_initializer(factor=1.0))
-        b = tf.get_variable('biases', [out_dim],
+        b = tf.get_variable(name+'biases', [out_dim],
                             initializer=tf.constant_initializer())
         return tf.nn.xw_plus_b(x, w, b)
 
@@ -316,4 +316,6 @@ class ResNet(object):
         assert x.get_shape().ndims == 4
         return tf.reduce_mean(x, [1, 2])
 
+    def total_parameters(self):
+        return np.sum([np.prod(v.shape) for v in tf.trainable_variables()])
 
