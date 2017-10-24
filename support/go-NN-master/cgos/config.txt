@@ -1,0 +1,14 @@
+
+# config file for testing various version of MyBot
+# ------------------------------------------------
+
+%section server
+    server yss-aya.com
+    port 6819
+
+%section player
+     name      Quark-0.1.0
+     password  password
+     invoke    gogui-display /home/greg/coding/ML/go/NN/engine/CGOSEngine.py
+     priority  7
+

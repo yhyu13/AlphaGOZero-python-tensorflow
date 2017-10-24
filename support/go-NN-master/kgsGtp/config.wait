@@ -1,0 +1,9 @@
+logfile=/home/greg/coding/ML/go/NN/kgsGtp/log-kgsGtp.txt
+verbose=t
+engine=gogui-display /home/greg/coding/ML/go/NN/engine/RunEngine.py
+name=QuarkBot
+password=om9dye
+room=Computer Go
+mode=wait
+opponent=TheDuck
+talk=Hi! I'm a bot built from a deep convolutional neural network! I don't know English :(
