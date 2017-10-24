@@ -1,0 +1,396 @@
+(;GM[1]FF[4]CA[UTF-8]AP[CGoban:3]ST[2]
+RU[Chinese]SZ[19]KM[7.50]TM[7200]OT[3x60 byo-yomi]
+PW[AlphaGo]PB[Lee Sedol]BR[9p]DT[2016-03-09]C[Game 1 - Dawn
+
+Commentary by Fan Hui 2p
+Expert Go analysis by Gu Li 9p and Zhou Ruiyang 9p
+Translated by Lucas Baker, Thomas Hubert, and Thore Graepel
+
+I sometimes suffer from insomnia during important tournaments, but I slept well before the first game of this match. Perhaps it was because I was not the one playing. At breakfast, everyone on the team displayed some tension, but as for me, I was already free of doubts.
+
+I entered the playing room at 12:35, twenty-five minutes before the match was due to start. Some members of the staff were testing the cameras one last time. A make-up artist called me to put powder on my face, to prevent the light from reflecting. Everyone looked very busy, but the real cause of the activity was just to occupy us while we waited.
+
+At 12:40, Lee Sedol entered the room with his wife and daughter, and sat down in front of the Go board. His daughter looked at him inquisitively, as if this was the first time she had accompanied her father to an official match. Lee smiled back at her.
+
+After the staff explained a few details about the live broadcast, Lee exited the room. The minute he left, without knowing why, I felt a strange sense of pressure descending. It was not the pressure of anticipating the outcome, but rather of uncertainty - of not knowing what would transpire when the match began.
+
+The playing room was actually quite sizeable. Apart from the Go board and the referees' table, there was a space for the AlphaGo team and VIPs to experience the game up close, complete with a screen for the commentary. The cameras did not face this section, so the audience would only see the players and the board.
+
+At 12:47, two Korean referees entered the room. One was a professional 8 dan, whose main role would be to announce the beginning of the game and the final result. A different professional would take on this role each day. The other was a woman, reportedly an amateur player, who would be in charge of reading out the seconds during byo-yomi. Like me, she would be here for every game. Myself, I had only one role: to count the final score if the game reached an end and neither player had resigned. Due to the language barrier, the other referees and I could only communicate by nodding our heads, but I could still see in their eyes their absolute confidence in Lee Sedol's victory.
+
+Because this was the first game of the match, everyone looked a bit tense. No event of this scale had ever taken place in the history of Go. Although Google had no prior experience in organizing Go competitions, they had conscientiously seen to every detail: the camera angles, the timings, the order in which the players should enter, the setup of the postgame press conference, and everything else. Even we Go players can learn from the professionalism, enthusiasm, and sincerity they displayed in organizing this match.
+
+As the countdown on the screen hit zero, Lee Sedol and Aja Huang entered the room and took their seats. Following the nigiri, Lee Sedol chose Black. Interestingly, even if the difference is minute, it is clear from AlphaGo's data that it prefers White.]RE[W+Resign]
+;B[qd]C[After thinking for just thirty seconds, Lee placed the first black stone. The historic battle had begun!]
+;W[dp]
+;B[pq]
+;W[dd]
+;B[fc]C[Lee Sedol quickly played the two 3-4 points, followed by the corner approach.]
+;W[cf]
+;B[ql]C[Next, after a minute of reflection, Lee played this unexpected extension! A new fuseki, perhaps? Or was it a strategic ploy? If Lee thought that AlphaGo's knowledge was based on pattern recognition from existing games, then playing a move no professional had played before might confuse it. In reality, Lee had underestimated AlphaGo.
+
+Faced with a strange move like this, a human player would no doubt take some time to think, as the first impression would be that the opponent is laying a trap. Imagine two kung fu masters locked in battle. If one makes an unusual move, the other would surely react with caution to avoid being caught out. However, there is no concept of "fear" in AlphaGo's dictionary. It knows only one strategy: constantly adapting to the present situation.]
+;W[od]
+;B[ld]C[Against White's approach, Lee quickly pincered, as if he had prepared this response.]
+;W[qc]
+;B[rc]C[When White attached in the corner, Lee instantly blocked. The classic thinking is that this way of playing is very heavy for White, not only strengthening Black's corner, but turning the pincer into the perfect attacking move. Could it be that AlphaGo did not know the joseki?]
+;W[pc]LB[rc:11][qc:10][pc:12]C[When the players in the commentary room saw White 10 and 12, everybody thought Lee had exposed a problem in AlphaGo's opening. After all, our first impulse when passing judgment is to look within the scope of our existing knowledge. However, this can sometimes distract us from the essence of the problem. Were the black stones on the left side truly working well together?]
+(;B[re]
+;W[of]LB[re:A]C[When White jumped, the feeling in the room suddenly changed. The black stones on the left were too low, and Black's formation was nothing to be proud of after all! 
+
+In fact, at this moment, AlphaGo already felt that the game had begun to favor White. According to its analysis, the problem lay in the tiger's mouth at A, and Black should have chosen the knight's move instead.]
+;B[pg]C[Although many professionals already thought the result was unfavorable for Black, Lee still looked confident, and played the large knight's move almost instantly.]
+;W[og]
+;B[ph]
+;W[id]C[When White played here, Lee hesitated. For the first time since the game began, his hand left the bowl of stones. He pressed his left index finger to his upper lip, and started tapping the right one against his leg. He seemed to realize things weren't going as well as expected. Of course, when circumstances take a sudden turn for the worse, the pressure can be difficult to handle.]
+(;B[lf]C[Lee responded steadily with the jump. In AlphaGo's judgment, this was too slow and White had already taken the lead, with a win rate of 54%. See the variation for an alternative.]
+;W[oh]
+;B[pi]
+;W[lh]C[After pushing once on the left, AlphaGo capped Black on the lower side.]
+;B[kh]C[Lee quickly responded with the attachment. Subconsciously, he may have believed that AlphaGo would be unwilling to initiate a fight. At the same time, this move was very much his style, brimming with fighting spirit.
+
+After the game, many commentators questioned this move, but this was AlphaGo's suggestion as well. In this case, it seems great minds thought alike.]
+;W[ke]C[Seeing the peep, Lee sighed, as if realizing he was in for a hard game.]
+;B[le]
+;W[lg]C[Black had to connect, but White continued with this severe follow-up! This move challenged Lee to make the game's first crucial choice: War, or peace? It is impossible to calculate every variation fully, so how to choose? For most players, the decision is a combination of personal style and a feeling for shape. At the same time, it is important to consider the opponent's intentions. For instance, did White pause before playing? Did White look pleased or dissatisfied with the previous position? Normally, reading the opponent is one of Lee's strong points. Thanks to his exquisite perception, he can pick whichever way of playing gives him the greatest advantage. This time, however, he hesitated. Since the start of the game, AlphaGo had played at a constant rhythm, with no sign of doubt or confusion. It felt as if every move were inevitable.]
+(;B[kg]C[This was the first time in the match that Lee found himself at a crossroads, and he had no intention of backing down before a machine. So, after three minutes of thought, Lee resolutely blocked, and White cut. At this point, AlphaGo's win rate rose to 56%. In AlphaGo's judgment, Black should have followed the variation and chosen the turn instead.]
+;W[kf]
+;B[ne]
+;W[oe]C[Black peeped, and White connected. At this point, Lee Sedol had 1 hour and 43 minutes remaining, AlphaGo 1 hour and 44 minutes.]
+(;B[jc]C[Black continued to probe White's intentions. Lee was asking AlphaGo, “Dare you block?”]
+;W[ic]C[Without hesitation, AlphaGo did. The curtain rose on the first major battle, and the following moves were a one-way street. However, AlphaGo only grew more and more confident, its win rate reaching 58%. According to AlphaGo, Black should have followed the variation starting with the turn.]
+;B[jd]C[At this point, Lee had 1 hour and 40 minutes, AlphaGo 1 hour and 43 minutes.]
+;W[ie]
+;B[je]
+;W[jf]
+;B[if]
+;W[jg]C[With this turn, AlphaGo’s win rate continued rising to 59%.
+
+White is not particularly eager to capture the two stones - see the variation.]
+(;B[li]C[At this point, Lee had 1 hour and 34 minutes, AlphaGo 1 hour and 39 minutes.]
+;W[mi]C[AlphaGo thought this exchange was unnecessary.]
+;B[hf]
+;W[ih]LB[ki:A]C[Many commentators asked why White chose this move instead of A. Actually, by this point, AlphaGo's win rate had already reached 64%, so AlphaGo felt confident that capturing the two stones was not needed.
+
+After this kosumi, the value of the two stones decreased markedly.]
+;B[mb]C[At this point, Lee was pausing to think after each move, no longer laying down stones one after another as he had in the opening.]
+;W[gd]C[This move was mandatory to protect White's three stones.]
+;B[ki]
+;W[mj]
+(;B[kk]
+;W[ib]C[White descended here to trigger a series of forcing exchanges. Many commentators thought this unnecessary, but from AlphaGo's perspective, the win rate continued climbing to reach 66%. Did AlphaGo think Lee had made another mistake?]
+;B[ob]
+;W[ml]
+;B[lm]C[White jumped out, and Black kept up the pressure on White's dragon, attacking fiercely with the knight's move.]
+;W[nc]
+;B[nb]
+;W[kb]
+;B[lc]LB[nc:A][lc:D][nb:B][kb:C]C[The simplifying exchanges of A for B and C for D might seem early to a human player, but were very much in AlphaGo's style. It is difficult to evaluate the pros and cons of making these exchanges now.]
+;W[mm]
+;B[ln]C[Lee played quickly during this fight. When Black extended, Lee had 1 hour and 30 minutes, AlphaGo 1 hour and 29 minutes.]
+;W[kl]C[With this attachment, however, Lee became contemplative once more.
+
+In normal matches, Lee often seeks opportunities to play startling moves that throw his opponents off their rhythm. This time, the roles had been reversed. It was AlphaGo that played these moves, rattling the opponent while maintaining equanimity itself.]
+;B[ll]
+;W[lk]
+(;B[jj]C[After 4 minutes of reflection, Lee chose the tiger's mouth, a bizarre shape in this position!
+
+Compared to the rest of the match, Lee played quite quickly in this game. Subconsciously, it seemed, he believed that entering byo-yomi against AlphaGo would count as a failure in itself. Of course, playing so fast might also induce careless mistakes. AlphaGo thought this was one such move. See the variation.
+
+At this point, Lee Sedol had 1 hour and 27 minutes left, AlphaGo 1 hour and 26 minutes.]
+;W[jl]C[When AlphaGo extended here, David Silver, technical lead of the AlphaGo team, came to the players' room and sat down to observe. I asked about the outlook, and he replied only with a smile. This confirmed my analysis - White was ahead!]
+;B[hj]
+;W[hi]
+(;B[gj]LB[hj:A][hi:B]C[After the jump at A, it is painful to endure White's bump at B, but AlphaGo disapproved of Black's extension here. See the variation.]
+;W[gf]C[AlphaGo thought the nose attachment was the only reply.]
+;B[ii]C[At this point, Lee had 1 hour and 24 minutes left, AlphaGo 1 hour and 22 minutes.]
+;W[jh]
+;B[ij]C[This move was ugly but necessary, giving White sente to return to the left side.]
+;W[mn]
+;B[lo]
+;W[mo]
+;B[lp]C[Lee had played the preceding moves almost instantly, so after this move, Black had 1 hour and 23 minutes to White's 1 hour and 18 minutes. Lee glanced at the clock and shook his head.]
+;W[mp]
+(;B[lq]C[AlphaGo thought this move should have been the hane.]
+;W[mq]C[With this move, AlphaGo’s win rate rose a little further to over 70%. Although this value theoretically represents the chance of victory, in practice it is an extremely conservative indicator of AlphaGo's true estimate. A value of 70% means that AlphaGo already believes the outcome of the game is nearly decided.]
+;B[im]C[When Lee played 77, he shook his head unhappily. Sure enough, Black's outlook was pessimistic. For the first time in the match, Lee left the room for a smoking break. (This also gave the referees the chance to use the restroom.) According to the competition rules, there would be no stopping the clock during the match, so when White played the next move, Lee's clock continued to run.]
+;W[qo]C[With one player absent, the tension lessened dramatically. It was as if the room were a bow, and the hunter had relaxed the bowstring. It was then that we realized how strongly affected we were by the pressure of the game.
+
+At this point, both AlphaGo and Lee Sedol had 1 hour and 15 minutes remaining.]
+(;B[fq]C[Apparently, AlphaGo thought that this approach was not best, preferring the variation instead.]
+;W[gg]C[When Lee resumed his seat, he quickly played the corner approach. Seeing AlphaGo's response at 80, I wrote down in my notebook: "Statement of victory!"
+
+During the match, all the commentators thought this move was extremely soft, and answering in the upper right corner was far bigger. However, I believe I know AlphaGo as well as anybody, and in my view a move like this is really a demonstration of its matchless confidence. AlphaGo does not pursue the biggest victory, only the most certain one. Once it has a lead of two or three points, AlphaGo is completely capable of holding it until the end.
+
+Looking at AlphaGo's 74% win rate confirmed my impressions.]
+;B[cn]C[After White protected, Black had no choice but to seek compensation from the double approach.]
+;W[dn]
+;B[dm]
+;W[fp]
+;B[gp]
+;W[gq]C[A beautiful move! Sacrificing a stone where the opponent is strong is a common strategy, but it is nonetheless refreshing to see White brazenly cutting through in the face of Black's wall.
+
+At this moment, I looked over at the 8-dan professional who was that day's referee. He shook his hand under the table, indicating that he thought the game was already over for Lee.
+
+One might have the impression from this commentary that Lee had not played well so far, or that he had not deployed his full power. Yet, I believe that's not the case. Rather, it is AlphaGo's strength that makes Go look easy.
+
+At this point, AlphaGo and Lee Sedol had 1 hour and 8 minutes each on the clock.]
+;B[fr]
+;W[co]C[The cut was breathtaking, but the follow-up was baffling. With this tiger's mouth, AlphaGo simply let Black swallow up the center! Was it already so confident in White's territorial lead? One way or the other, I thought White's move was far too slow. AlphaGo's judgment is not based on the size of its lead, but on the ease of controlling the outcome, so from that perspective there may be nothing wrong with this move. However, Lee seemed happy, as the game had certainly taken a turn for the better.]
+;B[en]
+;W[do]
+;B[ep]
+;W[cm]
+;B[dl]
+;W[lr]
+;B[kr]
+;W[rb]
+;B[jb]
+;W[ja]C[At this point, Lee Sedol had 1 hour and 4 minutes left, AlphaGo 59 minutes.]
+;B[mf]
+;W[mh]
+;B[nd]
+;W[qj]C[The last few moves had been a string of minor exchanges. To me, they felt like shots of anaesthetic in preparation for surgery. However, anaesthetic or no, Black must have felt the sharp pain of the incision at White 102.
+
+Perhaps the answer to the riddle is right before our eyes, and the point of the tiger's mouth at 88 was to win back sente for the invasion on the left side?
+
+A smile crossed Lee's face when he saw White's invasion, and he sank into deep calculation. This was his longest reflection of the game. At last, the deciding moment was at hand! The time had come to fight as if his life depended on it - but how does one fight an opponent that knows no fear?
+
+At this point, Lee Sedol had 1 hour left, AlphaGo 56 minutes.]
+;B[pj]C[After seven minutes of contemplation, Lee finally blocked from above.]
+;W[qk]C[AlphaGo answered here immediately. Although it normally plays at a constant pace, it seems even AlphaGo sometimes has a sense of "the only move."]
+;B[pl]
+;W[pk]
+;B[ok]
+;W[rh]C[When white played the knight's move, Lee Sedol sighed again. The game held so many possibilities, but with no way to read the opponent's intentions, it became more difficult to accept or reject any one of them. Because AlphaGo lacked any sense of mental or emotional pressure, the psychological burden grew twice as heavy on Lee's shoulders!
+
+At this point, Lee Sedol had 47 minutes left, AlphaGo 53 minutes.]
+(;B[rl]C[In the game, Lee Sedol chose to descend. AlphaGo, however, thought Black's only chance was to stake the game on the desperate fight shown in the variation.]
+;W[qf]
+(;B[ri]C[Attaching this way is clearly problematic, and Black should have attached on the other side as shown in the variation. In the game, White was able to capture the three stones in the lower left in sente, an enormous gain in both security and profit.
+
+At this point, Lee Sedol had 44 minutes left, AlphaGo 51 minutes.]
+;W[rf]
+;B[pf]
+;W[qe]
+;B[qh]
+;W[cc]C[When AlphaGo took the 3-3 point, its win rate rose to 82%. A value this high means AlphaGo already considers the game won, even if the absolute difference is small.]
+;B[bn]
+;W[bm]
+;B[bl]
+;W[bo]
+;B[rg]
+;W[mr]
+;B[po]
+;W[jr]
+;B[kq]
+;W[pn]
+;B[oo]
+;W[qp]
+;B[on]
+;W[pp]
+;B[op]
+;W[qq]
+;B[or]
+;W[pr]
+;B[oq]
+;W[pd]
+;B[qr]
+;W[rr]
+;B[ps]
+;W[rs]C[Although many commentators found better ways for Black to handle the upper left corner, Black had no chance of victory either way. Against a human player, one can still try to provoke a blunder, but against the untiring AlphaGo such hope is futile.
+
+When white lived in the corner, AlphaGo’s win rate was 90%.
+
+The tension faded from Lee's expression as he faced the inevitable.]
+;B[rn]
+;W[ro]
+;B[qn]
+;W[so]
+;B[cl]
+;W[an]
+;B[ks]
+;W[om]
+;B[ol]
+;W[ci]
+;B[hh]
+;W[hg]
+;B[dr]
+;W[dj]
+;B[bq]
+;W[cq]
+;B[cr]
+;W[bp]
+;B[dq]
+;W[br]
+;B[cp]
+;W[ap]
+;B[ek]
+;W[fi]C[As the endgame continued, it became clear that although the score remained close, Black's defeat was unavoidable.]
+;B[bj]
+;W[bi]
+;B[pb]
+;W[qb]
+;B[sf]
+;W[rd]
+;B[ai]
+;W[ah]
+;B[aj]
+;W[bh]
+;B[gi]
+;W[fj]
+;B[fk]
+;W[oc]
+;B[mc]
+;W[nm]
+;B[pm]C[When Lee played 181, he muttered a few words. Sadly, since they were in Korean, I cannot tell you what they were, but they must have shown the depth of his dissatisfaction.]
+;W[cj]
+;B[al]
+;W[aq]
+;B[gh]
+;W[fh]C[Lee picked up two black stones and lightly tapped them against the bowl. The sound echoed crisply through the room, and it felt as if time had frozen. I knew Lee was about to resign. Afterwards, many people said that I must have been happy in that moment. Now the world would know AlphaGo's true strength, and I would not be the only one it had defeated. The truth is, in the moment when he tapped those two stones, my mind was blank. Although I had known this day would come sooner or later, it had always felt so remote before, suddenly, it arrived. I felt as if I had been cast into outer space, adrift on waves of nothingness.
+
+Lee Sedol resigned, and I returned to the present. The Korean referee's announcement of the result marked a historic shift. From that moment on, humanity was no longer alone in exploring the mysteries of Go. We had gained a new partner in our quest: AlphaGo!])
+(;B[rg]C[Attaching on the other side, although it loses points compared to the game, allows Black to sacrifice one stone for sente.]
+;W[qg]
+;B[ri]
+;W[rf]
+;B[qh]
+;W[sg]
+;B[cc]LB[ri:6][qh:4][sg:7][rg:2][qg:3][rf:5][qf:1][cc:8]C[Keeping the initiative to invade the lower right with 8 makes a huge difference. Gu Li and Zhou Ruiyang completely approved of this sequence, and Gu even mentioned it during the live commentary. Perhaps Lee, satisfied with the gains in the upper right, had not yet fully appreciated how dire Black's situation was.
+]))
+(;B[rg]C[AlphaGo thinks Black should block, leading to a complicated fight that will probably end in ko.
+]
+;W[rl]
+;B[rm]
+;W[ol]
+;B[om]
+;W[nl]
+;B[qn]
+;W[rj]
+;B[po]
+;W[qf]
+;B[qh]
+;W[ri]
+;B[pf]
+;W[sc]
+;B[sd]C[Gu Li and Zhou Ruiyang felt that Black would resist choosing this variation unless every alternative looked hopeless. Perhaps AlphaGo believed that Black had already lost the chance to retreat, and this was the only way forward.]))
+(;B[nk]
+;W[mk]
+;B[hg]LB[qo:1][nk:2][mk:3][hg:4]C[After exchanging the peep at 2, Black extracts the black stones at the bottom with 4. This would lead to an extremely complicated fight with many uncertain elements.]
+;W[hh]
+;B[gg]
+;W[fi]
+;B[fd]
+;W[ge]
+;B[fg]
+;W[fh]
+;B[eg]C[Gu Li and Zhou Ruiyang did not comment much on this sequence, because it is both intricate and difficult to evaluate. However, this variation might offer Black more opportunities to turn the game around.]))
+(;B[mq]C[Black should hane now.]
+;W[nq]
+;B[lq]C[White's thickness is less imposing, and Black suffers less from shortage of liberties. Gu Li and Zhou Ruiyang suggested the same during the live commentary.]))
+(;B[mn]C[AlphaGo thinks Black should turn firmly on the top. White has no way to kill Black’s center directly, as shown in the variation.]
+(;W[gj]
+;B[hk]
+;W[om]
+;B[nk]
+;W[mk]
+;B[nn]
+;W[gi]
+;B[jh]
+;W[ig]
+;B[ii]
+;W[rb]LB[nn:8][mn:2][om:5][nk:6][mk:7][hk:4][gj:3][ii:12][hi:1][gi:9][jh:10][ig:11][rb:13]C[When white extends with 9, Black can simply force with 10 and 12 to fix the shape in the center. Plenty of aji remains on the lower side for Black to aim at later.
+
+AlphaGo still prefers White here, but gives Black better chances than the game. Gu Li and Zhou Ruiyang concurred with this analysis.])
+(;W[jk]
+;B[ii]LB[mn:1][jk:2][ii:3]C[White's atari at 2 fails, as Black can answer at 3. If White continues...]
+;W[kj]
+;B[hh]
+;W[hg]
+;B[ig]
+;W[gh]
+;B[jh]C[Black captures the critical center stones, and White's position falls apart.])))
+(;B[jk]C[AlphaGo thinks Black should extend here, after which White will push outwards just as in the game. Gu Li and Zhou Ruiyang agreed.]
+;W[mn]
+;B[lo]
+;W[mo]
+;B[lp]))
+(;B[lk]C[Black can play more strongly with this jump. To compensate the losses on the right, Black must intensify the pressure on the left.
+
+Note that White cannot push and cut - see the variation.]
+(;W[ib]
+;B[ob]
+;W[mk]
+;B[ll]
+;W[ml]
+;B[lm]LB[lm:7][ml:6][ll:5][mk:4][lk:1][ob:3][ib:2]C[White still plays 2, then pushes out with 4 and 6. Black's shape is better than the game.])
+(;W[lj]C[If White cuts...]
+;B[kj]
+;W[kk]
+;B[jk]
+;W[kl]
+;B[ij]
+;W[gh]
+;B[ll]LB[ll:8][kl:5][kk:3][jk:4][lj:1][kj:2][ij:6][gh:7]C[Black can utilize White's weaknesses to play 6 in sente. White must defend the center stones, but when Black extends with 8, White is left with two weak groups and a tough battle ahead.])))
+(;B[hf]LB[ki:A]C[AlphaGo thinks Black should extend directly. White will not capture the two stones directly at A - see the variation. ]
+(;W[ih]
+;B[mb]
+;W[gd]
+;B[ki]
+;W[li]
+;B[lj]
+;W[kj]
+;B[jj]
+;W[kk]
+;B[ji]LB[kk:11][lj:8][kj:9][jj:10][li:7][ki:6][ji:12][ih:3][jg:1][hf:2][gd:5][mb:4]C[After White saves the three stones at 5, Black can go back to extend at 6, and the shape is clearly better than the game. Gu Li and Zhou Ruiyang approved of this sequence.])
+(;W[ki]C[Of course, White can capture the two black stones in a ladder...]
+;B[gd]C[...but Black simply swallows up the three White stones.]
+;W[jh]
+;B[mb]C[Black's territory here is clearly superior, so White is not satisfied. However, since it is so ingrained that letting White capture this way would be unacceptable, Lee may well not have considered sacrificing the two stones. This would explain Black's passive play during the fight.])))
+(;B[kd]C[AlphaGo thinks Black should have played this way, but...]
+;W[if]
+;B[ib]
+;W[ki]
+;B[ih]
+;W[jc]
+;B[jd]
+;W[jh]
+;B[ic]
+;W[jg]
+;B[cn]LB[cn:11][ki:4][jh:8][ih:5][jg:10][if:2][kd:1][jd:7][jc:6][ic:9][ib:3]C[Although Black's aim with 1 and 3 is easy enough to understand, the price of this connection is sacrificing two critical stones in the center! I fear there is no professional in the world today who would consider this variation. The theory says "a ponnuki is worth 30 points," and here Black has sacrificed not one stone but two! Moreover, the stone at 5 is now utterly useless.
+
+When I showed this variation to Gu Li and Zhou Ruiyang, their faces paled. "If you show this to Lee Sedol, he'll think you're joking!" they exclaimed. Many people have asked me what AlphaGo's style is - it would at least be fair to say that its sense of global and local differs dramatically from human evaluations.
+
+Still, it is important to understand that AlphaGo never thought this result was favorable for Black, only that this way of compromising loses the least. AlphaGo does not debate whether a result is "acceptable" or "unacceptable." In its view, each moment is unique, and the only objective is to seek the highest win rate in every position.]))
+(;B[kf]C[AlphaGo thinks Black should turn instead.]
+;W[kg]
+;B[jf]
+;W[jg]
+;B[he]
+;W[gd]C[Although this tesuji gives White a local advantage...]
+;B[hd]
+;W[gc]
+;B[hc]
+;W[hb]
+;B[ib]
+;W[fb]
+;B[ge]
+;W[fd]
+;B[fq]C[Black comes out with sente to approach the upper right. Globally, Black is by no means behind.]))
+(;B[lg]C[The two-space jump looks more dynamic.]
+;W[oh]
+;B[pi]
+;W[oi]
+;B[nc]LB[pi:3][oi:4][oh:2][lg:1][nc:5]C[White pushes with 2 and 4, and Black destroys White's eye shape with 5. This variation will lead to a complicated fight.]))
+(;B[pf]
+;W[of]C[If Black plays the knight's move, White will attach to avoid being enclosed.]
+;B[og]
+;W[nf]
+;B[pe]
+;W[rb]
+;B[ng]
+;W[lf]
+;B[mg]C[Now Black can continue to press.]
+;W[le]
+;B[jd]C[Black's formation on the left is clearly better than the game.]))

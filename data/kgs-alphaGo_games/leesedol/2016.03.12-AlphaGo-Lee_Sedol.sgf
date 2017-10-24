@@ -1,0 +1,348 @@
+(;GM[1]FF[4]CA[UTF-8]AP[CGoban:3]ST[2]
+RU[Chinese]SZ[19]KM[7.50]TM[7200]OT[3x60 byo-yomi]
+PW[AlphaGo]PB[Lee Sedol]BR[9p]DT[2016-03-12]C[Game 3 - Revolution
+
+Commentary by Fan Hui 2p
+Expert Go analysis by Gu Li 9p and Zhou Ruiyang 9p
+Translated by Lucas Baker, Thomas Hubert, and Thore Graepel
+
+Although the match had begun just two days ago, it had already delivered the greatest shock in Go history. According to the rules, every two games would be followed by one day of rest, so it was vital for Lee to use this day to regain his composure. The next game might well decide the match. The rest day also gave the AlphaGo team a temporary respite from the pressure. For those of us visiting Korea for the first time, it also presented an opportunity to explore the city of Seoul. 
+
+At 10AM on March 11th, the AlphaGo team set off to visit the city center. It was then I realized that, apart from eating, I hadn't left the hotel once since I had arrived. Although I tried my hardest to relax and enjoy the surroundings, before I knew it, my thoughts always returned to the match. The past two days had been simply too astonishing.
+
+One fragment stands out from the day of sightseeing. As we passed by a small shop selling dragon's beard candies, a popular sweet in China and Korea, we peered inside to see how they were created. The friendly shopkeeper came out and told us about their history, as well as how to make them. As we chatted, he asked where we were from, and one member of the team replied "England." He hesitated a bit and asked, "AlphaGo?" The moment we confirmed his suspicions, he grew excited and began repeating, "Incredible! AlphaGo is truly incredible." Even after only two days, AlphaGo had become a household name throughout Korea.
+
+Despite the rest day, it seems our minds never left the match, with the historic third game imminently approaching.
+
+When we returned that evening, we looked at the online commentaries, and found that almost no one still believed that Lee would win. Nonetheless, there was no lack of moral support and strategic advice. The more I read, the more I felt that Lee was bearing the weight of the world on his shoulders. Ever since I was young, my teacher had taught me that Go demanded inner peace. Without a calm heart, one could not play at the highest level. But in an atmosphere like this, how could Lee possibly achieve such equilibrium?
+
+At 1pm on March 12th, the third game began. Lee took Black.]RE[W+Resign]
+;B[pd]
+;W[pp]
+;B[cd]C[As Lee put down move 3, I was surprised to see his hand shaking slightly. I had heard that Lee sometimes suffered from insomnia before important games. Perhaps yesterday was one such sleepless night.]
+;W[dp]
+;B[cn]
+;W[fq]
+;B[id]C[Black 7 set up the high Chinese fuseki, a fighting stance that seeks to take the initiative. It seemed that Lee was done with waiting patiently.]
+;W[qf]
+(;B[nc]C[Facing the corner approach, Lee hesitated for three minutes, eventually choosing the knight's move at 9. He must have worried about White invading the corner directly at the 3-3 point if he had jumped on the fourth line. Nonetheless, AlphaGo thought this was the best plan for Black. See the variation.]
+;W[qm]C[White protected the upper left corner with the large knight's move at 10, a relatively common strategy. AlphaGo’s win rate at this point was 51.5%.]
+;B[dj]
+;W[ed]C[Black's extension was necessary, and White 12 also seems like the only move.]
+;B[dc]C[Black's kosumi with 13 is an uncommon way of playing - Lee must have prepared it to work with his high Chinese opening. Later, I found that AlphaGo would also have played this move.]
+;W[eg]C[When White played the two-space jump at 14, it felt as if AlphaGo were looking down from the heavens, comprehending the entire board at a glance.]
+(;B[ef]C[I do not know whether anyone had played the jump at 14 before, but it seemed to infuriate Lee, who slapped down the astonishing attachment at Black 15!
+
+Playing with AlphaGo can feel distressingly like euthanasia: by the time we feel what is going on, we are already dead. Perhaps this is why Lee seized the first opportunity to attack, attempting to rip open AlphaGo's weak points before its global advantage grew overwhelming. Nonetheless, from the perspective of Go fundamentals, Black 15 is simply too extreme.
+
+Many people have asked me about Lee Sedol's style. Most would call him a fighter, but I feel this is too broad a label. Gu Li is also a fighter, but he is the tough, courageous, and direct kind, whereas Lee resembles a wolf who ambushes his prey. He conceals himself, awaiting the best opportunity. His slow preparation lulls you into unawareness. Patience and keen senses are his weapons. Finally, the moment he detects his chance, he strikes, swiftly and fatally.
+
+But in this game, Lee betrayed his style and showed his fangs too early. Perhaps he succumbed to the pressure, to the desire for a clear victory to prove himself.
+
+AlphaGo also thought Black 15 was overplay. See the variation.]
+;W[de]C[After White hit the elephant's eye with 16, Black's shape was hard to bear. The next move would be mandatory for a human player, but AlphaGo believed there was still time to change course. See the variation.]
+(;B[df]
+;W[ce]C[Playing against AlphaGo can induce a certain sense of despair. It is like a black hole, sucking you in little by little. No matter how you try to break away, you will slowly discover that your efforts count for nothing.
+
+After White 18, it was Black's shape that was torn apart. Lee's face began to redden.]
+;B[ec]
+;W[fd]
+;B[ff]C[Many commentaries disagreed with Black 21, even calling it the losing move, but AlphaGo saw no problem with this way of playing.
+
+At this point, Lee had 1 hour and 41 minutes left, AlphaGo 1 hour and 48 minutes.]
+;W[fc]C[Lee sighed when he saw this move, although he must have known it was coming.]
+;B[bd]
+;W[he]
+;B[ie]
+;W[hd]C[Lee hesitated over the choice presented by this move: enclose White and let the group live, or give no quarter and continue pursuing the attack?]
+(;B[ic]
+;W[hg]C[Black continued attacking, but when White came out at 28, Lee sighed even deeper. Did he regret the initial fight, or the decision to continue? Either way, in a game against AlphaGo, the more one plays, the more doubts arise, and these doubts are what will ultimately prove fatal.
+
+In any case, AlphaGo thought Black should have extended as shown in the variation.
+
+When White jumped here, AlphaGo’s win rate stood at 59%.]
+;B[if]
+;W[gg]C[When White played 30, Lee Sedol rested his hand on the bowl and started tapping his finger. This decision would take courage.]
+(;B[jh]C[Courage he may have had, but Black 31 was a definite overplay! Lee must have known this, but since he could not best AlphaGo in a contest of positional judgment, perhaps he hoped to break through its defenses in local fighting.
+
+Of course, AlphaGo did not agree with this move. See the variation.]
+;W[ci]C[After the baptism by fire of the last two games, Go players were prepared to appreciate AlphaGo's ability. When move 32 appeared onscreen, everyone agreed it was a beautiful, perfect move! Although White's local shape was strange, the situation already looked out of Black's control. See the variation for some alternative lines.
+
+Lee glanced at the clock. Then he began to rock back and forth, nervously, like a boat drifting in windy seas. At this point, AlphaGo's win rate had reached 62%.]
+(;B[dg]C[In the actual game, Lee had no choice but to turn at 33, after which he left the room for a smoke. He needed to regain calm, but it was a bit too late.
+
+In the sequence that followed, AlphaGo's fighting strategy was watertight. If Go were boxing, then Lee came in with fists swinging, but he may as well have been punching cotton. The way his strength rebounded back on him must have been difficult to bear.]
+;W[di]
+;B[ei]
+;W[bg]
+;B[bh]
+;W[be]
+;B[bi]
+;W[cj]
+;B[dh]
+;W[dk]
+;B[ej]
+;W[ck]
+;B[ch]
+;W[gi]
+;B[fh]
+;W[dm]C[As Lee pressed beyond the point of no return, AlphaGo's win rate continued to rise. By the time White jumped at 48, it had already topped 72%.
+
+At this point, Lee had 1 hour left, AlphaGo 1 hour and 34 minutes.]
+;B[dn]
+;W[fg]
+;B[eh]
+;W[fm]
+;B[ek]
+;W[el]C[During this game, Lee was clearly in a different state of mind than he had been before. He murmured and sighed incessantly, shook his head back and forth, even occasionally ventured a helpless smile.
+
+The battle grew more difficult for Black, and when White played 54, the win rate stood at 74%. To reach such a high number so quickly meant that the game was essentially decided, but Lee continued to persevere.]
+;B[gk]
+;W[ii]
+;B[cm]
+;W[fo]
+;B[en]
+;W[fl]
+;B[bk]LB[dl:B][cl:A]C[Black 61 was an interesting move. Normally, Black would first exchange A for B to secure an unconditional connection with 61. In the game, there remained a dangerous possibility of ko.
+
+Since the beginning of the match, there had been a rumor that AlphaGo could not handle ko correctly. Especially since it had avoided a large ko near the end of game 2, it seemed that AlphaGo sought to prevent ko. Perhaps Lee wanted to verify the rumor.]
+;W[bj]
+;B[aj]
+(;W[hm]C[When White jumped with 64, AlphaGo's win rate reached 77%.
+
+See the variation for an idea of what might happen when White triggers the ko.]
+;B[hj]
+;W[hi]
+;B[gj]
+;W[ji]
+;B[il]C[One look at Lee's face was enough to see how the game was going. Perhaps the last hope for Black was that White's dragon at the bottom remained a little insecure.
+
+Here, Lee had 39 minutes, AlphaGo 1 hour and 21 minutes.]
+;W[jn]
+;B[cp]
+;W[cq]
+;B[dq]
+;W[dr]
+;B[bq]
+;W[eq]
+;B[pm]C[With the attachment at 77, Lee admitted that he could not win by normal means. Instead, he resorted to his famous "zombie" style! As the name implies, this style is one in which a player is already "dead," or at least doomed, but thrashes about frighteningly in an attempt to catch the opponent off guard. This strategy has won back many a lost game, but against AlphaGo, it seemed more tragic than anything else.]
+;W[pl]
+;B[qn]
+;W[om]
+;B[pn]
+;W[ql]
+;B[ol]
+;W[on]C[When White pressed at 84, AlphaGo's win rate was 84%.]
+;B[rn]
+;W[oo]
+;B[ok]
+;W[qi]
+;B[ll]
+;W[hc]
+;B[qq]
+;W[qp]
+;B[rp]
+;W[pq]
+;B[rq]
+;W[qr]
+;B[rr]
+;W[ln]C[The battle in the upper left drew to a close with 98. Black had lived in the corner, but White had gained safety for the group on the lower side, and secured an enormous swath of sixth-line territory on the top! Black's position was already hopeless, as confirmed by AlphaGo’s win rate of 87%.]
+;B[qe]
+;W[re]
+;B[rd]
+;W[pe]
+;B[qd]
+;W[bb]
+;B[dd]
+;W[ee]
+;B[cb]
+;W[bc]
+;B[ad]
+;W[eb]
+;B[ba]
+;W[gb]C[Sitting beside the board, I was expecting Lee to resign any minute, a feeling that only intensified when White played 112. White was unconditionally alive, Black was short on points, and there seemed to be nowhere left to play.]
+;B[qk]
+;W[pk]
+;B[lo]
+;W[mn]
+;B[pj]
+;W[qj]
+;B[rl]
+;W[rk]
+;B[rm]
+;W[qk]
+;B[cr]
+;W[pf]
+;B[iq]C[In reality, Lee was far more tenacious than I had thought. When he invaded with Black 125, I gasped in surprise! Could he possibly live there!?]
+;W[kq]
+;B[lq]
+;W[jq]
+;B[jo]
+;W[kn]
+;B[hr]
+;W[ip]
+;B[hp]
+;W[io]
+;B[jr]
+;W[kr]
+;B[ho]
+;W[gq]C[For a human go professional, it would be unbearable to let Black live, but AlphaGo has no such restrictions. It only picks the move with the highest win rate. So, when White played 138, Black earned an unexpected chance to live in ko. See the variation.
+
+Lee did not choose this ko, however, because Black has no way to win it.]
+(;B[hq]
+;W[in]
+;B[fn]
+;W[gn]
+;B[go]
+;W[gr]
+;B[gs]
+;W[fs]
+;B[is]C[Turning down one ko, he tenaciously cut off the White group on the right side to set up an even bigger one. With this move, Lee secured an approach-move ko for life.]
+;W[ib]C[However, White did not even bother to answer! Instead, White took the big point at 148. By this point, the win rate was already over 98%, a declaration of total victory.]
+;B[ks]
+;W[lr]
+;B[dq]
+;W[hn]
+;B[ds]
+;W[cq]
+;B[fp]
+;W[eo]
+;B[do]
+;W[ep]
+;B[er]
+;W[hs]
+;B[qh]
+;W[ph]
+;B[gs]
+;W[dq]
+;B[br]
+;W[hs]
+;B[pi]
+;W[oh]
+;B[gs]
+;W[bp]C[The final ko fight of the game felt as solemn as a dirge. Lee's last hope was gone: AlphaGo had shattered the notion that it had any problem with ko.]
+;B[hs]
+;W[co]
+;B[bo]
+;W[bn]
+;B[cp]
+;W[cs]C[At 176, Lee Sedol resigned.
+
+Although, with this game, AlphaGo had already claimed victory in the match, the rules stipulated that all five games would take place regardless of the results.
+
+During the postgame press conference, Lee stated his new objective was to win at least one game. Even this seemed very unlikely.
+
+At the same time, the idea that AlphaGo's victory would somehow ruin Go began to disappear. Confronted by defeat, people suddenly seemed to understand that humanity had not lost to a machine, but rather, had only surpassed itself! Furthermore, interest in Go had risen to unprecedented levels in both Asia and the West, creating a wonderful opportunity for further development.
+
+I, too, believe we must not regard AlphaGo as a rival, against whom we can win or lose. Instead, we should see it as a partner, helping us more deeply explore the marvels of the game.
+
+Perhaps, now that Lee could finally lay down the burden of winning the match, the fourth game would prove to be an especially brilliant one.])
+(;B[jp]C[Starting with this atari, Black can set up a ko to live.]
+;W[in]
+;B[kp]
+;W[hq]
+;B[ir]
+;W[lr]
+;B[mr]
+;W[mq]
+;B[mp]
+;W[lp]C[However, Black has very few ko threats, and White can always start a second ko on the right, so this way is hopeless for Black.]))
+(;W[bl]
+;B[cl]
+;W[ak]
+;B[dl]
+;W[ai]C[Because this capture is sente, White can live locally in ko.]
+;B[ah]
+;W[bm]C[This is a large ko, but if White wins, Black's group will be cut apart.]))
+(;B[dh]C[Black cannot split White.]
+;W[di]C[All White needs to do now is push out.]
+;B[eh]
+;W[ei]
+;B[fh]
+;W[hi]
+;B[fi]
+;W[ej]C[Up to here, Black's two stones on the right have already sustained grave damage. Because Black's right side group is not yet safe, it will be difficult to find compensation by attacking White's group below. This is no good for Black.])
+(;B[cf]C[Although Black can choose to connect directly...]
+;W[di]
+;B[be]
+;W[ej]C[...it would be buying security at the price of letting White obliterate the potential of the right side. Once again, Black's two stones have suffered heavy damage, and the loss on the right is unacceptable.]))
+(;B[ch]C[AlphaGo thinks Black should reinforce the right side.]
+;W[ej]
+;B[dk]
+;W[jh]
+;B[hi]
+;W[ig]
+;B[pl]
+;W[pm]
+;B[nl]C[Following the shoulder hit, Black will be on the lookout for an opportune moment to fight. Of course, Lee, having lost patience by this point, would have found this variation too slow.]))
+(;B[if]C[AlphaGo thinks that Black should extend upwards instead.]
+;W[gg]
+;B[dg]C[After White plays the knight's move to escape, Black reinforces the right.]
+;W[ic]
+;B[jc]
+;W[ib]
+;B[jb]
+;W[hf]
+;B[ig]
+;W[gi]C[White gets out into the center, and Black now switch to attack the left side. 
+]
+;B[qh]
+;W[qd]
+;B[qc]
+;W[rc]
+;B[qe]
+;W[rd]
+;B[pe]
+;W[pc]
+;B[qb]
+;W[pb]
+;B[rb]
+;W[sb]
+;B[re]
+;W[qa]
+;B[qk]
+;W[be]C[Although this may be a bit better than the game, there is no doubt that Black has failed in this fight, and this variation is just a way to minimize the damage.]))
+(;B[ec]LB[ef:A]C[Perhaps AlphaGo is correct to suggest the crawl, but no human could stand to play this way. The idea of Black A was to cut and fight, and changing direction so soon simply defies logic.
+]
+;W[df]
+;B[gd]
+;W[cl]
+;B[dh]
+;W[el]
+;B[gh]
+;W[he]
+;B[hd]
+;W[ge]C[Of course, if Black did choose this variation, it would also be fine for White.]))
+(;B[cg]C[This jump would be the normal move.]
+;W[ei]
+;B[di]
+;W[ec]
+;B[gd]
+;W[ce]C[White would look to settle the group directly.]
+;B[be]
+;W[de]
+;B[bf]
+;W[cc]
+;B[cb]
+;W[bc]
+;B[db]
+;W[dd]
+;B[bd]
+;W[eb]
+;B[bb]
+;W[hc]
+;B[ic]
+;W[hd]
+;B[he]
+;W[gc]
+;B[ie]
+;W[of]C[Although Black has profited on both sides, White has made eyes in sente. With the jump on the left, White looks to have a dynamic opening.]))
+(;B[nd]C[If Black chooses the one-space jump...]
+;W[qc]C[...White will invade the 3-3 point.]
+;B[qd]
+;W[rd]
+;B[pc]C[Black will turn and defend the lower side.]
+;W[rb]
+;B[qb]
+;W[rc]
+;B[dj]C[This is a balanced result.]))
