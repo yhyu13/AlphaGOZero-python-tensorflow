@@ -14,16 +14,50 @@ I downloaded the paper Mastering the Game of Go without Human Knowledge in the f
 
 This time's AlphaGo uses combined policy & value network (final fc diverges to two branches) to cope with training stability.
 From Paper:
+
 ![](/figure/dual_network.png)
+
 Innovation (annealing & Dirichlet noise) in MCTS has enabled exploration
+
 From Paper:
 ![](/figure/MCTS.png)
+
 And exploration leads to learning more and more complex movings, making the game at the end of training (~70h) both competitive and balanced.
+
 From Paper:
 ![](/figure/learning_go.png)
-The input is still raw stones but normal CNN has been replaced by RES-50NET
+
+The input is still raw stones but normal CNN has been replaced by residual net
+
 From Paper:
 ![](/figure/cnn_archi.png)
+
 And finally pure RL has outperformed supervised learning+RL agent
+
 From Paper:
 ![](/figure/rl_vs_sl.png)
+
+## AlphaGo Zero Architecture:
+
+* input 19 x 19 x 17: 7 previous states + current state player’s stone, 7 previous states + current state opponent’s stone, player’s colour
+* 1. A convolution of 256 filters of kernel size 3 x 3 with stride 1
+  2. Batch normalisation
+  3. A rectifier non-linearity
+
+**Residual Blocks**
+* 1. A convolution of 256 filters of kernel size 3 x 3 with stride 1
+  2. Batch normalisation
+  3. A rectifier non-linearity
+  4. A convolution of 256 filters of kernel size 3 x 3 with stride 1
+  5. Batch normalisation
+  6. A skip connection that adds the input to the block
+  7. A rectifier non-linearity
+
+**Policy Head**
+* 1.A convolution of 2 filters of kernel size 1 x 1 with stride 1  2. Batch normalisation  3. A rectifier non-linearity  4. A fully connected linear layer that outputs a vector of size 192^2 + 1 = 362 corresponding to logit probabilities for all intersections and the pass move
+
+**Value Head**
+* 1. A convolution of 1 filter of kernel size 1 x 1 with stride 1 
+  2. Batch normalisation  3. A rectifier non-linearity
+  4. A fully connected linear layer to a hidden layer of size 256 
+  5. A rectifier non-linearity  6. A fully connected linear layer to a scalar  7. A tanh non-linearity outputting a scalar in the range [ 1, 1]
