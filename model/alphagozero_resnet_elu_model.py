@@ -16,6 +16,9 @@ class AlphaGoZeroResNet(ResNet):
             self._build_train_op()
         self.summaries = tf.summary.merge_all()
 
+    def _relu(x,leak=0):
+        return tf.nn.elu(x)
+
     # override _residual block to repliate AlphaGoZero architecture
     def _residual(self, x, in_filter, out_filter, stride,
                   activate_before_residual=False):
@@ -26,7 +29,7 @@ class AlphaGoZeroResNet(ResNet):
             # A convolution of 256 filters of kernel size 3x3 with stride 1
             x = self._conv('conv1', x, 3, in_filter, out_filter, stride)
             # Batch normalisation
-            x = self._batch_norm('bn1', x)
+            #x = self._batch_norm('bn1', x)
             # A rectifier non-linearity
             x = self._relu(x, self.hps.relu_leakiness)
 
@@ -46,7 +49,7 @@ class AlphaGoZeroResNet(ResNet):
                               (out_filter - in_filter) // 2]])
             x += orig_x
             # A rectifier non-linearity
-            x = self._relu(x, self.hps.relu_leakiness)
+            #x = self._relu(x, self.hps.relu_leakiness)
 
         tf.logging.info('image after unit %s', x.get_shape())
         return x
