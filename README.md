@@ -6,14 +6,20 @@ This is a trial implementation of DeepMind's Oct19th publication: [Mastering the
 ## Useful links:
 
 [All DeepMind’s AlphaGO games](http://www.alphago-games.com)
+
 [GoGOD dataset, $15](https://gogodonline.co.uk)
+
 [KGS >=4dan, FREE](https://www.u-go.net/gamerecords-4d/)
+
 [Youtube: Learn to play GO](https://www.youtube.com/watch?v=xMshtO8h7RU)
 
 [repo: MuGo](https://github.com/brilee/MuGo)
+
 [repo: ROCAlphaGO](https://github.com/Rochester-NRT/RocAlphaGo)
+
 [repo: miniAlphaGO](https://github.com/yotamish/mini-Alpha-Go)
-[repo: renet-tensorflow](https://github.com/ritchieng/resnet-tensorflow)
+
+[repo: resnet-tensorflow](https://github.com/ritchieng/resnet-tensorflow)
 
 
 ## From Paper:
