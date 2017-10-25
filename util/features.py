@@ -86,6 +86,8 @@ def would_capture_feature(position):
             features[last_lib] += len(g.stones)
     return make_onehot(features, P)
 
+'''
+# MuGo Features
 DEFAULT_FEATURES = [
     stone_color_feature,
     ones_feature,
@@ -93,6 +95,30 @@ DEFAULT_FEATURES = [
     recent_move_feature,
     would_capture_feature,
 ]
+'''
+
+# AlphaGo Zero Features
+DEFAULT_FEATURES = [
+    player_opponent_recent_eight_move,
+    player_colour,
+]
+
+# AlphaGo Zero Features
+@planes(16)
+def player_opponent_recent_eight_move(position):
+    onehot_features = np.zeros([go.N, go.N, 16], dtype=np.uint8)
+    for i, player_move in enumerate(reversed(position.recent[-P:])):
+        _, move = player_move # unpack the info from position.recent
+        if move is not None:
+            onehot_features[move[0], move[1], i+max((16-len(position.recent),0))] = 1
+    return onehot_features
+
+# AlphaGo Zero Features
+@planes(1)
+def player_colour(position):
+    return np.ones([go.N, go.N, position.to_play], dtype=np.uint8)
+
+
 
 def extract_features(position, features=DEFAULT_FEATURES):
     return np.concatenate([feature(position) for feature in features], axis=2)

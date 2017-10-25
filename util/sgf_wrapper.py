@@ -19,7 +19,8 @@ SGF_TEMPLATE = '''(;GM[1]FF[4]CA[UTF-8]AP[MuGo_sgfgenerator]RU[{ruleset}]
 SZ[{boardsize}]KM[{komi}]PW[{white_name}]PB[{black_name}]RE[{result}]
 {game_moves})'''
 
-PROGRAM_IDENTIFIER = "MuGo"
+# PROGRAM_IDENTIFIER = "MuGo"
+PROGRAM_IDENTIFIER = "AlphaGoZero"
 
 def translate_sgf_move(player_move):
     if player_move.color not in (go.BLACK, go.WHITE):
