@@ -86,38 +86,36 @@ def would_capture_feature(position):
             features[last_lib] += len(g.stones)
     return make_onehot(features, P)
 
-'''
-# MuGo Features
-DEFAULT_FEATURES = [
-    stone_color_feature,
-    ones_feature,
-    liberty_feature,
-    recent_move_feature,
-    would_capture_feature,
-]
-'''
+# AlphaGo Zero Features
+@planes(16)
+def player_opponent_recent_eight_move(position):
+    onehot_features = np.zeros([go.N, go.N, 16], dtype=np.uint8)
+    player_colour = position.to_play
+    # odd number of recent play indicate it is opponet's round
+    if len(position.recent) % 2 == 1:
+        player_colour *= -1
+    # if recent play history is smaller than 16, then pad
+    padding = max((16-len(position.recent),0))
+    for i, board in enumerate(reversed(position.recent_board[-16:])):
+        if board is not None:
+            board *= player_colour
+            onehot_features[board>0, i+padding] = 1
+            #print(np.sum(onehot_features[:,:,i+padding]))
+        player_colour *= -1
+    return onehot_features
+
+# AlphaGo Zero Features
+@planes(1)
+def player_colour(position):
+    # In principle, white=-1 and black=1, here, unint8 can't express -1.
+    # So the conversion is left to train.py
+    return np.ones([go.N, go.N, 1], dtype=np.uint8)*(1 if position.to_play==1 else 0)
 
 # AlphaGo Zero Features
 DEFAULT_FEATURES = [
     player_opponent_recent_eight_move,
     player_colour,
 ]
-
-# AlphaGo Zero Features
-@planes(16)
-def player_opponent_recent_eight_move(position):
-    onehot_features = np.zeros([go.N, go.N, 16], dtype=np.uint8)
-    for i, player_move in enumerate(reversed(position.recent[-P:])):
-        _, move = player_move # unpack the info from position.recent
-        if move is not None:
-            onehot_features[move[0], move[1], i+max((16-len(position.recent),0))] = 1
-    return onehot_features
-
-# AlphaGo Zero Features
-@planes(1)
-def player_colour(position):
-    return np.ones([go.N, go.N, position.to_play], dtype=np.uint8)
-
 
 
 def extract_features(position, features=DEFAULT_FEATURES):
@@ -129,4 +127,5 @@ def bulk_extract_features(positions, features=DEFAULT_FEATURES):
     output = np.zeros([num_positions, go.N, go.N, num_planes], dtype=np.uint8)
     for i, pos in enumerate(positions):
         output[i] = extract_features(pos, features=features)
+        #print(np.sum(output[i][:,:,:-1]))
     return output

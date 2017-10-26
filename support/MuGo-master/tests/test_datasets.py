@@ -15,20 +15,21 @@ class TestDataSets(GoPositionTestCase):
 
     def test_dataset_serialization(self):
         sgf_files = list(load_data_sets.find_sgf_files(TEST_DIR))
-        positions_w_context = list(load_data_sets.get_positions_from_sgf(sgf_files[0]))
+        for i in range(len(sgf_files)):
+            positions_w_context = list(load_data_sets.get_positions_from_sgf(sgf_files[i]))
 
-        dataset = load_data_sets.DataSet.from_positions_w_context(positions_w_context)
-        dataset.write(TEMP_FILE_NAME)
-        recovered = load_data_sets.DataSet.read(TEMP_FILE_NAME)
-        self.assertEqual(dataset.is_test, recovered.is_test)
-        self.assertEqual(dataset.data_size, recovered.data_size)
-        self.assertEqual(dataset.board_size, recovered.board_size)
-        self.assertEqual(dataset.input_planes, recovered.input_planes)
-        self.assertEqual(dataset.is_test, recovered.is_test)
-        self.assertEqual(dataset.pos_features.shape, recovered.pos_features.shape)
-        self.assertEqual(dataset.next_moves.shape, recovered.next_moves.shape)
-        self.assertEqualNPArray(dataset.next_moves, recovered.next_moves)
-        self.assertEqualNPArray(dataset.pos_features, recovered.pos_features)
+            dataset = load_data_sets.DataSet.from_positions_w_context(positions_w_context)
+            dataset.write(TEMP_FILE_NAME)
+            recovered = load_data_sets.DataSet.read(TEMP_FILE_NAME)
+            self.assertEqual(dataset.is_test, recovered.is_test)
+            self.assertEqual(dataset.data_size, recovered.data_size)
+            self.assertEqual(dataset.board_size, recovered.board_size)
+            self.assertEqual(dataset.input_planes, recovered.input_planes)
+            self.assertEqual(dataset.is_test, recovered.is_test)
+            self.assertEqual(dataset.pos_features.shape, recovered.pos_features.shape)
+            self.assertEqual(dataset.next_moves.shape, recovered.next_moves.shape)
+            self.assertEqualNPArray(dataset.next_moves, recovered.next_moves)
+            self.assertEqualNPArray(dataset.pos_features, recovered.pos_features)
 
 class TestDataSetHelpers(GoPositionTestCase):
     def test_onehot(self):

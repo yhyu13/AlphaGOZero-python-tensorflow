@@ -39,13 +39,14 @@ class GOTrainEnv:
         self.nb_classes = args.n_classes
 
         self.img = tf.placeholder(tf.float32, shape=[self.batch_num, self.img_row, self.img_col, self.img_channels])
-        self.label = tf.placeholder(tf.float32, shape=[self.batch_num, self.nb_classes])
+        self.labels = tf.placeholder(tf.float32, shape=[self.batch_num, self.nb_classes])
+        self.results = tf.placehodler(tf.float32,shape=[])
 
         # whether this example should be positively or negatively reinforced.
         # Set to 1 for positive, -1 for negative.
         self.reinforce_direction = tf.placeholder(tf.float32, shape=[])
 
-        self.model = alphagozero_resnet_model.AlphaGoZeroResNet(hps, img, labels, zs,'train')
+        self.model = alphagozero_resnet_model.AlphaGoZeroResNet(hps, img, labels, results,'train')
         self.model.build_graph()
 
         self.merged = model.summaries
@@ -75,44 +76,56 @@ class GOTrainEnv:
 
             for i in range(self.num_iter):
                 batch = training_data.get_batch(batch_size)
+                batch = batch.astype(np.float32)
+                # convert the last feature: player colour to -1 & 1 from 0 & 1
+                batch[0][...,16] = (batch[0][...,16]-0.5)*2
+                
                 feed_dict = {self.img: batch[0],
                              self.labels: batch[1],
+                             self.results: bath[2],
                              self.model.lrn_rate: lr}
-                _, l, ac, summary, lr, global_norm = self.sess.run([self.model.train_op, self.model.cost,self.model.acc, self.merged, self.model.lrn_rate,self.model.norm], feed_dict=feed_dict)
+                _, l, ac, resutl_ac,summary, lr, global_norm = self.sess.run([self.model.train_op, self.model.cost,self.model.acc, self.model.result_acc , self.merged, self.model.lrn_rate,self.model.norm], feed_dict=feed_dict)
                 self.train_writer.add_summary(summary, i)
                 self.sess.run(model.increase_global_step)
                 
                 if i % 100 == 0:
                     print('step', i+1)
                     print('Training loss', l)
-                    print('Training accuracy', ac)
+                    print('Play move training accuracy', ac)
+                    print('Win ratio training accuracy', result_ac)
                     print('Learning rate', round(lr,10))
                     print('Magnitude of global norm', round(global_norm,2))
                     print('Total step', self.sess.run(model.global_step))
                     
 
-    def test(self,test_data,proportion=0.1):
+    def test(self,test_data, proportion=0.1):
         
         print('Running evaluation...')
 
         num_minibatches = test_data.data_size // batch_size
 
-        test_loss, test_acc, n_batch = 0, 0, 0
-        for i in range(int(num_minibatches*proportion)):
-            batch_x, batch_y = test_data.get_batch(self.batch_num)
+        test_loss, test_acc, test_result_acc ,n_batch = 0, 0, 0,0
+        for i in range(int(num_minibatches * proportion)):
+            batch = test_data.get_batch(batch_size)
+            batch = batch.astype(np.float32)
+            # convert the last feature: player colour to -1 & 1 from 0 & 1
+            batch[0][...,16] = (batch[0][...,16]-0.5)*2
             
-            feed_dict_eval = {self.img: batch[0], self.labels: batch[1]}
+            feed_dict_eval = {self.img: batch[0], self.labels: batch[1],self.results, batch[2]}
 
-            loss, ac = self.sess.run([self.model.cost, self.model.acc], feed_dict=feed_dict_eval)
+            loss, ac, result_acc = self.sess.run([self.model.cost, self.model.acc,self.model.result_acc], feed_dict=feed_dict_eval)
             test_loss += loss
             test_acc += ac
+            test_result_acc += result_acc
             n_batch += 1
 
         tot_test_loss = test_loss / n_batch
         tot_test_acc = test_acc / n_batch
+        test_result_acc = test_result_acc / n_batch
 
         print('   Test loss: {}'.format(tot_test_loss))
-        print('   Test accuracy: {}'.format(tot_test_acc))
+        print('   play move test accuracy: {}'.format(tot_test_acc))
+        print('   Win ratio test accuracy: {}'.format(test_result_acc))
 
         if tot_test_acc > 0.4:
             # if test acc is bigger than 40%, save

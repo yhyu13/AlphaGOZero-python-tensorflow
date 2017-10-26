@@ -124,13 +124,21 @@ class AlphaGoZeroResNet(ResNet):
 
             tf.summary.scalar('cost', self.cost)
 
-        with tf.variable_scope('acc'):
+        with tf.variable_scope('move_acc'):
             correct_prediction = tf.equal(
                 tf.cast(tf.argmax(logits, 1), tf.int32), self.labels)
             self.acc = tf.reduce_mean(
-                tf.cast(correct_prediction, tf.float32), name='accu')
+                tf.cast(correct_prediction, tf.float32), name='move_accu')
 
-            tf.summary.scalar('accuracy', self.acc)
+            tf.summary.scalar('move_accuracy', self.acc)
+
+        with tf.variable_scope('result_acc'):
+            correct_prediction_2 = tf.equal(
+                tf.sign(self.value), self.zs)
+            self.result_acc = tf.reduce_mean(
+                tf.cast(correct_prediction_2, tf.float32), name='result_accu')
+
+            tf.summary.scalar('resutl_accuracy', self.result_acc)
 
     # override build train op
     def _build_train_op(self):

@@ -140,7 +140,7 @@ def replay_sgf(sgf_contents):
     metadata = GameMetadata(
         result=sgf_prop(props.get('RE')),
         handicap=int(sgf_prop(props.get('HA', [0]))),
-        board_size=int(sgf_prop(props.get('SZ'))))
+        board_size=int(sgf_prop(props.get('SZ', [19]))))
     go.set_board_size(metadata.board_size)
 
     pos = Position(komi=komi)

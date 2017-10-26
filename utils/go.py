@@ -253,6 +253,10 @@ class Position():
         self.lib_tracker = lib_tracker or LibertyTracker.from_board(self.board)
         self.ko = ko
         self.recent = recent
+
+        # recent board stores an array of boards, initialized as an empty array
+        self.recent_board = []
+        
         self.to_play = to_play
 
     def __deepcopy__(self, memodict={}):
@@ -359,7 +363,6 @@ class Position():
         place_stones(pos.board, color, [c])
         captured_stones = pos.lib_tracker.add_stone(color, c)
         place_stones(pos.board, EMPTY, captured_stones)
-
         opp_color = color * -1
 
         if len(captured_stones) == 1 and potential_ko == opp_color:
@@ -376,6 +379,10 @@ class Position():
         pos.caps = new_caps
         pos.ko = new_ko
         pos.recent += (PlayerMove(color, c),)
+        
+        # append move result to recent board
+        pos.recent_board.append(pos.board)
+        
         pos.to_play *= -1
         return pos
 

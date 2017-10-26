@@ -76,7 +76,7 @@ class DataSet(object):
         start = self._index_within_epoch
         end = start + batch_size
         self._index_within_epoch += batch_size
-        return self.pos_features[start:end], self.next_moves[start:end]
+        return self.pos_features[start:end], self.next_moves[start:end],self.results[start:end] # alphagozero sl batch: board history, next move, result 
 
     @staticmethod
     def from_positions_w_context(positions_w_context, is_test=False):
@@ -106,6 +106,7 @@ class DataSet(object):
             # the +7 // 8 compensates for numpy's bitpacking padding
             packed_position_bytes = f.read((position_dims + 7) // 8)
             packed_next_move_bytes = f.read((next_move_dims + 7) // 8)
+            
             # should have cleanly finished reading all bytes from file!
             assert len(f.read()) == 0
 
