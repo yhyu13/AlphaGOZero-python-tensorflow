@@ -10,9 +10,9 @@ Most of the complexity here is dealing with two features of SGF:
 from collections import namedtuple
 import numpy as np
 
-import go
-from go import Position
-from utils import parse_sgf_coords as pc, unparse_sgf_coords as upc
+import utils.go as go
+from utils.go import Position
+from utils.utils import parse_sgf_coords as pc, unparse_sgf_coords as upc
 import sgf
 
 SGF_TEMPLATE = '''(;GM[1]FF[4]CA[UTF-8]AP[MuGo_sgfgenerator]RU[{ruleset}]

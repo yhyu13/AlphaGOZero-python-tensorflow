@@ -11,7 +11,7 @@ import re
 import time
 
 import gtp
-import go
+import utils.go as go
 
 KGS_COLUMNS = 'ABCDEFGHJKLMNOPQRST'
 SGF_COLUMNS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"

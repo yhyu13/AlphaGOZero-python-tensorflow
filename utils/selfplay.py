@@ -1,10 +1,14 @@
 import time
-import go
-import strategies
+import utils.go as go
+import ytils.strategies as strategies
 import policy
-import sgf_wrapper
-import load_data_sets
-import utils
+import utils.sgf_wrapper as sgf_wrapper
+import utils.load_data_sets as load_data_sets
+import utils.utils as utils
+
+'''
+This file requires model to have reinforcment learning feature, will implement in model alphago model
+'''
 
 net = policy.PolicyNetwork()
 net.initialize_variables('/Users/brilee/dev/MuGo/saved_models/20170718')

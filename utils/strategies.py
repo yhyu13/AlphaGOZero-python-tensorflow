@@ -7,8 +7,8 @@ import time
 import gtp
 import numpy as np
 
-import go
-import utils
+import utils.go as go
+import utils.utils
 
 # Draw moves from policy net until this threshold, then play moves randomly.
 # This speeds up the simulation, and it also provides a logical cutoff

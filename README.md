@@ -80,3 +80,40 @@ From Paper:
   2. Batch normalisation  3. A rectifier non-linearity
   4. A fully connected linear layer to a hidden layer of size 256 
   5. A rectifier non-linearity  6. A fully connected linear layer to a scalar  7. A tanh non-linearity outputting a scalar in the range [ 1, 1]
+
+---
+
+# Set up
+
+## Install requirement
+
+python 3.6
+
+```
+pip install -r requirement.txt
+```
+
+## Add ./util ./model to PYTHONPATH
+
+Under repo's root dir
+
+```
+PWD=pwd
+export PYTHONPATH="$PWD/model:$PYTHONPATH"
+export PYTHONPATH="$PWD/utils:$PYTHONPATH"
+set PWD=
+```
+
+# Preprocess Data:
+
+*It is only an example, feel free to assign your local dataset directory*
+
+```
+python preprocess.py --dataset=./data
+```
+
+# Train A Model:
+
+```
+python train.py
+```

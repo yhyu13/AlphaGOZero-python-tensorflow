@@ -2,10 +2,17 @@ import argparse
 import os
 import sys
 
-from load_data_sets import DataSet,parse_data_sets
+from utils.load_data_sets import DataSet,parse_data_sets
 
 
-# Credit: Brain Lee    
+# Credit: Brain Lee
+
+# this method doesn't read .sgf recursively from a folder to subfolder
+# make sure dataset looks like this:
+# --|-folder1/.sgfs
+#   |-folder2/.sgfs
+#   ...
+#   |-folderN/.sgfs
 def preprocess(*data_sets, processed_dir="processed_data"):
     processed_dir = os.path.join(os.getcwd(), processed_dir)
     if not os.path.isdir(processed_dir):

@@ -1,4 +1,4 @@
-from resnet_model import *
+from model.resnet_model import *
 
 class AlphaGoZeroResNet(ResNet):
 
@@ -15,6 +15,16 @@ class AlphaGoZeroResNet(ResNet):
         if self.mode == 'train':
             self._build_train_op()
         self.summaries = tf.summary.merge_all()
+
+    def _fully_connected(self, x, out_dim, name=''):
+        """FullyConnected layer for final output."""
+        x = tf.contrib.layers.flatten(x)
+        w = tf.get_variable(
+            name+'DW', [x.get_shape()[1], out_dim],
+            initializer=tf.uniform_unit_scaling_initializer(factor=1.0))
+        b = tf.get_variable(name+'biases', [out_dim],
+                            initializer=tf.constant_initializer())
+        return tf.nn.xw_plus_b(x, w, b)
 
     # override _residual block to repliate AlphaGoZero architecture
     def _residual(self, x, in_filter, out_filter, stride,
@@ -95,23 +105,23 @@ class AlphaGoZeroResNet(ResNet):
             # for all intersections and the pass move
 
             # defensive 1 step to temp annealling
-            temp = tf.maximum(tf.train.expotential_decay(100.,self.global_step,1e4,0.95),1.)
-            logits = tf.divide(self._fully_connected(logits, self.hps.num_classes),temp)
+            self.temp = tf.maximum(tf.train.exponential_decay(100.,self.global_step,1e4,0.95),1.)
+            logits = tf.divide(self._fully_connected(logits, self.hps.num_classes,'policy_fc'),temp)
             self.predictions = tf.nn.softmax(logits)
 
         with tf.variable_scope('value_head'):
             # A convolution of 1 filter of kernel size 1x1 with stride 1
             value = self._conv('value_conv', x, 1, 256, 1, self._stride_arr(1))
             # Batch normalisation
-            value = self._batch_norm('value_bn', logits)
+            value = self._batch_norm('value_bn', value)
             # A rectifier non-linearity
             value = self._relu(value, self.hps.relu_leakiness)
             # A fully connected linear layer to a hidden layer of size 256
-            value = self._fully_connected(value, 256, 'fc1')
+            value = self._fully_connected(value, 256, 'value_fc1')
             # A rectifier non-linearity
             value = self._relu(value, self.hps.relu_leakiness)
             # A fully connected linear layer to a scalar
-            value = self._fully_connected(value, 1, 'fc2')
+            value = self._fully_connected(value, 1, 'value_fc2')
             # A tanh non-linearity outputting a scalar in the range [1, 1]
             self.value = tf.tanh(value)
             
@@ -126,7 +136,7 @@ class AlphaGoZeroResNet(ResNet):
 
         with tf.variable_scope('move_acc'):
             correct_prediction = tf.equal(
-                tf.cast(tf.argmax(logits, 1), tf.int32), self.labels)
+                tf.cast(tf.argmax(logits, 1), tf.float32), self.labels)
             self.acc = tf.reduce_mean(
                 tf.cast(correct_prediction, tf.float32), name='move_accu')
 

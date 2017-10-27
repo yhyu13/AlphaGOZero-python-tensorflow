@@ -5,10 +5,10 @@ import os
 import struct
 import sys
 
-from features import bulk_extract_features
-import go
-from sgf_wrapper import replay_sgf
-import utils
+from utils.features import bulk_extract_features
+import utils.go as go
+from utils.sgf_wrapper import replay_sgf
+import utils.utils as utils
 
 # Number of data points to store in a chunk on disk
 CHUNK_SIZE = 4096
