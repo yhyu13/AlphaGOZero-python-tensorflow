@@ -42,7 +42,7 @@ class GOTrainEnv:
 
         self.img = tf.placeholder(tf.float32, shape=[None, self.img_row, self.img_col, self.img_channels])
         self.labels = tf.placeholder(tf.float32, shape=[None, self.nb_classes])
-        self.results = tf.placeholder(tf.float32,shape=[None])
+        self.results = tf.placeholder(tf.float32,shape=[None,1])
 
         # whether this example should be positively or negatively reinforced.
         # Set to 1 for positive, -1 for negative.
@@ -101,6 +101,7 @@ class GOTrainEnv:
                 batch = [np.asarray(item).astype(np.float32) for item in batch]
                 # convert the last feature: player colour to -1 & 1 from 0 & 1
                 batch[0][...,16] = (batch[0][...,16]-0.5)*2
+                batch[2] = (batch[2]-0.5)*2
                 
                 feed_dict = {self.img: batch[0],
                              self.labels: batch[1],
@@ -110,7 +111,7 @@ class GOTrainEnv:
                 self.train_writer.add_summary(summary, i)
                 self.sess.run(self.model.increase_global_step)
                 
-                if i % 10 == 0:
+                if i % 100 == 0:
                     print('step', i+1)
                     print('Training loss', l)
                     print('Play move training accuracy', ac)
@@ -133,6 +134,7 @@ class GOTrainEnv:
             batch = [np.asarray(item).astype(np.float32) for item in batch]
             # convert the last feature: player colour to -1 & 1 from 0 & 1
             batch[0][...,16] = (batch[0][...,16]-0.5)*2
+            batch[2] = (batch[2]-0.5)*2
             
             feed_dict_eval = {self.img: batch[0], self.labels: batch[1],self.results:batch[2]}
 
@@ -163,7 +165,7 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(description='Define parameters.')
 
     parser.add_argument('--n_epoch', type=int, default=1)
-    parser.add_argument('--n_batch', type=int, default=1128)
+    parser.add_argument('--n_batch', type=int, default=128)
     parser.add_argument('--n_img_row', type=int, default=go.N)
     parser.add_argument('--n_img_col', type=int, default=go.N)
     parser.add_argument('--n_img_channels', type=int, default=17)
@@ -189,8 +191,6 @@ if __name__=="__main__":
     
     run = GOTrainEnv(hps,args.load_model_path)
 
-    
-
     test_dataset = DataSet.read(os.path.join(args.processed_dir, "test.chunk.gz"))
     train_chunk_files = [os.path.join(args.processed_dir, fname) 
         for fname in os.listdir(args.processed_dir)
@@ -206,7 +206,7 @@ if __name__=="__main__":
         with timer("training"):
             run.train(train_dataset)
 
-        if global_step % 50 == 0:
+        if global_step % 10 == 0:
             with timer("test set evaluation"):
-                run.test(test_dataset,proportion=1.)
+                run.test(test_dataset,proportion=.1)
     print('Now, I am the Master.')

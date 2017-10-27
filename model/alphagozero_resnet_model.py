@@ -105,8 +105,8 @@ class AlphaGoZeroResNet(ResNet):
             # for all intersections and the pass move
 
             # defensive 1 step to temp annealling
-            self.temp = tf.maximum(tf.train.exponential_decay(100.,self.global_step,1e4,0.95),1.)
-            logits = tf.divide(self._fully_connected(logits, self.hps.num_classes,'policy_fc'),temp)
+            self.temp = tf.maximum(tf.train.exponential_decay(100.,self.global_step,1e6,0.95),1.)
+            logits = tf.divide(self._fully_connected(logits, self.hps.num_classes,'policy_fc'),self.temp)
             self.predictions = tf.nn.softmax(logits)
 
         with tf.variable_scope('value_head'):
@@ -136,7 +136,7 @@ class AlphaGoZeroResNet(ResNet):
 
         with tf.variable_scope('move_acc'):
             correct_prediction = tf.equal(
-                tf.cast(tf.argmax(logits, 1), tf.float32), self.labels)
+                tf.argmax(logits, 1), tf.argmax(self.labels,1))
             self.acc = tf.reduce_mean(
                 tf.cast(correct_prediction, tf.float32), name='move_accu')
 

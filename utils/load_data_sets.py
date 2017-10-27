@@ -85,14 +85,26 @@ class DataSet(object):
         encoded_moves = make_onehot(next_moves)
         return DataSet(extracted_features, encoded_moves, results, is_test=is_test)
 
+    
+
     def write(self, filename):
         header_bytes = struct.pack(CHUNK_HEADER_FORMAT, self.data_size, self.board_size, self.input_planes, self.is_test)
         position_bytes = np.packbits(self.pos_features).tostring()
         next_move_bytes = np.packbits(self.next_moves).tostring()
+
+        '''Ackowledge self.result = (metadata(result,handicap,boardsize),...,metadata(result,handicap,boardsize))'''       
+        whowin,turn = 1 if 'B' in self.results[0].result else -1, 1
+        wrt_result =  [None]*len(self.results)
+        for i in range(len(wrt_result)):
+            wrt_result[i] = int(whowin==turn)
+            turn *= -1
+
+        result_bytes = np.packbits(wrt_result).tostring()
         with gzip.open(filename, "wb", compresslevel=6) as f:
             f.write(header_bytes)
             f.write(position_bytes)
             f.write(next_move_bytes)
+            f.write(result_bytes)
 
     @staticmethod
     def read(filename):
@@ -102,21 +114,25 @@ class DataSet(object):
 
             position_dims = data_size * board_size * board_size * input_planes
             next_move_dims = data_size * board_size * board_size
+            result_dims = data_size
 
             # the +7 // 8 compensates for numpy's bitpacking padding
             packed_position_bytes = f.read((position_dims + 7) // 8)
             packed_next_move_bytes = f.read((next_move_dims + 7) // 8)
+            packed_result_bytes = f.read((result_dims + 7) // 8)
             
             # should have cleanly finished reading all bytes from file!
             assert len(f.read()) == 0
 
             flat_position = np.unpackbits(np.fromstring(packed_position_bytes, dtype=np.uint8))[:position_dims]
             flat_nextmoves = np.unpackbits(np.fromstring(packed_next_move_bytes, dtype=np.uint8))[:next_move_dims]
-
+            flat_results = np.unpackbits(np.fromstring(packed_result_bytes, dtype=np.uint8))[:result_dims]
+            
             pos_features = flat_position.reshape(data_size, board_size, board_size, input_planes)
             next_moves = flat_nextmoves.reshape(data_size, board_size * board_size)
+            results = flat_results.reshape(data_size,1)
 
-        return DataSet(pos_features, next_moves, [], is_test=is_test)
+        return DataSet(pos_features, next_moves, results, is_test=is_test)
 
 def parse_data_sets(*data_sets):
     sgf_files = list(find_sgf_files(*data_sets))

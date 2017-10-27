@@ -108,8 +108,8 @@ class AlphaGoZeroResNet(ResNet):
             # for all intersections and the pass move
 
             # defensive 1 step to temp annealling
-            self.temp = tf.maximum(tf.train.exponential_decay(100.,self.global_step,1e4,0.95),1.)
-            logits = tf.divide(self._fully_connected(logits, self.hps.num_classes, 'policy_fc'),temp)
+            self.temp = tf.maximum(tf.train.exponential_decay(100.,self.global_step,1e6,0.95),1.)
+            logits = tf.divide(self._fully_connected(logits, self.hps.num_classes, 'policy_fc'),self.temp)
             self.predictions = tf.nn.softmax(logits)
 
         with tf.variable_scope('value_head'):
@@ -137,13 +137,21 @@ class AlphaGoZeroResNet(ResNet):
 
             tf.summary.scalar('cost', self.cost)
 
-        with tf.variable_scope('acc'):
+        with tf.variable_scope('move_acc'):
             correct_prediction = tf.equal(
-                tf.cast(tf.argmax(logits, 1), tf.int32), self.labels)
+                tf.argmax(logits, 1), tf.argmax(self.labels,1))
             self.acc = tf.reduce_mean(
-                tf.cast(correct_prediction, tf.float32), name='accu')
+                tf.cast(correct_prediction, tf.float32), name='move_accu')
 
-            tf.summary.scalar('accuracy', self.acc)
+            tf.summary.scalar('move_accuracy', self.acc)
+
+        with tf.variable_scope('result_acc'):
+            correct_prediction_2 = tf.equal(
+                tf.sign(self.value), self.zs)
+            self.result_acc = tf.reduce_mean(
+                tf.cast(correct_prediction_2, tf.float32), name='result_accu')
+
+            tf.summary.scalar('resutl_accuracy', self.result_acc)
 
     # override build train op
     def _build_train_op(self):
