@@ -106,6 +106,8 @@ set PWD=
 
 # Preprocess Data:
 
+(Incomplete. TO DO:serialize results into .gz files, see utils/load_data_set)
+
 *It is only an example, feel free to assign your local dataset directory*
 
 ```
