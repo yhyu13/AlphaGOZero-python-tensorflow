@@ -21,6 +21,7 @@ This is a trial implementation of DeepMind's Oct19th publication: [Mastering the
 
 [repo: resnet-tensorflow](https://github.com/ritchieng/resnet-tensorflow)
 
+[repo: leela-zero (best AlphaGo Zero replica so far)](https://github.com/gcp/leela-zero)
 
 ## From Paper:
 
@@ -104,9 +105,17 @@ export PYTHONPATH="$PWD/utils:$PYTHONPATH"
 set PWD=
 ```
 
-# Preprocess Data:
+## Download Dataset (kgs 4dan):
 
-(Incomplete. TO DO:serialize results into .gz files, see utils/load_data_set)
+Under repo's root dir
+
+```
+cd data/download
+chmod +x download.sh
+./download.sh
+```
+
+## Preprocess Data:
 
 *It is only an example, feel free to assign your local dataset directory*
 
@@ -114,8 +123,13 @@ set PWD=
 python preprocess.py --dataset=./data
 ```
 
-# Train A Model:
+## Train A Model:
 
 ```
 python train.py
 ```
+
+# Credit:
+
+*Brain Lee
+*Ritchie Ng
