@@ -92,13 +92,15 @@ class DataSet(object):
         position_bytes = np.packbits(self.pos_features).tostring()
         next_move_bytes = np.packbits(self.next_moves).tostring()
 
-        '''Ackowledge self.result = (metadata(result,handicap,boardsize),...,metadata(result,handicap,boardsize))'''       
-        whowin,turn = 1 if 'B' in self.results[0].result else -1, 1
-        wrt_result =  [None]*len(self.results)
-        for i in range(len(wrt_result)):
-            wrt_result[i] = int(whowin==turn)
-            turn *= -1
-
+        '''Ackowledge self.result = (metadata(result,handicap,boardsize),...,metadata(result,handicap,boardsize))'''
+        try:    
+            whowin,turn = 1 if 'B' in self.results[0].result else -1, 1
+            wrt_result =  [None]*len(self.results)
+            for i in range(len(wrt_result)):
+                wrt_result[i] = int(whowin==turn)
+                turn *= -1
+        except:
+            print(filename, 'lacks results. Discard.')
         result_bytes = np.packbits(wrt_result).tostring()
         with gzip.open(filename, "wb", compresslevel=6) as f:
             f.write(header_bytes)

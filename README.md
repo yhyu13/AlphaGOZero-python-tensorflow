@@ -74,13 +74,19 @@ From Paper:
   7. A rectifier non-linearity
 
 **Policy Head**
-* 1.A convolution of 2 filters of kernel size 1 x 1 with stride 1  2. Batch normalisation  3. A rectifier non-linearity  4. A fully connected linear layer that outputs a vector of size 192^2 + 1 = 362 corresponding to logit probabilities for all intersections and the pass move
+* 1.A convolution of 2 filters of kernel size 1 x 1 with stride 1
+  2. Batch normalisation
+  3. A rectifier non-linearity
+  4. A fully connected linear layer that outputs a vector of size 192^2 + 1 = 362 corresponding to logit probabilities for all intersections and the pass move
 
 **Value Head**
 * 1. A convolution of 1 filter of kernel size 1 x 1 with stride 1 
-  2. Batch normalisation  3. A rectifier non-linearity
+  2. Batch normalisation
+  3. A rectifier non-linearity
   4. A fully connected linear layer to a hidden layer of size 256 
-  5. A rectifier non-linearity  6. A fully connected linear layer to a scalar  7. A tanh non-linearity outputting a scalar in the range [ 1, 1]
+  5. A rectifier non-linearity
+  6. A fully connected linear layer to a scalar
+  7. A tanh non-linearity outputting a scalar in the range [ 1, 1]
 
 ---
 
@@ -120,7 +126,7 @@ chmod +x download.sh
 *It is only an example, feel free to assign your local dataset directory*
 
 ```
-python preprocess.py --dataset=./data
+python preprocess.py preprocess ./data/SGFs/kgs-*
 ```
 
 ## Train A Model:
