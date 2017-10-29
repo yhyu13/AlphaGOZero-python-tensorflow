@@ -1,7 +1,8 @@
 import time
 import utils.go as go
 import ytils.strategies as strategies
-import policy
+import main
+import Network
 import utils.sgf_wrapper as sgf_wrapper
 import utils.load_data_sets as load_data_sets
 import utils.utils as utils
@@ -10,8 +11,7 @@ import utils.utils as utils
 This file requires model to have reinforcment learning feature, will implement in model alphago model
 '''
 
-net = policy.PolicyNetwork()
-net.initialize_variables('/Users/brilee/dev/MuGo/saved_models/20170718')
+net = Network.Network(main.args,main.hps,main.args.load_model_path)
 now = time.time()
 
 

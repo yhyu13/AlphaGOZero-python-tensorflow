@@ -4,6 +4,18 @@ class AlphaGoZeroResNet(ResNet):
 
     def __init__(self, hps, images, labels, zs, mode):
         self.zs = zs
+
+        if hps is None:        
+            hps = HParams(batch_size=128,
+                           num_classes=361,
+                           min_lrn_rate=0.0001,
+                           lrn_rate=0.1,
+                           num_residual_units=20,
+                           use_bottleneck=False,
+                           weight_decay_rate=0.0001,
+                           relu_leakiness=0.1,
+                           optimizer='adam')
+        
         super().__init__(hps, images, labels, mode)
 
     # override build graph
@@ -157,10 +169,11 @@ class AlphaGoZeroResNet(ResNet):
     def _build_train_op(self):
         """Build training specific ops for the graph."""
         self.lrn_rate = tf.constant(self.hps.lrn_rate, tf.float32)
+        self.reinforce_dir = tf.constant(1., tf.float32)
         tf.summary.scalar('learning rate', self.lrn_rate)
 
         trainable_variables = tf.trainable_variables()
-        grads = tf.gradients(self.cost, trainable_variables)
+        grads = tf.gradients(self.cost*self.reinforce_dir, trainable_variables)
         # defensive step 2 to clip norm
         grads,self.norm = tf.clip_by_global_norm(grads,100.)
 

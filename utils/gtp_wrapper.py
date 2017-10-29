@@ -1,10 +1,11 @@
 import gtp
 
-import go
+import utils.go as go
 import random
-import utils
-from policy import PolicyNetwork
-from strategies import RandomPlayerMixin, GreedyPolicyPlayerMixin, RandomPolicyPlayerMixin, MCTSPlayerMixin
+import utils.utils as utils
+from Network import Network
+from utils.strategies import RandomPlayerMixin, GreedyPolicyPlayerMixin, RandomPolicyPlayerMixin
+from model.AVP_MCTS import MCTSPlayerMixin
 
 def translate_gtp_colors(gtp_color):
     if gtp_color == gtp.BLACK:
@@ -76,16 +77,15 @@ class RandomPolicyPlayer(RandomPolicyPlayerMixin, GtpInterface): pass
 class GreedyPolicyPlayer(GreedyPolicyPlayerMixin, GtpInterface): pass
 class MCTSPlayer(MCTSPlayerMixin, GtpInterface): pass
 
-def make_gtp_instance(strategy_name, read_file):
-    n = PolicyNetwork(use_cpu=True)
-    n.initialize_variables(read_file)
+def make_gtp_instance(strategy_name,args,read_file,hps):
+    n = Network(args,hps,read_file)
     if strategy_name == 'random':
         instance = RandomPlayer()
-    elif strategy_name == 'policy':
+    elif strategy_name == 'greedypolicy':
         instance = GreedyPolicyPlayer(n)
     elif strategy_name == 'randompolicy':
         instance = RandomPolicyPlayer(n)
-    elif strategy_name == 'mcts':
+    elif strategy_name == 'mctspolicy':
         instance = MCTSPlayer(n)
     else:
         return None

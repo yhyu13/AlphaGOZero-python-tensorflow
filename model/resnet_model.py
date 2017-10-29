@@ -45,7 +45,7 @@ class ResNet(object):
           labels: Batches of labels. [batch_size, num_classes]
           mode: One of 'train' and 'eval'.
         """
-        self.hps = hps
+        self.hps = hps 
         self._images = images
         self.labels = labels
         self.mode = mode

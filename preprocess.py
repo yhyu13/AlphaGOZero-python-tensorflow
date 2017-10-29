@@ -38,7 +38,7 @@ if __name__=="__main__":
 
     parser = argparse.ArgumentParser(description='Define parameters.')
 
-    parser.add_argument('--dataset', dest='data_sets')
+    parser.add_argument('--dataset', dest='data_sets',default='./data')
 
     args = parser.parse_args()
     
