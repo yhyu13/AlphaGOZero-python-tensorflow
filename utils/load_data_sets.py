@@ -88,26 +88,28 @@ class DataSet(object):
     
 
     def write(self, filename):
-        header_bytes = struct.pack(CHUNK_HEADER_FORMAT, self.data_size, self.board_size, self.input_planes, self.is_test)
-        position_bytes = np.packbits(self.pos_features).tostring()
-        next_move_bytes = np.packbits(self.next_moves).tostring()
+        try:
+            header_bytes = struct.pack(CHUNK_HEADER_FORMAT, self.data_size, self.board_size, self.input_planes, self.is_test)
+            position_bytes = np.packbits(self.pos_features).tostring()
+            next_move_bytes = np.packbits(self.next_moves).tostring()
 
-        '''Ackowledge self.result = (metadata(result,handicap,boardsize),...,metadata(result,handicap,boardsize))'''
-        try:    
+            '''Ackowledge self.result = (metadata(result,handicap,boardsize),...,metadata(result,handicap,boardsize))'''
             whowin,turn = 1 if 'B' in self.results[0].result else -1, 1
             wrt_result =  [None]*len(self.results)
             for i in range(len(wrt_result)):
                 wrt_result[i] = int(whowin==turn)
                 turn *= -1
+            result_bytes = np.packbits(wrt_result).tostring()
+            
+            with gzip.open(filename, "wb", compresslevel=6) as f:
+                f.write(header_bytes)
+                f.write(position_bytes)
+                f.write(next_move_bytes)
+                f.write(result_bytes)
         except:
-            print(filename, 'lacks results. Discard.')
-        result_bytes = np.packbits(wrt_result).tostring()
-        with gzip.open(filename, "wb", compresslevel=6) as f:
-            f.write(header_bytes)
-            f.write(position_bytes)
-            f.write(next_move_bytes)
-            f.write(result_bytes)
-
+            print(filename, 'Discard.')
+            return
+            
     @staticmethod
     def read(filename):
         with gzip.open(filename, "rb") as f:
