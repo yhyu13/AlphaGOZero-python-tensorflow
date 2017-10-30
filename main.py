@@ -22,10 +22,10 @@ parser.add_argument('--n_img_row', type=int, default=19)
 parser.add_argument('--n_img_col', type=int, default=19)
 parser.add_argument('--n_img_channels', type=int, default=17)
 parser.add_argument('--n_classes', type=int, default=19**2)
-parser.add_argument('--lr', type=float, default=0.1)
+parser.add_argument('--lr', type=float, default=0.01)
 parser.add_argument('--n_resid_units', type=int, default=10)
 parser.add_argument('--lr_schedule', type=int, default=60)
-parser.add_argument('--lr_factor', type=float, default=0.1)
+parser.add_argument('--lr_factor', type=float, default=1.)
 parser.add_argument('--dataset', dest='processed_dir',default='./processed_data')
 parser.add_argument('--model_path',dest='load_model_path',default=None)
 parser.add_argument('--force_save',dest='force_save_model',action='store_true',default=False)
@@ -37,7 +37,7 @@ args = parser.parse_args()
 HParams = namedtuple('HParams',
                  'batch_size, num_classes, min_lrn_rate, lrn_rate, '
                  'num_residual_units, use_bottleneck, weight_decay_rate, '
-                 'relu_leakiness, optimizer')
+                 'relu_leakiness, optimizer, temperature, global_norm')
 
 hps = HParams(batch_size=args.n_batch,
                num_classes=args.n_classes,
@@ -47,7 +47,9 @@ hps = HParams(batch_size=args.n_batch,
                use_bottleneck=False,
                weight_decay_rate=0.0001,
                relu_leakiness=0.1,
-               optimizer='adam')
+               optimizer='mom',
+               temperature=1.0,
+               global_norm=100)
 
 # Credit: Brain Lee
 def gtp(strategy=args.policy,args=args,load_model_path=args.load_model_path,hps=hps):

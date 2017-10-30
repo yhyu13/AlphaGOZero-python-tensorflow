@@ -109,22 +109,26 @@ class Network:
                 
                 feed_dict = {self.img: batch[0],
                              self.labels: batch[1],
-                             self.results: batch[2],
-                             self.model.lrn_rate: lr}
-                _, l, ac, result_ac,summary, lr,temp, global_norm = \
-                self.sess.run([self.model.train_op, self.model.cost,self.model.acc,\
-                               self.model.result_acc , self.merged, self.model.lrn_rate,\
-                               self.model.temp,self.model.norm], feed_dict=feed_dict)
-                self.train_writer.add_summary(summary, i)
-                self.sess.run(self.model.increase_global_step)
+                             self.results: batch[2]}
                 
-                if i % 1 == 0:
-                    print('Step {} | Training loss {:.2f} | Temperatur {:.2f} | Magnitude of global norm {} | Total step {}'.format(i+1,\
-                                                                                                         l,temp,global_norm,\
-                                                                                                         self.sess.run(self.model.global_step)))
-                    print('Play move training accuracy', ac)
-                    print('Win ratio training accuracy', result_ac)
-                    print('Learning rate', 'Adam' if self.optimizer_name=='adam' else lr)
+                try:
+                    _, l, ac, result_ac,summary, lr,temp, global_norm = \
+                    self.sess.run([self.model.train_op, self.model.cost,self.model.acc,\
+                                   self.model.result_acc , self.merged, self.model.lrn_rate,\
+                                   self.model.temp,self.model.norm], feed_dict=feed_dict)
+                    self.train_writer.add_summary(summary, i)
+                    self.sess.run(self.model.increase_global_step)
+                    
+                    if i % 10 == 0:
+                        print('Step {} | Training loss {:.2f} | Temperature {:.2f} | Magnitude of global norm {} | Total step {}'.format(i+1,\
+                                                                                                             l,temp,global_norm,\
+                                                                                                             self.sess.run(self.model.global_step)))
+                        print('Play move training accuracy', ac)
+                        print('Win ratio training accuracy', result_ac)
+                        print('Learning rate', 'Adam' if self.optimizer_name=='adam' else lr)
+                except:
+                    print('Step {} corrupts. Discard.'.format(i+1))
+                    continue
 
     def test(self,test_data, proportion=0.1):
         
