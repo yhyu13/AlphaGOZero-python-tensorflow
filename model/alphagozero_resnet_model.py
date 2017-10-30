@@ -116,7 +116,7 @@ class AlphaGoZeroResNet(ResNet):
             # for all intersections and the pass move
 
             # defensive 1 step to temp annealling
-            self.temp = tf.maximum(tf.train.exponential_decay(2.,self.global_step,1e4,0.8),1.)
+            self.temp = tf.maximum(tf.train.exponential_decay(1.,self.global_step,1e4,0.8),1.)
             logits = tf.divide(self._fully_connected(logits, self.hps.num_classes,'policy_fc'),self.temp)
             self.predictions = tf.nn.softmax(logits)
 
@@ -139,7 +139,10 @@ class AlphaGoZeroResNet(ResNet):
         with tf.variable_scope('costs'):
             xent = tf.nn.softmax_cross_entropy_with_logits(
                 logits=logits, labels=self.labels)
+            # defensive step 3 to convert nan to zero
+            xent = tf.where(tf.is_nan(xent),tf.zeros_like(xent),xent)
             squared_diff = tf.squared_difference(self.zs,self.value)
+            squared_diff = tf.where(tf.is_nan(squared_diff),tf.zeros_like(squared_diff),squared_diff)
             self.cost = tf.reduce_mean(xent, name='xent') + tf.reduce_mean(squared_diff,name='squared_diff')
             self.cost += self._decay()
 
@@ -173,8 +176,7 @@ class AlphaGoZeroResNet(ResNet):
         grads = tf.gradients(self.cost*self.reinforce_dir, trainable_variables)
         # defensive step 2 to clip norm
         grads,self.norm = tf.clip_by_global_norm(grads,100.)
-        # defensive step 3 to convert nan to zero
-        grads = tf.where(tf.is_nan(grads),tf.zeros_like(grads),grads)
+        
 
         if self.hps.optimizer == 'sgd':
             optimizer = tf.train.GradientDescentOptimizer(self.lrn_rate)
