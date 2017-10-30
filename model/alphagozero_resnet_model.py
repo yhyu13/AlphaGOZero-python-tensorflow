@@ -140,7 +140,7 @@ class AlphaGoZeroResNet(ResNet):
             xent = tf.nn.softmax_cross_entropy_with_logits(
                 logits=logits, labels=self.labels)
             squared_diff = tf.squared_difference(self.zs,self.value)
-            self.cost = tf.reduce_mean(xent, name='xent') + tf.reduce_mean(squared_diff,name='squared_diff')
+            self.cost = tf.reduce_mean(xent, name='xent') + 0.01*tf.reduce_mean(squared_diff,name='squared_diff')
             self.cost += self._decay()
 
             tf.summary.scalar('cost', self.cost)
@@ -164,7 +164,7 @@ class AlphaGoZeroResNet(ResNet):
     # override build train op
     def _build_train_op(self):
         """Build training specific ops for the graph."""
-        self.lrn_rate = tf.maximum(tf.train.exponential_decay(self.hps.lrn_rate,self.global_step,1e4,0.8),1e-5)
+        self.lrn_rate = tf.maximum(tf.train.exponential_decay(self.hps.lrn_rate,self.global_step,1e4,0.95),1e-4)
         self.reinforce_dir = tf.constant(1., tf.float32)
         
         tf.summary.scalar('learning rate', self.lrn_rate)
