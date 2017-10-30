@@ -126,7 +126,13 @@ python preprocess.py --dataset=./data
 ## Train A Model:
 
 ```
-python train.py
+python main.py --mode=train --force_save —-n_resid_units=20
+```
+
+## Play Against An A.I. (currently only random A.I. is available)
+
+```
+python main.py --mode=gtp —-policy=random --model_path='./savedmodels/model--0.0.ckpt'
 ```
 
 # Credit:

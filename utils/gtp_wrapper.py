@@ -2,7 +2,7 @@ import gtp
 
 import utils.go as go
 import random
-import utils.utils as utils
+import utils.utilities as utils
 from Network import Network
 from utils.strategies import RandomPlayerMixin, GreedyPolicyPlayerMixin, RandomPolicyPlayerMixin
 from model.AVP_MCTS import MCTSPlayerMixin
@@ -17,7 +17,7 @@ def translate_gtp_colors(gtp_color):
 
 class GtpInterface(object):
     def __init__(self):
-        self.size = 9
+        self.size = 19
         self.position = None
         self.komi = 6.5
         self.clear()

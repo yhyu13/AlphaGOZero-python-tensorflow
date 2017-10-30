@@ -8,7 +8,7 @@ import sys
 from utils.features import bulk_extract_features
 import utils.go as go
 from utils.sgf_wrapper import replay_sgf
-import utils.utils as utils
+import utils.utilities as utils
 
 # Number of data points to store in a chunk on disk
 CHUNK_SIZE = 4096

@@ -8,7 +8,8 @@ import gtp
 import numpy as np
 
 import utils.go as go
-import utils.utils as utils
+import utils.utilities as utils
+from utils.features import extract_features
 
 # All terminology here (Q, U, N, p_UCT) uses the same notation as in the
 # AlphaGo paper.
@@ -118,7 +119,7 @@ class MCTSPlayerMixin:
 
     def suggest_move(self, position):
         start = time.time()
-        move_probs = self.policy_network.run(position)
+        move_probs = self.policy_network.run(extract_features(position))
         root = MCTSNode.root_node(position, move_probs)
         while time.time() - start < self.seconds_per_move:
             self.tree_search(root)
@@ -141,7 +142,7 @@ class MCTSPlayerMixin:
             del chosen_leaf.parent.children[chosen_leaf.move]
             return
         print("Investigating following position:\n%s" % (chosen_leaf.position,), file=sys.stderr)
-        move_probs = self.policy_network.run(position)
+        move_probs = self.policy_network.run(extract_features(position))
         chosen_leaf.expand(move_probs)
         # evaluation
         value = self.estimate_value(root, chosen_leaf)

@@ -1,11 +1,11 @@
 import time
 import utils.go as go
-import ytils.strategies as strategies
+import utils.strategies as strategies
 import main
 import Network
 import utils.sgf_wrapper as sgf_wrapper
 import utils.load_data_sets as load_data_sets
-import utils.utils as utils
+import utils.utilities as utils
 
 '''
 This file requires model to have reinforcment learning feature, will implement in model alphago model
@@ -19,7 +19,7 @@ positions = [go.Position(to_play=go.WHITE) for i in range(1)]
 # neural net 1 always plays "black", and variety is accomplished by
 # letting white play first half the time.
 strategies.simulate_many_games(net, net, positions)
-print(time.time() - now)
+print('Total Time to complete ',time.time() - now)
 now = time.time()
 
 def get_winrate(final_positions):
