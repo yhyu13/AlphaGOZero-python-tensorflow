@@ -1,6 +1,6 @@
-import argparse
 import os
 import sys
+import argh
 
 from utils.load_data_sets import DataSet,parse_data_sets
 
@@ -17,7 +17,7 @@ def preprocess(*data_sets, processed_dir="processed_data"):
     processed_dir = os.path.join(os.getcwd(), processed_dir)
     if not os.path.isdir(processed_dir):
         os.mkdir(processed_dir)
-
+        
     test_chunk, training_chunks = parse_data_sets(*data_sets)
     print("Allocating %s positions as test; remainder as training" % len(test_chunk), file=sys.stderr)
 
@@ -34,12 +34,9 @@ def preprocess(*data_sets, processed_dir="processed_data"):
         train_dataset.write(train_filename)
     print("%s chunks written" % (i+1))            
 
+
 if __name__=="__main__":
 
-    parser = argparse.ArgumentParser(description='Define parameters.')
-
-    parser.add_argument('--dataset', dest='data_sets',default='./data')
-
-    args = parser.parse_args()
-    
-    preprocess(args.data_sets)
+    p = argh.ArghParser()
+    p.add_commands([preprocess])
+    p.dispatch()

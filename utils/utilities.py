@@ -72,12 +72,18 @@ def take_n(n, iterable):
 
 def iter_chunks(chunk_size, iterator):
     while True:
-        next_chunk = take_n(chunk_size, iterator)
-        # If len(iterable) % chunk_size == 0, don't return an empty chunk.
-        if next_chunk:
-            yield next_chunk
-        else:
-            break
+        '''
+        try statement portection from unclean data
+        '''
+        try:
+            next_chunk = take_n(chunk_size, iterator)
+            # If len(iterable) % chunk_size == 0, don't return an empty chunk.
+            if next_chunk:
+                yield next_chunk
+            else:
+                break
+        except:
+            continue
 
 def shuffler(iterator, pool_size=10**5, refill_threshold=0.9):
     yields_between_refills = round(pool_size * (1 - refill_threshold))
