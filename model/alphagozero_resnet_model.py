@@ -116,7 +116,7 @@ class AlphaGoZeroResNet(ResNet):
             # for all intersections and the pass move
 
             # defensive 1 step to temp annealling
-            self.temp = tf.maximum(tf.train.exponential_decay(100.,self.global_step,1e6,0.95),1.)
+            self.temp = tf.maximum(tf.train.exponential_decay(2.,self.global_step,1e4,0.8),1.)
             logits = tf.divide(self._fully_connected(logits, self.hps.num_classes,'policy_fc'),self.temp)
             self.predictions = tf.nn.softmax(logits)
 
@@ -172,7 +172,7 @@ class AlphaGoZeroResNet(ResNet):
         trainable_variables = tf.trainable_variables()
         grads = tf.gradients(self.cost*self.reinforce_dir, trainable_variables)
         # defensive step 2 to clip norm
-        grads,self.norm = tf.clip_by_global_norm(grads,100.)
+        grads,self.norm = tf.clip_by_global_norm(grads,10.)
 
         if self.hps.optimizer == 'sgd':
             optimizer = tf.train.GradientDescentOptimizer(self.lrn_rate)
