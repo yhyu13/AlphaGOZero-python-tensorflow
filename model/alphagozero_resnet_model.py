@@ -172,7 +172,9 @@ class AlphaGoZeroResNet(ResNet):
         trainable_variables = tf.trainable_variables()
         grads = tf.gradients(self.cost*self.reinforce_dir, trainable_variables)
         # defensive step 2 to clip norm
-        grads,self.norm = tf.clip_by_global_norm(grads,10.)
+        grads,self.norm = tf.clip_by_global_norm(grads,100.)
+        # defensive step 3 to convert nan to zero
+        grads = tf.where(tf.is_nan(grads),tf.zeros_like(grads),grads)
 
         if self.hps.optimizer == 'sgd':
             optimizer = tf.train.GradientDescentOptimizer(self.lrn_rate)
