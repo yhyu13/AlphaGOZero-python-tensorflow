@@ -1,24 +1,19 @@
 import copy
 import math
-import random
 import sys
 import time
-
-import gtp
 import numpy as np
 
 import utils.go as go
-import utils.utilities as utils
 from utils.features import extract_features,bulk_extract_features
 
-import multiprocessing as mp
-import numpy.random.gamma as gamma
+from multiprocessing import Pool 
+from numpy.random import gamma
 
 # All terminology here (Q, U, N, p_UCT) uses the same notation as in the
 # AlphaGo paper.
 # Exploration constant
 c_PUCT = 5
-POOL = mp.Pool()
 
 def split(a, n):
     '''
@@ -29,7 +24,7 @@ def split(a, n):
     k, m = divmod(len(a), n)
     return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
 
-class AVPMCTSNode():
+class MCTSNode():
     '''
     A MCTSNode has two states: plain, and expanded.
     An plain MCTSNode merely knows its Q + U values, so that a decision
@@ -64,8 +59,9 @@ class AVPMCTSNode():
 
     @property
     def action_score_dirichlet(self):
+        # new_prior = (1-epsilon)*prior+epsilon*gamma(alpha)
         alpha,ep=0.03,0.25
-        return self.Q + self.U / self.prior * ((1-ep)*self.prior+ep*gamma(alpha))
+        return self.Q + self.U * ((1-ep)+ep*gamma(alpha)/(self.prior+1e-8))
 
     def is_expanded(self):
         return self.position is not None
@@ -111,7 +107,7 @@ class AVPMCTSNode():
         return current
 
 
-class AVPMCTSPlayerMixin:
+class MCTSPlayerMixin:
     def __init__(self, policy_network, seconds_per_move=5):
         self.policy_network = policy_network
         self.seconds_per_move = seconds_per_move
@@ -133,39 +129,47 @@ class AVPMCTSPlayerMixin:
 
     def multi_tree_search(self, root, iters=1600):
         print("tree search", file=sys.stderr)
-
+        pool = Pool()
         # selection
-        chosen_leaves = [None]*iters
+        results = [None]*iters
+        chosen_leaves = []
+        select = lambda root:root.select_leaf_dirichlet()
         for i in range(iters):
-            select = lambda root.select_leaf_dirichlet()
-            chosen_leaves[i] = POOL.apply_async(select,args=(,))
-        positions = [None]*iters
+            results.append(pool.apply_async(select,args=(root,)))
         for i in range(iters):
-            chosen_leaf = chosen_leaves[i].get()
-            positions[i] = chosen_leaf.compute_position()
-            if positions[i] is None:
+            chosen_leaf = results[i].get()
+            position = chosen_leaf.compute_position()
+            if position is None:
                 print("illegal move!", file=sys.stderr)
                 # See go.Position.play_move for notes on detecting legality
                 del chosen_leaf.parent.children[chosen_leaf.move]
                 continue
+            chosen_leaves.append(chosen_leaf)
             print("Investigating following position:\n%s" % (chosen_leaf.position,), file=sys.stderr)
 
         # evaluation
-        for batch in list(split(range(iters),8)):
+        expand = lambda leaf,probs:leaf.expand(probs)
+        backup = lambda leaf,value:leaf.backup_value(value)
+        for batch in list(split(range(len(chosen_leaves)),8)):
             batch_leaves = [chosen_leaves[i] for i in batch]
             leaf_positions = [batch_leaves[i].position for i in range(len(batch_leaves))]
-            move_probs,values = self.policy_network.evaluate_node(bulk_extract_features(leaf_positions))
+            move_probs,values = self.policy_network.evaluate_node(bulk_extract_features(leaf_positions,dihedral=True))
             perspective = []
             for leaf_position in leaf_positions:
                 perspective = 1 if leaf_position.to_play == root.position.to_play else -1
                 perspectives.append(perspective)
-            values = values*np.asarray(perspectives))
+            values = values*np.asarray(perspectives)
 
             # expansion & backup
+
+            pool.map(expand,zip(batch_leaves,move_probs))
+            pool.map(backup,zip(batch_leaves,values))
             for i in range(len(batch_leaves)):
-                batch_leaves[i].expand(move_probs[i])
+                #batch_leaves[i].expand(move_probs[i])
                 print("value: %s" % values[i], file=sys.stderr)
-                batch_leaves[i].backup_value(values[i])
+                #batch_leaves[i].backup_value(values[i])
+        pool.close()
+        pool.join()
         sys.stderr.flush()
         
 

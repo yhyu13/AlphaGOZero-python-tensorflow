@@ -117,15 +117,20 @@ DEFAULT_FEATURES = [
     player_colour,
 ]
 
+def extract_features(position, features=DEFAULT_FEATURES,diheral=False):
+    features = np.concatenate([feature(position) for feature in features], axis=2)
+    if not diheral:
+        return features
+    else:
+        # (di(p), v) = fθ(di(sL))
+        # rotation and flip. flip -> rot.
+        flip_axis,rotate_num = np.random.randint(2),np.random.randint(4)
+        return np.rot90(np.flip(features,axis=flip_axis),rotate_num)
 
-def extract_features(position, features=DEFAULT_FEATURES):
-    return np.concatenate([feature(position) for feature in features], axis=2)
-
-def bulk_extract_features(positions, features=DEFAULT_FEATURES):
+def bulk_extract_features(positions, features=DEFAULT_FEATURES,diheral=False):
     num_positions = len(positions)
     num_planes = sum(f.planes for f in features)
     output = np.zeros([num_positions, go.N, go.N, num_planes], dtype=np.uint8)
     for i, pos in enumerate(positions):
-        output[i] = extract_features(pos, features=features)
-        #print(np.sum(output[i][:,:,:-1]))
+        output[i] = extract_features(pos, features=features,diheral=diheral)
     return output
