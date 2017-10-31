@@ -21,7 +21,9 @@ This is a trial implementation of DeepMind's Oct19th publication: [Mastering the
 
 [repo: resnet-tensorflow](https://github.com/ritchieng/resnet-tensorflow)
 
-[repo: leela-zero (best AlphaGo Zero replica so far)](https://github.com/gcp/leela-zero)
+[repo: leela-zero (c++ AlphaGo Zero replica)](https://github.com/gcp/leela-zero)
+
+[repo: reversi-alpha-zero (python Keras AlphaGo Zero RL, highly recommended)](https://github.com/mokemokechicken/reversi-alpha-zero)
 
 ## From Paper:
 

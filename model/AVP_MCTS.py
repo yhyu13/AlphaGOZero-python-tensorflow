@@ -29,7 +29,7 @@ def split(a, n):
     k, m = divmod(len(a), n)
     return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
 
-class MCTSNode():
+class AVPMCTSNode():
     '''
     A MCTSNode has two states: plain, and expanded.
     An plain MCTSNode merely knows its Q + U values, so that a decision
@@ -40,7 +40,7 @@ class MCTSNode():
     '''
     @staticmethod
     def root_node(position, move_probabilities):
-        node = MCTSNode(None, None, 0)
+        node = AVPMCTSNode(None, None, 0)
         node.position = position
         node.expand(move_probabilities)
         return node
@@ -56,16 +56,15 @@ class MCTSNode():
         self.N = 0 # number of times node was visited
 
     def __repr__(self):
-        return "<MCTSNode move=%s prior=%s score=%s is_expanded=%s>" % (self.move, self.prior, self.action_score, self.is_expanded())
+        return "<AVPMCTSNode move=%s prior=%s score=%s is_expanded=%s>" % (self.move, self.prior, self.action_score, self.is_expanded())
 
     @property
     def action_score(self):
-        # Note to self: after adding value network, must calculate 
-        # self.Q = weighted_average(avg(values), avg(rollouts)),
-        # as opposed to avg(map(weighted_average, values, rollouts))
         return self.Q + self.U
 
-    def action_score_dirichlet(self,alpha=0.03,ep=0.25):
+    @property
+    def action_score_dirichlet(self):
+        alpha,ep=0.03,0.25
         return self.Q + self.U / self.prior * ((1-ep)*self.prior+ep*gamma(alpha))
 
     def is_expanded(self):
@@ -83,26 +82,10 @@ class MCTSNode():
 
     def backup_value(self, value):
         '''
-        self.N += 1
-        if self.parent is None:
-            # No point in updating Q / U values for root, since they are
-            # used to decide between children nodes.
-            return
-        # This incrementally calculates node.Q = average(Q of children),
-        # given the newest Q value and the previous average of N-1 values.
-        self.Q, self.U = (
-            self.Q + (value - self.Q) / self.N,
-            c_PUCT * math.sqrt(self.parent.N) * self.prior / self.N,
-        )
-        # must invert, because alternate layers have opposite desires
-        self.parent.backup_value(-value)
+        Since Python lacks Tail Call Optimization(TCO)
+        use while loop to reduce the burden of a huge stack
         '''
         while True:
-
-            '''
-            Since Python lacks Tail Call Optimization(TCO), use while loop
-            '''
-            
             self.N += 1
             if self.parent is None:
                 return
@@ -124,11 +107,11 @@ class MCTSNode():
     def select_leaf_dirichlet(self):
         current = self
         while current.is_expanded():
-            current = max(current.children.values(), key=lambda node: node.action_score_dirichlet())
+            current = max(current.children.values(), key=lambda node: node.action_score_dirichlet)
         return current
 
 
-class MCTSPlayerMixin:
+class AVPMCTSPlayerMixin:
     def __init__(self, policy_network, seconds_per_move=5):
         self.policy_network = policy_network
         self.seconds_per_move = seconds_per_move
@@ -147,38 +130,6 @@ class MCTSPlayerMixin:
             if is_move_reasonable(position, move):
                 return move
         return None
-    '''
-    def tree_search(self, root):
-        print("tree search", file=sys.stderr)
-        # selection
-        chosen_leaf = root.select_leaf()
-        # expansion
-        position = chosen_leaf.compute_position()
-        if position is None:
-            print("illegal move!", file=sys.stderr)
-            # See go.Position.play_move for notes on detecting legality
-            del chosen_leaf.parent.children[chosen_leaf.move]
-            return
-        print("Investigating following position:\n%s" % (chosen_leaf.position,), file=sys.stderr)
-        move_probs = self.policy_network.run(extract_features(position))
-        chosen_leaf.expand(move_probs)
-        # evaluation
-        value = self.estimate_value(root, chosen_leaf)
-        # backup
-        print("value: %s" % value, file=sys.stderr)
-        chosen_leaf.backup_value(value)
-        sys.stderr.flush()
-
-    def estimate_value(self, root, chosen_leaf):
-        # Estimate value of position using rollout only (for now).
-        # (TODO: Value network; average the value estimations from rollout + value network)
-        leaf_position = chosen_leaf.position
-        current = copy.deepcopy(leaf_position)
-        simulate_game(self.policy_network, current)
-        print(current, file=sys.stderr)
-        perspective = 1 if leaf_position.to_play == root.position.to_play else -1
-        return current.score() * perspective
-    '''
 
     def multi_tree_search(self, root, iters=1600):
         print("tree search", file=sys.stderr)
@@ -186,9 +137,8 @@ class MCTSPlayerMixin:
         # selection
         chosen_leaves = [None]*iters
         for i in range(iters):
-            select = lambda root.select_leaf()
-            chosen_leaf = POOL.apply_async(select,args=(,))
-            chosen_leaves[i] = chosen_leaf
+            select = lambda root.select_leaf_dirichlet()
+            chosen_leaves[i] = POOL.apply_async(select,args=(,))
         positions = [None]*iters
         for i in range(iters):
             chosen_leaf = chosen_leaves[i].get()
@@ -203,7 +153,7 @@ class MCTSPlayerMixin:
         # evaluation
         for batch in list(split(range(iters),8)):
             batch_leaves = [chosen_leaves[i] for i in batch]
-            leaf_positions = [batch_leaves.position for i in range(len(batch_leaves))]
+            leaf_positions = [batch_leaves[i].position for i in range(len(batch_leaves))]
             move_probs,values = self.policy_network.evaluate_node(bulk_extract_features(leaf_positions))
             perspective = []
             for leaf_position in leaf_positions:
