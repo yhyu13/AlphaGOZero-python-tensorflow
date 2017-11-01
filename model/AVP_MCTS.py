@@ -35,7 +35,7 @@ class MCTSNode():
     '''
     @staticmethod
     def root_node(position, move_probabilities):
-        node = AVPMCTSNode(None, None, 0)
+        node = MCTSNode(None, None, 0)
         node.position = position
         node.expand(move_probabilities)
         return node

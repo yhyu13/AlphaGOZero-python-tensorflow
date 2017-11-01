@@ -171,7 +171,13 @@ def replay_position(position):
     pos = Position(komi=position.komi)
     for player_move in position.recent:
         color, next_move = player_move
-        yield PositionWithContext(pos, next_move, metadata)
-        pos = pos.play_move(next_move, color=color)
+        try:
+            tmp = pos.play_move(next_move, color=color)
+            yield PositionWithContext(pos, next_move, metadata)
+            pos = tmp
+        except:
+            break
+    '''
     # return the original position, with unknown next move
     yield PositionWithContext(pos, None, metadata)
+    '''

@@ -14,13 +14,12 @@ This file requires model to have reinforcment learning feature, will implement i
 net = Network.Network(main.args,main.hps,main.args.load_model_path)
 now = time.time()
 
-
-positions = [go.Position(to_play=go.WHITE) for i in range(1)]
+N_games = 10
+positions = [go.Position(to_play=go.WHITE) for i in range(N_games)]
 # neural net 1 always plays "black", and variety is accomplished by
 # letting white play first half the time.
 strategies.simulate_many_games(net, net, positions)
 print('Total Time to complete ',time.time() - now)
-now = time.time()
 
 def get_winrate(final_positions):
     black_win = [utils.parse_game_result(pos.result()) == go.BLACK
@@ -45,7 +44,8 @@ def extract_moves(final_positions):
 
 win_percentage = get_winrate(positions)
 winners, losers = extract_moves(positions)
-print(time.time() - now)
+'''
 net.reinforce(winners, direction=1)
 net.reinforce(losers, direction=-1)
+'''
 
