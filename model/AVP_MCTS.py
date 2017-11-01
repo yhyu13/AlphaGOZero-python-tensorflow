@@ -119,7 +119,7 @@ class MCTSPlayerMixin:
         move_probs = self.policy_network.run(extract_features(position))
         root = MCTSNode.root_node(position, move_probs)
         while time.time() - start < self.seconds_per_move:
-            self.tree_search(root)
+            self.multi_tree_search(root,iters=1)
         print("Searched for %s seconds" % (time.time() - start), file=sys.stderr)
         sorted_moves = sorted(root.children.keys(), key=lambda move, root=root: root.children[move].N, reverse=True)
         for move in sorted_moves:

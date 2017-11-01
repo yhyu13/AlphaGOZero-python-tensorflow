@@ -159,7 +159,10 @@ class MCTSNode():
         return self.position is not None
 
     def compute_position(self):
-        self.position = self.parent.position.play_move(self.move)
+        try:
+            self.position = self.parent.position.play_move(self.move)
+        except:
+            self.position = None
         return self.position
 
     def expand(self, move_probabilities):
@@ -190,6 +193,9 @@ class MCTSNode():
             current = max(current.children.values(), key=lambda node: node.action_score)
         return current
 
+    def move_prob(self):
+        return np.asarray([child.N for child in self.children.values()]) / self.N
+
 
 class MCTSPlayerMixin:
     def __init__(self, policy_network, seconds_per_move=5):
@@ -200,7 +206,7 @@ class MCTSPlayerMixin:
 
     def suggest_move(self, position):
         start = time.time()
-        move_probs = self.policy_network.run(extract_features(position))
+        move_probs = self.policy_network.run(position)
         root = MCTSNode.root_node(position, move_probs)
         while time.time() - start < self.seconds_per_move:
             self.tree_search(root)
@@ -210,27 +216,36 @@ class MCTSPlayerMixin:
             if is_move_reasonable(position, move):
                 return move
         return None
+
+    def suggest_move_prob(self, position):
+        start = time.time()
+        move_probs = self.policy_network.run(position)
+        root = MCTSNode.root_node(position, move_probs)
+        for _ in range(1600):
+            self.tree_search(root)
+        print("Searched for %s seconds" % (time.time() - start), file=sys.stderr)
+        
+        return root.move_prob()
     
     def tree_search(self, root):
-        print("tree search", file=sys.stderr)
+        #print("tree search", file=sys.stderr)
         # selection
         chosen_leaf = root.select_leaf()
         # expansion
         position = chosen_leaf.compute_position()
         if position is None:
-            print("illegal move!", file=sys.stderr)
+            #print("illegal move!", file=sys.stderr)
             # See go.Position.play_move for notes on detecting legality
             del chosen_leaf.parent.children[chosen_leaf.move]
             return
-        print("Investigating following position:\n%s" % (chosen_leaf.position,), file=sys.stderr)
-        move_probs = self.policy_network.run(extract_features(position))
-        chosen_leaf.expand(move_probs)
+        #print("Investigating following position:\n%s" % (chosen_leaf.position,), file=sys.stderr)
+        move_probs,value = self.policy_network.run_many([position])
+        chosen_leaf.expand(move_probs[0])
         # evaluation
-        value = self.estimate_value(root, chosen_leaf)
         # backup
-        print("value: %s" % value, file=sys.stderr)
-        chosen_leaf.backup_value(value)
-        sys.stderr.flush()
+        #print("value: %s" % value[0,0], file=sys.stderr)
+        chosen_leaf.backup_value(value[0,0])
+        #sys.stderr.flush()
 
     def estimate_value(self, root, chosen_leaf):
         # Estimate value of position using rollout only (for now).
@@ -242,3 +257,31 @@ class MCTSPlayerMixin:
         perspective = 1 if leaf_position.to_play == root.position.to_play else -1
         return current.score() * perspective
 
+def simulate_many_games_mcts(policy1, policy2, positions):
+    """Simulates many games in parallel, utilizing GPU parallelization to
+    run the policy network for multiple games simultaneously.
+
+    policy1 is black; policy2 is white."""
+
+    # Assumes that all positions are on the same move number. May not be true
+    # if, say, we are exploring multiple MCTS branches in parallel
+    while positions[0].n <= POLICY_CUTOFF_DEPTH + POLICY_FINISH_MOVES:
+        black_to_play = [pos for pos in positions if pos.to_play == go.BLACK]
+        white_to_play = [pos for pos in positions if pos.to_play == go.WHITE]
+
+        mc_policy1 = MCTSPlayerMixin(policy1)
+        mc_policy2 = MCTSPlayerMixin(policy2)
+        for policy, to_play in ((mc_policy1, black_to_play),
+                                (mc_policy2, white_to_play)):
+
+            for i, pos in enumerate(to_play):
+                if i < 30:
+                    move = select_weighted_random(pos, policy.suggest_move_prob(pos))
+                else:
+                    move = select_most_likely(pos, policy.suggest_move_prob(pos))
+                pos.play_move(move, mutate=True)
+
+    for pos in positions:
+        simulate_game_random(pos)
+
+    return positions

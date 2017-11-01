@@ -1,6 +1,7 @@
 import time
 import utils.go as go
 import utils.strategies as strategies
+from utils.strategies import simulate_many_games, simulate_many_games_mcts
 import main
 import Network
 import utils.sgf_wrapper as sgf_wrapper
@@ -14,11 +15,13 @@ This file requires model to have reinforcment learning feature, will implement i
 net = Network.Network(main.args,main.hps,main.args.load_model_path)
 now = time.time()
 
-N_games = 10
+N_games = 1
 positions = [go.Position(to_play=go.WHITE) for i in range(N_games)]
+
 # neural net 1 always plays "black", and variety is accomplished by
 # letting white play first half the time.
-strategies.simulate_many_games(net, net, positions)
+#simulate_many_games(net, net, positions)
+simulate_many_games_mcts(net, net, positions)
 print('Total Time to complete ',time.time() - now)
 
 def get_winrate(final_positions):

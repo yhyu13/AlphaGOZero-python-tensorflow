@@ -65,13 +65,16 @@ class Network:
 
     def run(self,positions):
         img = features.extract_features(positions)
-        move_probabilities = self.sess.run(self.model.predictions,feed_dict={self.img:img})
+        img[...,16] = (img[...,16]-0.5)*2
+        move_probabilities = self.sess.run(self.model.predictions,feed_dict={self.img:[img]})
         return move_probabilities.reshape([self.img_row, self.img_col])
 
     def run_many(self,positions):
         imgs = features.bulk_extract_features(positions)
-        move_probabilities = self.sess.run(self.model.predictions,feed_dict={self.img:imgs})
-        return move_probabilities.reshape([-1, self.img_row, self.img_col])
+        imgs[:][...,16] = (imgs[:][...,16]-0.5)*2
+        move_probabilities,value = self.sess.run([self.model.predictions,self.model.value],feed_dict={self.img:imgs})
+        return move_probabilities.reshape([-1, self.img_row, self.img_col]), value
+
 
     def reinforce(self, positions, direction):
         '''
