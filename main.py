@@ -8,6 +8,11 @@ import re
 import sys
 from collections import namedtuple
 
+_PATH_ = os.path.dirname(os.path.dirname(__file__))
+
+if _PATH_ not in sys.path:
+    sys.path.append(_PATH_)
+
 @contextmanager
 def timer(message):
     tick = time()

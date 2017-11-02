@@ -23,7 +23,7 @@ This is a trial implementation of DeepMind's Oct19th publication: [Mastering the
 
 [repo: leela-zero (c++ AlphaGo Zero replica)](https://github.com/gcp/leela-zero)
 
-[repo: reversi-alpha-zero (python Keras AlphaGo Zero RL, highly recommended)](https://github.com/mokemokechicken/reversi-alpha-zero)
+[repo: reversi-alpha-zero (if you like reversi(黑白棋))](https://github.com/mokemokechicken/reversi-alpha-zero)
 
 ## From Paper:
 
@@ -102,18 +102,7 @@ python 3.6
 pip install -r requirement.txt
 ```
 
-## Add ./util ./model to PYTHONPATH
-
-Under repo's root dir
-
-```
-PWD=pwd
-export PYTHONPATH="$PWD/model:$PYTHONPATH"
-export PYTHONPATH="$PWD/utils:$PYTHONPATH"
-set PWD=
-```
-
-## Download Dataset (kgs 4dan):
+## Download Dataset (kgs 4dan)
 
 Under repo's root dir
 
@@ -123,7 +112,7 @@ chmod +x download.sh
 ./download.sh
 ```
 
-## Preprocess Data:
+## Preprocess Data
 
 *It is only an example, feel free to assign your local dataset directory*
 
@@ -131,7 +120,7 @@ chmod +x download.sh
 python preprocess.py preprocess ./data/SGFs/kgs-*
 ```
 
-## Train A Model:
+## Train A Model
 
 ```
 python main.py --mode=train --force_save —-n_resid_units=20
@@ -141,6 +130,14 @@ python main.py --mode=train --force_save —-n_resid_units=20
 
 ```
 python main.py --mode=gtp —-policy=random --model_path='./savedmodels/model--0.0.ckpt'
+```
+
+## Basic Self-play
+
+Under repo’s root  dir
+
+```
+python utils/selfplay.py
 ```
 
 # Credit:
