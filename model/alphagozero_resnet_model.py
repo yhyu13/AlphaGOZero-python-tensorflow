@@ -27,16 +27,6 @@ class AlphaGoZeroResNet(ResNet):
             self._build_train_op()
         self.summaries = tf.summary.merge_all()
 
-    def _fully_connected(self, x, out_dim, name=''):
-        """FullyConnected layer for final output."""
-        x = tf.contrib.layers.flatten(x)
-        w = tf.get_variable(
-            name+'DW', [x.get_shape()[1], out_dim],
-            initializer=tf.uniform_unit_scaling_initializer(factor=1.0))
-        b = tf.get_variable(name+'biases', [out_dim],
-                            initializer=tf.constant_initializer())
-        return tf.nn.xw_plus_b(x, w, b)
-
     # override _residual block to repliate AlphaGoZero architecture
     def _residual(self, x, in_filter, out_filter, stride,
                   activate_before_residual=False):

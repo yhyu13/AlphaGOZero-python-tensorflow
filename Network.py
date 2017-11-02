@@ -63,26 +63,20 @@ class Network:
         self.sess.run(tf.global_variables_initializer())
         print('Done initializing variables')
 
-    def run(self,positions):
-        img = features.extract_features(positions)
-        img[...,16] = (img[...,16]-0.5)*2
-        move_probabilities = self.sess.run(self.model.predictions,feed_dict={self.img:[img]})
-        return move_probabilities.reshape([self.img_row, self.img_col])
-
     def run_many(self,positions):
         imgs = features.bulk_extract_features(positions)
         imgs[:][...,16] = (imgs[:][...,16]-0.5)*2
         move_probabilities,value = self.sess.run([self.model.predictions,self.model.value],feed_dict={self.img:imgs})
         return move_probabilities.reshape([-1, self.img_row, self.img_col]), value
 
-
     def reinforce(self, positions, direction):
         '''
         This method is trying to reinforce self-play result, direction being +1 meaning positive reinforcement.
+        This method is WRONG
         '''
         imgs = features.bulk_extract_features(positions)
-        feed_dict = {self.img:imgs,self.reinforce_dir:direction}
-        _, l, summary, temp, global_norm = self.sess.run([self.model.train_op, \
+        feed_dict = {self.img:imgs,self.model.reinforce_dir:direction}
+        _, l, summary, temp, global_norm = self.sess.run([self.model.rl_train_op, \
                                                           self.model.cost, self.merged, \
                                                           self.model.temp,self.model.norm], feed_dict=feed_dict)
         self.train_writer.add_summary(summary, i)
@@ -90,7 +84,6 @@ class Network:
         print('Self-play reinforcement direction {} | Training loss {:.2f} | Temperatur {:.2f} | Magnitude of global norm {} | Total step {}'.format(direction,\
                                                                                                                                                      l,temp,global_norm,\
                                                                                                                                                      self.sess.run(self.model.global_step)))
-
     def train(self, training_data):        
         print('Training model...')
         self.num_iter = training_data.data_size // self.batch_num

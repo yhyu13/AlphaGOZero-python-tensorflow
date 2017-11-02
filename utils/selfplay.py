@@ -1,7 +1,7 @@
 import time
 import utils.go as go
 import utils.strategies as strategies
-from utils.strategies import simulate_many_games, simulate_many_games_mcts
+from utils.strategies import simulate_many_games, simulate_many_games_mcts, simulate_game_mcts
 import main
 import Network
 import utils.sgf_wrapper as sgf_wrapper
@@ -16,12 +16,13 @@ net = Network.Network(main.args,main.hps,main.args.load_model_path)
 now = time.time()
 
 N_games = 1
-positions = [go.Position(to_play=go.WHITE) for i in range(N_games)]
+positions = [go.Position(to_play=go.BLACK) for i in range(N_games)]
 
 # neural net 1 always plays "black", and variety is accomplished by
 # letting white play first half the time.
 #simulate_many_games(net, net, positions)
-simulate_many_games_mcts(net, net, positions)
+#simulate_many_games_mcts(net, net, positions)
+simulate_game_mcts(net,positions[0])
 print('Total Time to complete ',time.time() - now)
 
 def get_winrate(final_positions):
@@ -39,16 +40,15 @@ def extract_moves(final_positions):
         winner = utils.parse_game_result(final_position.result())
         for pwc in positions_w_context:
             if pwc.position.to_play == winner:
-                winning_moves.append(pwc)
+                winning_moves.append(pwc.position)
             else:
-                losing_moves.append(pwc)
-    return (load_data_sets.DataSet.from_positions_w_context(winning_moves),
-            load_data_sets.DataSet.from_positions_w_context(losing_moves))
+                losing_moves.append(pwc.position)
+    return winning_moves, losing_moves
 
 win_percentage = get_winrate(positions)
 winners, losers = extract_moves(positions)
 '''
+# Don't train, method is wrong
 net.reinforce(winners, direction=1)
 net.reinforce(losers, direction=-1)
 '''
-

@@ -119,23 +119,10 @@ class RandomPolicyPlayerMixin:
 
 c_PUCT = 5
 
-class MCTSNode():
-    '''
-    A MCTSNode has two states: plain, and expanded.
-    An plain MCTSNode merely knows its Q + U values, so that a decision
-    can be made about which MCTS node to expand during the selection phase.
-    When expanded, a MCTSNode also knows the actual position at that node,
-    as well as followup moves/probabilities via the policy network.
-    Each of these followup moves is instantiated as a plain MCTSNode.
-    '''
-    @staticmethod
-    def root_node(position, move_probabilities):
-        node = MCTSNode(None, None, 0)
-        node.position = position
-        node.expand(move_probabilities)
-        return node
-
-    def __init__(self, parent, move, prior):
+class MCTSPlayerMixin(object):
+    
+    def __init__(self, policy_network, parent, move, prior):
+        self.policy_network = policy_network
         self.parent = parent # pointer to another MCTSNode
         self.move = move # the move that led to this node
         self.prior = prior
@@ -166,13 +153,12 @@ class MCTSNode():
         return self.position
 
     def expand(self, move_probabilities):
-        self.children = {move: MCTSNode(self, move, prob)
+        self.children = {move: MCTSPlayerMixin(self.policy_network,self,move, prob)
             for move, prob in np.ndenumerate(move_probabilities)}
         # Pass should always be an option! Say, for example, seki.
-        self.children[None] = MCTSNode(self, None, 0)
+        self.children[None] = MCTSPlayerMixin(self.policy_network,self,None, 0)
 
-    def backup_value(self, value):
-        
+    def backup_value_single(self,value):
         self.N += 1
         if self.parent is None:
             # No point in updating Q / U values for root, since they are
@@ -184,78 +170,66 @@ class MCTSNode():
             self.Q + (value - self.Q) / self.N,
             c_PUCT * math.sqrt(self.parent.N) * self.prior / self.N,
         )
-        # must invert, because alternate layers have opposite desires
-        self.parent.backup_value(-value)
-
-    def select_leaf(self):
-        current = self
-        while current.is_expanded():
-            current = max(current.children.values(), key=lambda node: node.action_score)
-        return current
 
     def move_prob(self):
-        return np.asarray([child.N for child in self.children.values()]) / self.N
-
-
-class MCTSPlayerMixin:
-    def __init__(self, policy_network, seconds_per_move=5):
-        self.policy_network = policy_network
-        self.seconds_per_move = seconds_per_move
-        self.max_rollout_depth = go.N * go.N * 3
-        super().__init__()
-
-    def suggest_move(self, position):
-        start = time.time()
-        move_probs = self.policy_network.run(position)
-        root = MCTSNode.root_node(position, move_probs)
-        while time.time() - start < self.seconds_per_move:
-            self.tree_search(root)
-        print("Searched for %s seconds" % (time.time() - start), file=sys.stderr)
-        sorted_moves = sorted(root.children.keys(), key=lambda move, root=root: root.children[move].N, reverse=True)
-        for move in sorted_moves:
-            if is_move_reasonable(position, move):
-                return move
-        return None
+        prob = np.asarray([child.N for child in self.children.values()]) / self.N
+        prob /= np.sum(prob) # ensure 1.
+        return np.reshape(prob[:-1],(go.N,go.N)) # ignore the pass move, as is_move_reasonable(pos,move) will handle it
 
     def suggest_move_prob(self, position):
         start = time.time()
-        move_probs = self.policy_network.run(position)
-        root = MCTSNode.root_node(position, move_probs)
-        for _ in range(1600):
-            self.tree_search(root)
+        if self.parent is None: # is the ture root node right after None initialization
+            move_probs,_ = self.policy_network.run_many([position])
+            self.position = position
+            self.expand(move_probs[0])
+            
+        self.tree_search(iters=1)
         print("Searched for %s seconds" % (time.time() - start), file=sys.stderr)
         
-        return root.move_prob()
-    
-    def tree_search(self, root):
-        #print("tree search", file=sys.stderr)
-        # selection
-        chosen_leaf = root.select_leaf()
-        # expansion
-        position = chosen_leaf.compute_position()
-        if position is None:
-            #print("illegal move!", file=sys.stderr)
-            # See go.Position.play_move for notes on detecting legality
-            del chosen_leaf.parent.children[chosen_leaf.move]
-            return
-        #print("Investigating following position:\n%s" % (chosen_leaf.position,), file=sys.stderr)
-        move_probs,value = self.policy_network.run_many([position])
-        chosen_leaf.expand(move_probs[0])
-        # evaluation
-        # backup
-        #print("value: %s" % value[0,0], file=sys.stderr)
-        chosen_leaf.backup_value(value[0,0])
-        #sys.stderr.flush()
+        return self.move_prob()
 
-    def estimate_value(self, root, chosen_leaf):
-        # Estimate value of position using rollout only (for now).
-        # (TODO: Value network; average the value estimations from rollout + value network)
-        leaf_position = chosen_leaf.position
-        current = copy.deepcopy(leaf_position)
-        simulate_game(self.policy_network, current)
-        print(current, file=sys.stderr)
-        perspective = 1 if leaf_position.to_play == root.position.to_play else -1
-        return current.score() * perspective
+    def start_tree_search(self):
+        
+        if not self.is_expanded(): # leaf node
+            position = self.compute_position()
+            if position is None:
+                #print("illegal move!", file=sys.stderr)
+                # See go.Position.play_move for notes on detecting legality
+                # In Go, illegal move means loss (or resign)
+                self.backup_value_single(-1)
+                return -1*-1
+            #print("Investigating following position:\n%s" % (position), file=sys.stderr)
+            move_probs,value = self.policy_network.run_many([position])
+            self.expand(move_probs[0])
+            self.backup_value_single(value[0,0])
+            return value[0,0]*-1
+        else:
+            all_action_score = map(lambda node: node.action_score, self.children.values())
+            move2QU = {move:action_score for move,action_score in zip(self.children.keys(),all_action_score)}
+            select_move = max(move2QU, key=move2QU.get)
+            value = self.children[select_move].start_tree_search()
+            self.backup_value_single(value)
+            return value*-1
+    
+    def tree_search(self,iters=100):
+        for _ in range(iters):
+            value = self.start_tree_search()
+            #print("value: %s" % value, file=sys.stderr)
+
+def simulate_game_mcts(policy, position):
+    """Simulates a game starting from a position, using a policy network"""
+    mc_policy = MCTSPlayerMixin(policy,None,None,0)
+    while position.n <= POLICY_CUTOFF_DEPTH:
+        if position.n < 30:
+            move = select_weighted_random(position, mc_policy.suggest_move_prob(position))
+        else:
+            move = select_most_likely(position, mc_policy.suggest_move_prob(position))
+        position.play_move(move, mutate=True)
+        mc_policy = mc_policy.children[move]
+        
+    simulate_game_random(position)
+
+    return position
 
 def simulate_many_games_mcts(policy1, policy2, positions):
     """Simulates many games in parallel, utilizing GPU parallelization to
@@ -269,8 +243,8 @@ def simulate_many_games_mcts(policy1, policy2, positions):
         black_to_play = [pos for pos in positions if pos.to_play == go.BLACK]
         white_to_play = [pos for pos in positions if pos.to_play == go.WHITE]
 
-        mc_policy1 = MCTSPlayerMixin(policy1)
-        mc_policy2 = MCTSPlayerMixin(policy2)
+        mc_policy1 = MCTSPlayerMixin(policy1,None,None,0)
+        mc_policy2 = MCTSPlayerMixin(policy2,None,None,0)
         for policy, to_play in ((mc_policy1, black_to_play),
                                 (mc_policy2, white_to_play)):
 
@@ -280,6 +254,7 @@ def simulate_many_games_mcts(policy1, policy2, positions):
                 else:
                     move = select_most_likely(pos, policy.suggest_move_prob(pos))
                 pos.play_move(move, mutate=True)
+                policy = policy.children[move]
 
     for pos in positions:
         simulate_game_random(pos)

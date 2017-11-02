@@ -304,10 +304,10 @@ class ResNet(object):
 
     def _fully_connected(self, x, out_dim, name=''):
         """FullyConnected layer for final output."""
-        x = tf.reshape(x, [self.hps.batch_size, -1])
+        x = tf.contrib.layers.flatten(x)
         w = tf.get_variable(
             name+'DW', [x.get_shape()[1], out_dim],
-            initializer=tf.uniform_unit_scaling_initializer(factor=1.0))
+            initializer=tf.contrib.layers.variance_scaling_initializer(factor=1.0,mode='FAN_AVG',uniform=True))
         b = tf.get_variable(name+'biases', [out_dim],
                             initializer=tf.constant_initializer())
         return tf.nn.xw_plus_b(x, w, b)

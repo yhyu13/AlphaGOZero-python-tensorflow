@@ -31,16 +31,6 @@ class AlphaGoZeroResNet(ResNet):
     def _relu(x,leak=0):
         return tf.nn.elu(x)
 
-    def _fully_connected(self, x, out_dim, name=''):
-        """FullyConnected layer for final output."""
-        x = tf.contrib.layers.flatten(x)
-        w = tf.get_variable(
-            name+'DW', [x.get_shape()[1], out_dim],
-            initializer=tf.uniform_unit_scaling_initializer(factor=1.0))
-        b = tf.get_variable(name+'biases', [out_dim],
-                            initializer=tf.constant_initializer())
-        return tf.nn.xw_plus_b(x, w, b)
-
     # override _residual block to repliate AlphaGoZero architecture
     def _residual(self, x, in_filter, out_filter, stride,
                   activate_before_residual=False):
@@ -120,7 +110,7 @@ class AlphaGoZeroResNet(ResNet):
             # for all intersections and the pass move
 
             # defensive 1 step to temp annealling
-            self.temp = tf.maximum(tf.train.exponential_decay(100.,self.global_step,1e6,0.95),1.)
+            self.temp = tf.maximum(tf.train.exponential_decay(self.hps.temperature,self.global_step,1e4,0.8),1.)
             logits = tf.divide(self._fully_connected(logits, self.hps.num_classes, 'policy_fc'),self.temp)
             self.predictions = tf.nn.softmax(logits)
 
@@ -168,15 +158,16 @@ class AlphaGoZeroResNet(ResNet):
     # override build train op
     def _build_train_op(self):
         """Build training specific ops for the graph."""
-        self.lrn_rate = tf.constant(self.hps.lrn_rate, tf.float32)
+        self.lrn_rate = tf.maximum(tf.train.exponential_decay(self.hps.lrn_rate,self.global_step,1e4,0.95),1e-4)
         self.reinforce_dir = tf.constant(1., tf.float32)
+        
         tf.summary.scalar('learning rate', self.lrn_rate)
-
+        
         trainable_variables = tf.trainable_variables()
-        grads = tf.gradients(self.cost*self.reinforce_dir, trainable_variables)
+        grads = tf.gradients(self.cost, trainable_variables)
         # defensive step 2 to clip norm
-        grads,self.norm = tf.clip_by_global_norm(grads,100.)
-
+        clipped_grads,self.norm = tf.clip_by_global_norm(grads,self.hps.global_norm)
+        
         if self.hps.optimizer == 'sgd':
             optimizer = tf.train.GradientDescentOptimizer(self.lrn_rate)
         elif self.hps.optimizer == 'mom':
@@ -184,9 +175,12 @@ class AlphaGoZeroResNet(ResNet):
         elif self.hps.optimizer == 'adam':
             optimizer = tf.train.AdamOptimizer(1e-4)
 
-        apply_op = optimizer.apply_gradients(
-            zip(grads, trainable_variables),
-            global_step=self.global_step, name='train_step')
+        # defensive step 3 check NaN https://stackoverflow.com/questions/40701712/how-to-check-nan-in-gradients-in-tensorflow-when-updating
+        grad_check = [tf.check_numerics(g,message='Nan Found!') for g in clipped_grads]
+        with tf.control_dependencies(grad_check):
+            apply_op = optimizer.apply_gradients(
+                zip(clipped_grads, trainable_variables),
+                global_step=self.global_step, name='train_step')
 
         train_ops = [apply_op] + self._extra_train_ops
         self.train_op = tf.group(*train_ops)

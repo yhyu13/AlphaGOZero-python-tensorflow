@@ -15,32 +15,10 @@ from numpy.random import gamma
 # Exploration constant
 c_PUCT = 5
 
-def split(a, n):
-    '''
-    Example:
-    >>> list(split(range(11), 3))
-    [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10]]
-    '''
-    k, m = divmod(len(a), n)
-    return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
-
-class MCTSNode():
-    '''
-    A MCTSNode has two states: plain, and expanded.
-    An plain MCTSNode merely knows its Q + U values, so that a decision
-    can be made about which MCTS node to expand during the selection phase.
-    When expanded, a MCTSNode also knows the actual position at that node,
-    as well as followup moves/probabilities via the policy network.
-    Each of these followup moves is instantiated as a plain MCTSNode.
-    '''
-    @staticmethod
-    def root_node(position, move_probabilities):
-        node = MCTSNode(None, None, 0)
-        node.position = position
-        node.expand(move_probabilities)
-        return node
-
-    def __init__(self, parent, move, prior):
+class MCTSPlayerMixin(object):
+    
+    def __init__(self, policy_network, parent, move, prior):
+        self.policy_network = policy_network
         self.parent = parent # pointer to another MCTSNode
         self.move = move # the move that led to this node
         self.prior = prior
@@ -51,125 +29,86 @@ class MCTSNode():
         self.N = 0 # number of times node was visited
 
     def __repr__(self):
-        return "<AVPMCTSNode move=%s prior=%s score=%s is_expanded=%s>" % (self.move, self.prior, self.action_score, self.is_expanded())
+        return "<MCTSNode move=%s prior=%s score=%s is_expanded=%s>" % (self.move, self.prior, self.action_score, self.is_expanded())
 
     @property
     def action_score(self):
+        # Note to self: after adding value network, must calculate 
+        # self.Q = weighted_average(avg(values), avg(rollouts)),
+        # as opposed to avg(map(weighted_average, values, rollouts))
         return self.Q + self.U
-
-    @property
-    def action_score_dirichlet(self):
-        # new_prior = (1-epsilon)*prior+epsilon*gamma(alpha)
-        alpha,ep=0.03,0.25
-        return self.Q + self.U * ((1-ep)+ep*gamma(alpha)/(self.prior+1e-8))
 
     def is_expanded(self):
         return self.position is not None
 
     def compute_position(self):
-        self.position = self.parent.position.play_move(self.move)
+        try:
+            self.position = self.parent.position.play_move(self.move)
+        except:
+            self.position = None
         return self.position
 
     def expand(self, move_probabilities):
-        self.children = {move: MCTSNode(self, move, prob)
+        self.children = {move: MCTSPlayerMixin(self.policy_network,self,move, prob)
             for move, prob in np.ndenumerate(move_probabilities)}
         # Pass should always be an option! Say, for example, seki.
-        self.children[None] = MCTSNode(self, None, 0)
+        self.children[None] = MCTSPlayerMixin(self.policy_network,self,None, 0)
 
-    def backup_value(self, value):
-        '''
-        Since Python lacks Tail Call Optimization(TCO)
-        use while loop to reduce the burden of a huge stack
-        '''
-        while True:
-            self.N += 1
-            if self.parent is None:
-                return
-            self.Q, self.U = (
-                self.Q + (value - self.Q) / self.N,
-                c_PUCT * math.sqrt(self.parent.N) * self.prior / self.N,
-            ) # notice sum(all children's N) == parent's N
-            # must invert, because alternate layers have opposite desires
-            value *= -1
-            self = self.parent
+    def backup_value_single(self,value):
+        self.N += 1
+        if self.parent is None:
+            # No point in updating Q / U values for root, since they are
+            # used to decide between children nodes.
+            return
+        # This incrementally calculates node.Q = average(Q of children),
+        # given the newest Q value and the previous average of N-1 values.
+        self.Q, self.U = (
+            self.Q + (value - self.Q) / self.N,
+            c_PUCT * math.sqrt(self.parent.N) * self.prior / self.N,
+        )
 
+    def move_prob(self):
+        prob = np.asarray([child.N for child in self.children.values()]) / self.N
+        prob /= np.sum(prob) # ensure 1.
+        return np.reshape(prob[:-1],(go.N,go.N)) # ignore the pass move, as is_move_reasonable(pos,move) will handle it
 
-    def select_leaf(self):
-        current = self
-        while current.is_expanded():
-            current = max(current.children.values(), key=lambda node: node.action_score)
-        return current
-
-    def select_leaf_dirichlet(self):
-        current = self
-        while current.is_expanded():
-            current = max(current.children.values(), key=lambda node: node.action_score_dirichlet)
-        return current
-
-
-class MCTSPlayerMixin:
-    def __init__(self, policy_network, seconds_per_move=5):
-        self.policy_network = policy_network
-        self.seconds_per_move = seconds_per_move
-        self.max_rollout_depth = go.N * go.N * 3
-        super().__init__()
-
-    def suggest_move(self, position):
+    def suggest_move_prob(self, position):
         start = time.time()
-        move_probs = self.policy_network.run(extract_features(position))
-        root = MCTSNode.root_node(position, move_probs)
-        while time.time() - start < self.seconds_per_move:
-            self.multi_tree_search(root,iters=1)
+        if self.parent is None: # is the ture root node right after None initialization
+            move_probs,_ = self.policy_network.run_many([position])
+            self.position = position
+            self.expand(move_probs[0])
+            
+        self.tree_search(iters=1)
         print("Searched for %s seconds" % (time.time() - start), file=sys.stderr)
-        sorted_moves = sorted(root.children.keys(), key=lambda move, root=root: root.children[move].N, reverse=True)
-        for move in sorted_moves:
-            if is_move_reasonable(position, move):
-                return move
-        return None
-
-    def multi_tree_search(self, root, iters=1600):
-        print("tree search", file=sys.stderr)
-        pool = Pool()
-        # selection
-        results = [None]*iters
-        chosen_leaves = []
-        select = lambda root:root.select_leaf_dirichlet()
-        for i in range(iters):
-            results.append(pool.apply_async(select,args=(root,)))
-        for i in range(iters):
-            chosen_leaf = results[i].get()
-            position = chosen_leaf.compute_position()
-            if position is None:
-                print("illegal move!", file=sys.stderr)
-                # See go.Position.play_move for notes on detecting legality
-                del chosen_leaf.parent.children[chosen_leaf.move]
-                continue
-            chosen_leaves.append(chosen_leaf)
-            print("Investigating following position:\n%s" % (chosen_leaf.position,), file=sys.stderr)
-
-        # evaluation
-        expand = lambda leaf,probs:leaf.expand(probs)
-        backup = lambda leaf,value:leaf.backup_value(value)
-        for batch in list(split(range(len(chosen_leaves)),8)):
-            batch_leaves = [chosen_leaves[i] for i in batch]
-            leaf_positions = [batch_leaves[i].position for i in range(len(batch_leaves))]
-            move_probs,values = self.policy_network.evaluate_node(bulk_extract_features(leaf_positions,dihedral=True))
-            perspective = []
-            for leaf_position in leaf_positions:
-                perspective = 1 if leaf_position.to_play == root.position.to_play else -1
-                perspectives.append(perspective)
-            values = values*np.asarray(perspectives)
-
-            # expansion & backup
-
-            pool.map(expand,zip(batch_leaves,move_probs))
-            pool.map(backup,zip(batch_leaves,values))
-            for i in range(len(batch_leaves)):
-                #batch_leaves[i].expand(move_probs[i])
-                print("value: %s" % values[i], file=sys.stderr)
-                #batch_leaves[i].backup_value(values[i])
-        pool.close()
-        pool.join()
-        sys.stderr.flush()
         
+        return self.move_prob()
+
+    def start_tree_search(self):
+        
+        if not self.is_expanded(): # leaf node
+            position = self.compute_position()
+            if position is None:
+                #print("illegal move!", file=sys.stderr)
+                # See go.Position.play_move for notes on detecting legality
+                # In Go, illegal move means loss (or resign)
+                self.backup_value_single(-1)
+                return -1*-1
+            #print("Investigating following position:\n%s" % (position), file=sys.stderr)
+            move_probs,value = self.policy_network.run_many([position])
+            self.expand(move_probs[0])
+            self.backup_value_single(value[0,0])
+            return value[0,0]*-1
+        else:
+            all_action_score = map(lambda node: node.action_score, self.children.values())
+            move2QU = {move:action_score for move,action_score in zip(self.children.keys(),all_action_score)}
+            select_move = max(move2QU, key=move2QU.get)
+            value = self.children[select_move].start_tree_search()
+            self.backup_value_single(value)
+            return value*-1
+    
+    def tree_search(self,iters=100):
+        for _ in range(iters):
+            value = self.start_tree_search()
+            #print("value: %s" % value, file=sys.stderr)
 
