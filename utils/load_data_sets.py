@@ -11,13 +11,13 @@ from utils.sgf_wrapper import replay_sgf
 import utils.utilities as utils
 
 # Number of data points to store in a chunk on disk
-CHUNK_SIZE = 4096
+CHUNK_SIZE = 2*16
 CHUNK_HEADER_FORMAT = "iii?"
 CHUNK_HEADER_SIZE = struct.calcsize(CHUNK_HEADER_FORMAT)
 
 def make_onehot(coords):
     num_positions = len(coords)
-    output = np.zeros([num_positions, go.N ** 2], dtype=np.uint8)
+    output = np.zeros([num_positions, go.N ** 2+1], dtype=np.uint8)
     for i, coord in enumerate(coords):
         output[i, utils.flatten_coords(coord)] = 1
     return output
