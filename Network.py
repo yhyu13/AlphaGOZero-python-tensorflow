@@ -4,6 +4,7 @@ import os
 import sys
 
 from model import alphagozero_resnet_model
+from model import alphagozero_resnet_elu_model
 import utils.features as features
 
 class Network:
@@ -39,7 +40,10 @@ class Network:
         self.reinforce_direction = tf.placeholder(tf.float32, shape=[None])
 
         print('Building Model...')
-        self.model = alphagozero_resnet_model.AlphaGoZeroResNet(hps, self.img, self.labels, self.results,'train')
+        if 'elu' in args.model:
+            self.model = alphagozero_resnet_elu_model.AlphaGoZeroResNetELU(hps, self.img, self.labels, self.results,'train')
+        else:
+            self.model = alphagozero_resnet_model.AlphaGoZeroResNet(hps, self.img, self.labels, self.results,'train')
         self.model.build_graph()
         print('Complete...')
 
@@ -86,6 +90,7 @@ class Network:
                                                                                                                                                      self.sess.run(self.model.global_step)))
     def train(self, training_data):        
         print('Training model...')
+        self.model.mode = 'train'
         self.num_iter = training_data.data_size // self.batch_num
         # Set default learning rate for scheduling
         lr = self.lr
@@ -115,7 +120,7 @@ class Network:
                     self.train_writer.add_summary(summary, i)
                     self.sess.run(self.model.increase_global_step)
                     
-                    if i % 10 == 0:
+                    if i % 50 == 0:
                         print('Step {} | Training loss {:.2f} | Temperature {:.2f} | Magnitude of global norm {} | Total step {}'.format(i+1,\
                                                                                                              l,temp,global_norm,\
                                                                                                              self.sess.run(self.model.global_step)))
@@ -129,7 +134,7 @@ class Network:
     def test(self,test_data, proportion=0.1):
         
         print('Running evaluation...')
-
+        self.model.mode = 'eval'
         num_minibatches = test_data.data_size // self.batch_num
 
         test_loss, test_acc, test_result_acc ,n_batch = 0, 0, 0,0
@@ -156,7 +161,7 @@ class Network:
         print('   play move test accuracy: {}'.format(tot_test_acc))
         print('   Win ratio test accuracy: {}'.format(test_result_acc))
 
-        if tot_test_acc > 0.4 or self.force_save_model:
-            # if test acc is bigger than 40%, save or force save model
+        if tot_test_acc > 0.2 or self.force_save_model:
+            # if test acc is bigger than 20%, save or force save model
             self.saver.save(self.sess,'./savedmodels/model-'+str(round(tot_test_acc,3))+'.ckpt')
 

@@ -26,6 +26,10 @@ class AlphaGoZeroResNet(ResNet):
         if self.mode == 'train':
             self._build_train_op()
         self.summaries = tf.summary.merge_all()
+        
+    # override _batch_norm to use tf.layers.batch_normalization
+    def _batch_norm(self, name, x):
+        return tf.layers.batch_normalization(x,training=self.mode=='train',name=name,fused=True)
 
     # override _residual block to repliate AlphaGoZero architecture
     def _residual(self, x, in_filter, out_filter, stride,

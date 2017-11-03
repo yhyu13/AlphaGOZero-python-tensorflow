@@ -22,17 +22,19 @@ def timer(message):
 
 parser = argparse.ArgumentParser(description='Define parameters.')
 parser.add_argument('--n_epoch', type=int, default=1)
+parser.add_argument('--global_epoch', type=int, default=200)
 parser.add_argument('--n_batch', type=int, default=128)
 parser.add_argument('--n_img_row', type=int, default=19)
 parser.add_argument('--n_img_col', type=int, default=19)
 parser.add_argument('--n_img_channels', type=int, default=17)
 parser.add_argument('--n_classes', type=int, default=19**2)
 parser.add_argument('--lr', type=float, default=0.1)
-parser.add_argument('--n_resid_units', type=int, default=1)
+parser.add_argument('--n_resid_units', type=int, default=20)
 parser.add_argument('--lr_schedule', type=int, default=60)
 parser.add_argument('--lr_factor', type=float, default=1.)
 parser.add_argument('--dataset', dest='processed_dir',default='./processed_data')
-parser.add_argument('--model_path',dest='load_model_path',default='./savedmodels/model--0.0.ckpt')
+parser.add_argument('--model_path',dest='load_model_path',default=None)
+parser.add_argument('--model_type',dest='model',default='resnet')#'resnet_elu'
 parser.add_argument('--force_save',dest='force_save_model',action='store_true',default=False)
 parser.add_argument('--policy',dest='policy',default='mcts')
 parser.add_argument('--mode',dest='MODE')
@@ -52,7 +54,7 @@ hps = HParams(batch_size=args.n_batch,
                use_bottleneck=False,
                weight_decay_rate=0.0001,
                relu_leakiness=0.1,
-               optimizer='mom',
+               optimizer='adam',
                temperature=1.0,
                global_norm=100)
 
@@ -95,17 +97,19 @@ def train(args=args,hps=hps):
     random.shuffle(train_chunk_files)
 
     global_step = 0
-    for file in train_chunk_files:
-        global_step += 1
-        print("Using %s" % file)
-        train_dataset = DataSet.read(file)
-        train_dataset.shuffle()
-        with timer("training"):
-            run.train(train_dataset)
+    for g_epoch in range(args.global_epoch):
+        for file in train_chunk_files:
+            global_step += 1
+            print(f"Using {file}")
+            train_dataset = DataSet.read(file)
+            train_dataset.shuffle()
+            with timer("training"):
+                run.train(train_dataset)
 
-        if global_step % 1 == 0:
-            with timer("test set evaluation"):
-                run.test(test_dataset,proportion=.1)
+            if global_step % 1 == 0:
+                with timer("test set evaluation"):
+                    run.test(test_dataset,proportion=.1)
+        print(f'Global epoch {g_epoch} finshed.')
     print('Now, I am the Master.')
 
 
