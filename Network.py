@@ -106,12 +106,10 @@ class Network:
                     self.sess.run(self.model.increase_global_step)
                     
                     if i % 5 == 0:
-                        print('Step {} | Training loss {:.2f} | Temperature {:.2f} | Magnitude of global norm {} | Total step {}'.format(i+1,\
-                                                                                                             l,temp,global_norm,\
-                                                                                                             self.sess.run(self.model.global_step)))
-                        print('Play move training accuracy', ac)
-                        print('Win ratio training accuracy', result_ac)
+                        print(f'Step {i} | Training loss {l:.2f} | Temperature {temp:.2f} | Magnitude of global norm {global_norm:.2f} | Total step {self.sess.run(self.model.global_step)} | Play move accuracy {ac:.2f} | Game outcome accuracy {result_ac:.2f}')
                         print('Learning rate', 'Adam' if self.optimizer_name=='adam' else lr)
+                        if ac > 0.8: # overfitting, check evaluation
+                            return 
                 except KeyboardInterrupt:
                     sys.exit()
                 except tf.errors.InvalidArgumentError:
@@ -140,9 +138,9 @@ class Network:
             test_result_acc += result_acc
             n_batch += 1
 
-        tot_test_loss = test_loss / (n_batch-1e2)
-        tot_test_acc = test_acc / (n_batch-1e2)
-        test_result_acc = test_result_acc / (n_batch-1e2)
+        tot_test_loss = test_loss / (n_batch-1e-2)
+        tot_test_acc = test_acc / (n_batch-1e-2)
+        test_result_acc = test_result_acc / (n_batch-1e-2)
 
         print('   Test loss: {}'.format(tot_test_loss))
         print('   play move test accuracy: {}'.format(tot_test_acc))
