@@ -23,7 +23,7 @@ def timer(message):
 parser = argparse.ArgumentParser(description='Define parameters.')
 parser.add_argument('--n_epoch', type=int, default=5)
 parser.add_argument('--global_epoch', type=int, default=200)
-parser.add_argument('--n_batch', type=int, default=256)
+parser.add_argument('--n_batch', type=int, default=128)
 parser.add_argument('--n_img_row', type=int, default=19)
 parser.add_argument('--n_img_col', type=int, default=19)
 parser.add_argument('--n_img_channels', type=int, default=17)
