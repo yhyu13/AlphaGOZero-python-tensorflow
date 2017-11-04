@@ -79,13 +79,14 @@ class DataSet(object):
         return self.pos_features[start:end], self.next_moves[start:end],self.results[start:end] # alphagozero sl batch: board history, next move, result 
 
     @staticmethod
-    def from_positions_w_context(positions_w_context, is_test=False):
+    def from_positions_w_context(positions_w_context, is_test=False, extract_move_prob=False):
         positions, next_moves, results = zip(*positions_w_context)
         extracted_features = bulk_extract_features(positions)
-        encoded_moves = make_onehot(next_moves)
+        if extract_move_prob:
+            encoded_moves = np.asarray(next_moves)
+        else:
+            encoded_moves = make_onehot(next_moves)
         return DataSet(extracted_features, encoded_moves, results, is_test=is_test)
-
-    
 
     def write(self, filename):
         try:

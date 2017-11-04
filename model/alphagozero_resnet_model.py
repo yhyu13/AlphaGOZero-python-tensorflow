@@ -164,7 +164,7 @@ class AlphaGoZeroResNet(ResNet):
         tf.summary.scalar('learning rate', self.lrn_rate)
         
         trainable_variables = tf.trainable_variables()
-        grads = tf.gradients(self.cost, trainable_variables)
+        grads = tf.gradients(self.cost*self.reinforce_dir, trainable_variables)
         # defensive step 2 to clip norm
         clipped_grads,self.norm = tf.clip_by_global_norm(grads,self.hps.global_norm)
         

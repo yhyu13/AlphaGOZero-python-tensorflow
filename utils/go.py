@@ -256,6 +256,8 @@ class Position():
 
         # recent board stores an array of boards, initialized as an empty array
         self.recent_board = []
+        # recent move prob stores an array of move prob, initialized as an empty array
+        self.recent_move_prob = []
         
         self.to_play = to_play
 
@@ -323,12 +325,16 @@ class Position():
 
         return True
 
-    def pass_move(self, mutate=False):
+    def pass_move(self, mutate=False,move_prob=None):
         pos = self if mutate else copy.deepcopy(self)
         pos.n += 1
         pos.recent += (PlayerMove(pos.to_play, None),)
         pos.to_play *= -1
         pos.ko = None
+        # append move result to recent board
+        pos.recent_board.append(pos.board)
+        # append move prob to recent move prob
+        pos.recent_move_prob.append(move_prob)
         return pos
 
     def flip_playerturn(self, mutate=False):
@@ -340,49 +346,41 @@ class Position():
     def get_liberties(self):
         return self.lib_tracker.liberty_cache
 
-    def play_move(self, c, color=None, mutate=False):
+    def play_move(self, c, color=None, mutate=False, move_prob=None):
         # Obeys CGOS Rules of Play. In short:
         # No suicides
         # Chinese/area scoring
         # Positional superko (this is very crudely approximate at the moment.)
         if color is None:
             color = self.to_play
-
         pos = self if mutate else copy.deepcopy(self)
-
         if c is None:
-            pos = pos.pass_move(mutate=mutate)
+            pos = pos.pass_move(mutate=mutate,move_prob=move_prob)
             return pos
-
         if not self.is_move_legal(c):
             raise IllegalMove("Move at {} is illegal: \n{}".format(c, self))
-
         # check must be done before potentially mutating the board
         potential_ko = is_koish(self.board, c)
-
         place_stones(pos.board, color, [c])
         captured_stones = pos.lib_tracker.add_stone(color, c)
         place_stones(pos.board, EMPTY, captured_stones)
         opp_color = color * -1
-
         if len(captured_stones) == 1 and potential_ko == opp_color:
             new_ko = list(captured_stones)[0]
         else:
             new_ko = None
-
         if pos.to_play == BLACK:
             new_caps = (pos.caps[0] + len(captured_stones), pos.caps[1])
         else:
             new_caps = (pos.caps[0], pos.caps[1] + len(captured_stones))
-
         pos.n += 1
         pos.caps = new_caps
         pos.ko = new_ko
         pos.recent += (PlayerMove(color, c),)
-        
         # append move result to recent board
         pos.recent_board.append(pos.board)
-        
+        # append move prob to recent move prob
+        pos.recent_move_prob.append(move_prob)
         pos.to_play *= -1
         return pos
 
@@ -403,15 +401,15 @@ class Position():
             else:
                 territory_color = UNKNOWN # dame, or seki
             place_stones(working_board, territory_color, territory)
-
+            
         return np.count_nonzero(working_board == BLACK) - np.count_nonzero(working_board == WHITE) - self.komi
 
     def result(self):
         score = self.score()
         if score > 0:
-            return 'B+' + '%.1f' % score
+            return 'B+' + f'{score:.1f}'
         elif score < 0:
-            return 'W+' + '%.1f' % abs(score)
+            return 'W+' + f'{abs(score):.1f}'
         else:
             return 'DRAW'
 

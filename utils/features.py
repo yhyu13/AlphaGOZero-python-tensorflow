@@ -134,3 +134,4 @@ def bulk_extract_features(positions, features=DEFAULT_FEATURES,diheral=False):
     for i, pos in enumerate(positions):
         output[i] = extract_features(pos, features=features,diheral=diheral)
     return output
+        
