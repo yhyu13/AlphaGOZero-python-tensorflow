@@ -70,7 +70,7 @@ class DataSet(object):
         self._index_within_epoch = 0
 
     def get_batch(self, batch_size):
-        if batch_size < self.data_size
+        if batch_size < self.data_size:
             if self._index_within_epoch + batch_size > self.data_size:
                 self.shuffle()
             start = self._index_within_epoch
@@ -120,7 +120,7 @@ class DataSet(object):
             data_size, board_size, input_planes, is_test = struct.unpack(CHUNK_HEADER_FORMAT, header_bytes)
 
             position_dims = data_size * board_size * board_size * input_planes
-            next_move_dims = data_size * board_size * board_size
+            next_move_dims = data_size * (board_size * board_size + 1)
             result_dims = data_size
 
             # the +7 // 8 compensates for numpy's bitpacking padding
@@ -136,7 +136,7 @@ class DataSet(object):
             flat_results = np.unpackbits(np.fromstring(packed_result_bytes, dtype=np.uint8))[:result_dims]
             
             pos_features = flat_position.reshape(data_size, board_size, board_size, input_planes)
-            next_moves = flat_nextmoves.reshape(data_size, board_size * board_size)
+            next_moves = flat_nextmoves.reshape(data_size, board_size * board_size + 1)
             results = flat_results.reshape(data_size,1)
 
         return DataSet(pos_features, next_moves, results, is_test=is_test)

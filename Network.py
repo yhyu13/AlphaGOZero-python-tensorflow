@@ -95,7 +95,7 @@ class Network:
                 feed_dict = {self.img: batch[0],
                              self.labels: batch[1],
                              self.results: batch[2],
-                             self.reinforce_dir: direction}
+                             self.model.reinforce_dir: direction}
                 
                 try:
                     _, l, ac, result_ac,summary, lr,temp, global_norm = \
