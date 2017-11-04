@@ -15,6 +15,7 @@ import Network
 import utils.sgf_wrapper as sgf_wrapper
 import utils.load_data_sets as load_data_sets
 import utils.utilities as utils
+from elo.elo import expected, elo
 '''
 This file requires model to have reinforcment learning feature, will implement in model alphago model
 '''

@@ -70,13 +70,15 @@ class DataSet(object):
         self._index_within_epoch = 0
 
     def get_batch(self, batch_size):
-        assert batch_size < self.data_size
-        if self._index_within_epoch + batch_size > self.data_size:
-            self.shuffle()
-        start = self._index_within_epoch
-        end = start + batch_size
-        self._index_within_epoch += batch_size
-        return self.pos_features[start:end], self.next_moves[start:end],self.results[start:end] # alphagozero sl batch: board history, next move, result 
+        if batch_size < self.data_size
+            if self._index_within_epoch + batch_size > self.data_size:
+                self.shuffle()
+            start = self._index_within_epoch
+            end = start + batch_size
+            self._index_within_epoch += batch_size
+            return self.pos_features[start:end], self.next_moves[start:end],self.results[start:end] # alphagozero sl batch: board history, next move, result
+        else:
+            return self.pos_features, self.next_moves, self.results
 
     @staticmethod
     def from_positions_w_context(positions_w_context, is_test=False, extract_move_prob=False):
