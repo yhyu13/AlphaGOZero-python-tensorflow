@@ -106,7 +106,7 @@ class Network:
                     self.sess.run(self.model.increase_global_step)
                     
                     if i % 5 == 0:
-                        print(f'Step {i} | Training loss {l:.2f} | Temperature {temp:.2f} | Magnitude of global norm {global_norm:.2f} | Total step {self.sess.run(self.model.global_step)} | Play move accuracy {ac:.2f} | Game outcome accuracy {result_ac:.2f}')
+                        print(f'Step {i} | Training loss {l:.2f} | Temperature {temp:.2f} | Magnitude of global norm {global_norm:.2f} | Total step {self.sess.run(self.model.global_step)} | Play move accuracy {ac:.4f} | Game outcome accuracy {result_ac:.2f}')
                         print('Learning rate', 'Adam' if self.optimizer_name=='adam' else lr)
                         if ac > 0.8: # overfitting, check evaluation
                             return 

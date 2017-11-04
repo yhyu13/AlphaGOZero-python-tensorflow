@@ -11,7 +11,7 @@ from utils.sgf_wrapper import replay_sgf
 import utils.utilities as utils
 
 # Number of data points to store in a chunk on disk
-CHUNK_SIZE = 4096
+CHUNK_SIZE = 2**20
 CHUNK_HEADER_FORMAT = "iii?"
 CHUNK_HEADER_SIZE = struct.calcsize(CHUNK_HEADER_FORMAT)
 
