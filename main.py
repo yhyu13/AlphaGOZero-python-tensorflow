@@ -33,7 +33,7 @@ parser.add_argument('--n_resid_units', type=int, default=10)
 parser.add_argument('--lr_schedule', type=int, default=60)
 parser.add_argument('--lr_factor', type=float, default=1.)
 parser.add_argument('--dataset', dest='processed_dir',default='./processed_data')
-parser.add_argument('--model_path',dest='load_model_path',default=None)
+parser.add_argument('--model_path',dest='load_model_path',default='./savedmodels')
 parser.add_argument('--model_type',dest='model',default='resnet')#'resnet_elu'
 parser.add_argument('--force_save',dest='force_save_model',action='store_true',default=False)
 parser.add_argument('--policy',dest='policy',default='mcts')

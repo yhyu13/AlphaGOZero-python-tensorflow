@@ -57,13 +57,17 @@ class Network:
         
         self.train_writer = tf.summary.FileWriter("./train_log", self.sess.graph)
 
-        self.saver = tf.train.Saver(var_list=[v for v in tf.trainable_variables()],max_to_keep=0)
+        self.saver = tf.train.Saver(var_list=[v for v in tf.trainable_variables()],max_to_keep=3)
 
         if load_model_path is not None:
             print('Loading Model...')
-            self.saver.restore(self.sess, load_model_path)
-            print('Complete...')
-            
+            try:
+                ckpt = tf.train.get_checkpoint_state(load_model_path)
+                self.saver.restore(self.sess, ckpt.model_checkpoint_path)
+                print('Complete...')
+            except:
+                print('Loading Model Failed')
+                pass
         self.sess.run(tf.global_variables_initializer())
         print('Done initializing variables')
 
@@ -102,11 +106,12 @@ class Network:
                     self.sess.run([self.model.train_op, self.model.cost,self.model.acc,\
                                    self.model.result_acc , self.merged, self.model.lrn_rate,\
                                    self.model.temp,self.model.norm], feed_dict=feed_dict)
-                    self.train_writer.add_summary(summary, i)
+                    global_step = self.sess.run(self.model.global_step)
+                    self.train_writer.add_summary(summary,global_step//self.batch_num)
                     self.sess.run(self.model.increase_global_step)
                     
-                    if i % 5 == 0:
-                        print(f'Step {i} | Training loss {l:.2f} | Temperature {temp:.2f} | Magnitude of global norm {global_norm:.2f} | Total step {self.sess.run(self.model.global_step)} | Play move accuracy {ac:.4f} | Game outcome accuracy {result_ac:.2f}')
+                    if i % 50 == 0:
+                        print(f'Step {i} | Training loss {l:.2f} | Temperature {temp:.2f} | Magnitude of global norm {global_norm:.2f} | Total step {global_step} | Play move accuracy {ac:.4f} | Game outcome accuracy {result_ac:.2f}')
                         print('Learning rate', 'Adam' if self.optimizer_name=='adam' else lr)
                         if ac > 0.8: # overfitting, check evaluation
                             return 

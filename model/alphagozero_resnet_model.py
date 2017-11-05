@@ -6,14 +6,14 @@ class AlphaGoZeroResNet(ResNet):
         self.zs = zs
         if hps is None:        
             hps = HParams(batch_size=1,
-                           num_classes=361,
+                           num_classes=362,
                            min_lrn_rate=0.0001,
                            lrn_rate=0.1,
                            num_residual_units=20,
                            use_bottleneck=False,
                            weight_decay_rate=0.0001,
                            relu_leakiness=0.1,
-                           optimizer='adam')
+                           optimizer='mom')
         
         super().__init__(hps, images, labels, mode)
 
