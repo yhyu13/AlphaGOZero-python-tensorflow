@@ -83,7 +83,7 @@ class Network:
         
         # Set default learning rate for scheduling
         for j in range(self.num_epoch):
-            print('Epoch {}'.format(j+1))
+            print(f'Epoch {j+1}')
 
             for i in range(self.num_iter):
                 batch = training_data.get_batch(self.batch_num)
@@ -109,8 +109,10 @@ class Network:
                     self.sess.run(self.model.increase_global_step)
                     
                     if i % 50 == 0:
-                        print(f'Step {i} | Training loss {l:.2f} | Temperature {temp:.2f} | Magnitude of global norm {global_norm:.2f} | Total step {global_step} | Play move accuracy {ac:.4f} | Game outcome accuracy {result_ac:.2f}')
-                        print('Learning rate', 'Adam' if self.optimizer_name=='adam' else lr)
+                        with open("result.txt","a") as f:
+                            f.write('Training...\n')
+                            print(f'Step {i} | Training loss {l:.2f} | Temperature {temp:.2f} | Magnitude of global norm {global_norm:.2f} | Total step {global_step} | Play move accuracy {ac:.4f} | Game outcome accuracy {result_ac:.2f}',file=f)
+                            print(f'Learning rate {"Adam" if self.optimizer_name=="adam" else lr}',file=f)
                         if ac > 0.7: # overfitting, check evaluation
                             return 
                 except KeyboardInterrupt:
@@ -145,9 +147,11 @@ class Network:
         tot_test_acc = test_acc / (n_batch-1e-2)
         test_result_acc = test_result_acc / (n_batch-1e-2)
 
-        print(f'   Test loss: {tot_test_loss:.2f}')
-        print(f'   play move test accuracy: {tot_test_acc:.4f}')
-        print(f'   Win ratio test accuracy: {test_result_acc:.2f}')
+        with open("result.txt","a") as f:
+            f.write('Running evaluation...\n')
+            print(f'   Test loss: {tot_test_loss:.2f}',file=f)
+            print(f'   play move test accuracy: {tot_test_acc:.4f}',file=f)
+            print(f'   Win ratio test accuracy: {test_result_acc:.2f}',file=f)
 
         if tot_test_acc > 0.2 or self.force_save_model:
             # if test acc is bigger than 20%, save or force save model

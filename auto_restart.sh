@@ -1,10 +1,11 @@
-#bin/env/bash
-TRAIN= "python main.py --mode=train --dataset=processed_data/ --force_save > resutl.txt"
-TEST= "lol"
-while 1; do
-    until echo "${TEST}";do
-	echo "Restart training"
-	sleep 1
-    done
+#!/bin/bash
+
+train(){
+    source activate py3dl
+    python main.py --mode=train
+}
+
+until train; do
+    echo "'train' crashed with exit code $?. Restarting..." >&2
     sleep 1
 done

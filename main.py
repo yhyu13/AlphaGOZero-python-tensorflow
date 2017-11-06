@@ -23,13 +23,13 @@ def timer(message):
 parser = argparse.ArgumentParser(description='Define parameters.')
 parser.add_argument('--n_epoch', type=int, default=5)
 parser.add_argument('--global_epoch', type=int, default=20)
-parser.add_argument('--n_batch', type=int, default=2048)
+parser.add_argument('--n_batch', type=int, default=64)
 parser.add_argument('--n_img_row', type=int, default=19)
 parser.add_argument('--n_img_col', type=int, default=19)
 parser.add_argument('--n_img_channels', type=int, default=17)
 parser.add_argument('--n_classes', type=int, default=19**2+1)
 parser.add_argument('--lr', type=float, default=0.1)
-parser.add_argument('--n_resid_units', type=int, default=20)
+parser.add_argument('--n_resid_units', type=int, default=1)
 parser.add_argument('--lr_schedule', type=int, default=10)
 parser.add_argument('--lr_factor', type=float, default=.1)
 parser.add_argument('--dataset', dest='processed_dir',default='./processed_data')
@@ -101,29 +101,30 @@ def train(args=args,hps=hps):
 
     global_step = 0
     lr = args.lr
-    for g_epoch in range(args.global_epoch):
-        
-        for file in train_chunk_files:
-            global_step += 1
+    with open("result.txt","a") as f:
+        for g_epoch in range(args.global_epoch):
             
-            if global_step % args.lr_schedule == 0:
-                lr *= args.lr_factor
+            for file in train_chunk_files:
+                global_step += 1
+                # scheduled learning rate
+                if global_step % args.lr_schedule == 0:
+                    lr *= args.lr_factor
+                # train    
+                print(f"Using {file}", file=f)
+                train_dataset = DataSet.read(file)
+                train_dataset.shuffle()
                 
-            print(f"Using {file}")
-            train_dataset = DataSet.read(file)
-            train_dataset.shuffle()
+                with timer("training"):
+                    run.train(train_dataset,lr=lr)
+                # test
+                if global_step % 1 == 0:
+                    with timer("test set evaluation"):
+                        run.test(test_dataset,proportion=.1)
+                print(f'Global step {global_step} finshed.', file=f)
+                
+            print(f'Global epoch {g_epoch} finshed.', file=f)
             
-            with timer("training"):
-                run.train(train_dataset,lr=lr)
-
-            if global_step % 1 == 0:
-                with timer("test set evaluation"):
-                    run.test(test_dataset,proportion=.1)
-            print(f'Global step {global_step} finshed.')
-            
-        print(f'Global epoch {g_epoch} finshed.')
-        
-    print('Now, I am the Master.')
+        print('Now, I am the Master.', file=f)
 
 
 if __name__ == '__main__':
