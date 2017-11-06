@@ -22,19 +22,20 @@ def timer(message):
 
 parser = argparse.ArgumentParser(description='Define parameters.')
 parser.add_argument('--n_epoch', type=int, default=5)
-parser.add_argument('--global_epoch', type=int, default=200)
-parser.add_argument('--n_batch', type=int, default=128)
+parser.add_argument('--global_epoch', type=int, default=20)
+parser.add_argument('--n_batch', type=int, default=2048)
 parser.add_argument('--n_img_row', type=int, default=19)
 parser.add_argument('--n_img_col', type=int, default=19)
 parser.add_argument('--n_img_channels', type=int, default=17)
 parser.add_argument('--n_classes', type=int, default=19**2+1)
 parser.add_argument('--lr', type=float, default=0.1)
-parser.add_argument('--n_resid_units', type=int, default=10)
-parser.add_argument('--lr_schedule', type=int, default=1)
+parser.add_argument('--n_resid_units', type=int, default=20)
+parser.add_argument('--lr_schedule', type=int, default=10)
 parser.add_argument('--lr_factor', type=float, default=.1)
 parser.add_argument('--dataset', dest='processed_dir',default='./processed_data')
 parser.add_argument('--model_path',dest='load_model_path',default='./savedmodels')
 parser.add_argument('--model_type',dest='model',default='resnet')#'resnet_elu'
+parser.add_argument('--optimizer',dest='opt',default='mom')
 parser.add_argument('--force_save',dest='force_save_model',action='store_true',default=False)
 parser.add_argument('--policy',dest='policy',default='mcts')
 parser.add_argument('--mode',dest='MODE')
@@ -54,7 +55,7 @@ hps = HParams(batch_size=args.n_batch,
                use_bottleneck=False,
                weight_decay_rate=0.0001,
                relu_leakiness=0.1,
-               optimizer='adam',
+               optimizer=args.opt,
                temperature=1.0,
                global_norm=100)
 

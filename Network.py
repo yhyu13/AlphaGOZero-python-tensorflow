@@ -145,7 +145,7 @@ class Network:
         tot_test_acc = test_acc / (n_batch-1e-2)
         test_result_acc = test_result_acc / (n_batch-1e-2)
 
-        print(f'   Test loss: {tot_test_loss:.2f}'.format()
+        print(f'   Test loss: {tot_test_loss:.2f}')
         print(f'   play move test accuracy: {tot_test_acc:.4f}')
         print(f'   Win ratio test accuracy: {test_result_acc:.2f}')
 

@@ -132,9 +132,9 @@ class AlphaGoZeroResNet(ResNet):
             
         with tf.variable_scope('costs'):
             self.use_sparse_sotfmax = tf.constant(1, tf.int32, name="condition")
-            xent = tf.cond(self.use_sparse_sotfmax > 0, tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits,\
-                                                                                                       labels=tf.argmax(self.labels,axis=1,output_type=tf.int32)),\
-                           tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=self.labels))
+            def f1(): return tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits,labels=tf.argmax(self.labels,axis=1))
+            def f2(): return tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=self.labels)
+            xent = tf.cond(self.use_sparse_sotfmax > 0, f1 , f2 )
             squared_diff = tf.squared_difference(self.zs,self.value)
             self.cost = tf.reduce_mean(xent, name='xent') + 0.01*tf.reduce_mean(squared_diff,name='squared_diff')
             self.cost += self._decay()
@@ -175,7 +175,7 @@ class AlphaGoZeroResNet(ResNet):
         elif self.hps.optimizer == 'mom':
             optimizer = tf.train.MomentumOptimizer(self.lrn_rate, 0.9)
         elif self.hps.optimizer == 'adam':
-            optimizer = tf.train.AdamOptimizer(1e-3)
+            optimizer = tf.train.AdamOptimizer(1e-4)
 
         # defensive step 3 check NaN https://stackoverflow.com/questions/40701712/how-to-check-nan-in-gradients-in-tensorflow-when-updating
         grad_check = [tf.check_numerics(g,message='Nan Found!') for g in clipped_grads]
