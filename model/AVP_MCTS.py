@@ -22,10 +22,10 @@ SEM = asyncio.Semaphore(8)
 LOOP = asyncio.get_event_loop()
 RUNNING_SIMULATION_NUM = 0
 
-class MCTSPlayerMixin(object):
+class MCTSPlayer(object):
     
-    def __init__(self, policy_network, parent, move, prior):
-        self.policy_network = policy_network
+    def __init__(self, policy_network_api, parent, move, prior):
+        self.policy_network = policy_network_api
         self.parent = parent # pointer to another MCTSNode
         self.move = move # the move that led to this node
         self.prior = prior
@@ -54,13 +54,13 @@ class MCTSPlayerMixin(object):
         else:
             return self.parent.tree_height+1
 
-    def virtual_loss(self,add=True):
-        if add: # add virtual loss to encourage explore
-            self.N += self.v_loss
-            self.W -= self.v_loss
-        else: # not add == remove virtual loss
-            self.N -= self.v_loss
-            self.W += self.v_loss
+    def virtual_loss_do(self):
+        self.N += self.v_loss
+        self.W -= self.v_loss
+
+    def virtual_loss_undo(self):
+        self.N -= self.v_loss
+        self.W += self.v_loss
 
     def is_expanded(self):
         return self.position is not None
@@ -111,12 +111,11 @@ class MCTSPlayerMixin(object):
         loop.run_until_complete(asyncio.gather(*coroutine_list))
 
         print(f"Searched for {(time.time() - start):.5f} seconds", file=sys.stderr)
-        
         return self.move_prob()
 
     async def start_tree_search(self):
-
         #TODO: add proper game over condition
+        self.virtual_loss_do() # add virtual loss
 
         while self in NOW_EXPANDING:
             await asyncio.sleep(1e-4)
@@ -124,6 +123,7 @@ class MCTSPlayerMixin(object):
         if not self.is_expanded(): #  is leaf node
             NOW_EXPANDING.add(self)
             position = self.compute_position()
+            self.virtual_loss_undo() # subtract virtual loss
             if position is None:
                 #print("illegal move!", file=sys.stderr)
                 # See go.Position.play_move for notes on detecting legality
@@ -146,9 +146,8 @@ class MCTSPlayerMixin(object):
                                    zip(self.children.values(),dirichlet([0.03]*362)))
             move2action_score = {move:action_score for move,action_score in zip(self.children.keys(),all_action_score)}
             select_move = max(move2action_score, key=move2action_score.get)
-            self.children[select_move].virtual_loss(add=True)
             value = await self.children[select_move].start_tree_search()
-            self.children[select_move].virtual_loss(add=False)
+            self.virtual_loss_undo() # subtract virtual loss
             self.backup_value_single(value)
             return value*-1
     

@@ -30,8 +30,8 @@ parser.add_argument('--n_img_channels', type=int, default=17)
 parser.add_argument('--n_classes', type=int, default=19**2+1)
 parser.add_argument('--lr', type=float, default=0.1)
 parser.add_argument('--n_resid_units', type=int, default=10)
-parser.add_argument('--lr_schedule', type=int, default=60)
-parser.add_argument('--lr_factor', type=float, default=1.)
+parser.add_argument('--lr_schedule', type=int, default=1)
+parser.add_argument('--lr_factor', type=float, default=.1)
 parser.add_argument('--dataset', dest='processed_dir',default='./processed_data')
 parser.add_argument('--model_path',dest='load_model_path',default='./savedmodels')
 parser.add_argument('--model_type',dest='model',default='resnet')#'resnet_elu'
@@ -91,25 +91,37 @@ def train(args=args,hps=hps):
     run = Network(args,hps,args.load_model_path)
 
     test_dataset = DataSet.read(os.path.join(args.processed_dir, "test.chunk.gz"))
+    
     train_chunk_files = [os.path.join(args.processed_dir, fname) 
         for fname in os.listdir(args.processed_dir)
         if TRAINING_CHUNK_RE.match(fname)]
+    
     random.shuffle(train_chunk_files)
 
     global_step = 0
+    lr = args.lr
     for g_epoch in range(args.global_epoch):
+        
         for file in train_chunk_files:
             global_step += 1
+            
+            if global_step % args.lr_schedule == 0:
+                lr *= args.lr_factor
+                
             print(f"Using {file}")
             train_dataset = DataSet.read(file)
             train_dataset.shuffle()
+            
             with timer("training"):
-                run.train(train_dataset)
+                run.train(train_dataset,lr=lr)
 
             if global_step % 1 == 0:
                 with timer("test set evaluation"):
                     run.test(test_dataset,proportion=.1)
+            print(f'Global step {global_step} finshed.')
+            
         print(f'Global epoch {g_epoch} finshed.')
+        
     print('Now, I am the Master.')
 
 

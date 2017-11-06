@@ -76,30 +76,28 @@ class Network:
         move_probabilities,value = self.sess.run([self.model.predictions,self.model.value],feed_dict={self.img:imgs})
         return move_probabilities, value
 
-    def train(self, training_data,direction=1.0):        
+    def train(self, training_data, direction=1.0, use_sparse=1, lr=0.1):        
         print('Training model...')
         self.model.mode = 'train'
         self.num_iter = training_data.data_size // self.batch_num
+        
         # Set default learning rate for scheduling
-        lr = self.lr
         for j in range(self.num_epoch):
             print('Epoch {}'.format(j+1))
-            # Decrease learning rate every args.lr_schedule epoch
-            # By args.lr_factor
-            if (j + 1) % self.lr_schedule == 0:
-                lr *= self.lr_factor
 
             for i in range(self.num_iter):
                 batch = training_data.get_batch(self.batch_num)
                 batch = [np.asarray(item).astype(np.float32) for item in batch]
-                # convert the last feature: player colour to -1 & 1 from 0 & 1
+                # convert the last feature: player colour to -1 & 1 rather than 0 & 1
                 batch[0][...,16] = (batch[0][...,16]-0.5)*2
                 batch[2] = (batch[2]-0.5)*2
                 
                 feed_dict = {self.img: batch[0],
                              self.labels: batch[1],
                              self.results: batch[2],
-                             self.model.reinforce_dir: direction}
+                             self.model.reinforce_dir: direction, # +1/-1 used in self-play data
+                             self.model.use_sparse_sotfmax: use_sparse, # +1 in SL, -1 in RL
+                             self.model.lrn_rate: lr} # scheduled learning rate
                 
                 try:
                     _, l, ac, result_ac,summary, lr,temp, global_norm = \
@@ -113,12 +111,12 @@ class Network:
                     if i % 50 == 0:
                         print(f'Step {i} | Training loss {l:.2f} | Temperature {temp:.2f} | Magnitude of global norm {global_norm:.2f} | Total step {global_step} | Play move accuracy {ac:.4f} | Game outcome accuracy {result_ac:.2f}')
                         print('Learning rate', 'Adam' if self.optimizer_name=='adam' else lr)
-                        if ac > 0.8: # overfitting, check evaluation
+                        if ac > 0.7: # overfitting, check evaluation
                             return 
                 except KeyboardInterrupt:
                     sys.exit()
                 except tf.errors.InvalidArgumentError:
-                    print('Step {} corrupts. Discard.'.format(i+1))
+                    print(f'Step {i+1} corrupts. Discard.')
                     continue
 
     def test(self,test_data, proportion=0.1):
@@ -147,11 +145,11 @@ class Network:
         tot_test_acc = test_acc / (n_batch-1e-2)
         test_result_acc = test_result_acc / (n_batch-1e-2)
 
-        print('   Test loss: {}'.format(tot_test_loss))
-        print('   play move test accuracy: {}'.format(tot_test_acc))
-        print('   Win ratio test accuracy: {}'.format(test_result_acc))
+        print(f'   Test loss: {tot_test_loss:.2f}'.format()
+        print(f'   play move test accuracy: {tot_test_acc:.4f}')
+        print(f'   Win ratio test accuracy: {test_result_acc:.2f}')
 
         if tot_test_acc > 0.2 or self.force_save_model:
             # if test acc is bigger than 20%, save or force save model
-            self.saver.save(self.sess,'./savedmodels/model-'+str(round(tot_test_acc,3))+'.ckpt')
+            self.saver.save(self.sess,f'./savedmodels/model-{tot_test_acc:.4f}.ckpt')
 
