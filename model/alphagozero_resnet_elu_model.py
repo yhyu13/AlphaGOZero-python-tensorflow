@@ -1,3 +1,4 @@
+# -*- coding: future_fstrings -*-
 from model.alphagozero_resnet_model import *
 
 class AlphaGoZeroResNetELU(AlphaGoZeroResNet):

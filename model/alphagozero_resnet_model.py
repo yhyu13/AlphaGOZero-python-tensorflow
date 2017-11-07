@@ -1,3 +1,4 @@
+# -*- coding: future_fstrings -*-
 from model.resnet_model import *
 from tensorflow.contrib.slim import prefetch_queue
 

@@ -1,3 +1,4 @@
+# -*- coding: future_fstrings -*-
 import argparse
 import argh
 from time import time
