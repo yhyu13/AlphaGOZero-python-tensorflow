@@ -2,16 +2,18 @@ from model.alphagozero_resnet_model import *
 
 class AlphaGoZeroResNetELU(AlphaGoZeroResNet):
 
-    def __init__(self, hps, images, labels, zs, mode):
-        super().__init__(hps, images, labels, zs, mode)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def _relu(self,x,leak=0):
+        """change relu to elu"""
         return tf.nn.elu(x)
 
     # override _residual block to repliate AlphaGoZero architecture
     def _residual(self, x, in_filter, out_filter, stride,
                   activate_before_residual=False):
-        
+
+        """suplit+conv+elu+conv+bach_norm+merge"""
         orig_x = x
         
         with tf.variable_scope('sub1'):

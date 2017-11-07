@@ -77,8 +77,8 @@ class RandomPolicyPlayer(RandomPolicyPlayerMixin, GtpInterface): pass
 class GreedyPolicyPlayer(GreedyPolicyPlayerMixin, GtpInterface): pass
 class MCTSPlayer(MCTSPlayerMixin, GtpInterface): pass
 
-def make_gtp_instance(strategy_name,args,read_file,hps):
-    n = Network(args,hps,read_file)
+def make_gtp_instance(strategy_name,flags,hps):
+    n = Network(flags,hps)
     if strategy_name == 'random':
         instance = RandomPlayer()
     elif strategy_name == 'greedypolicy':

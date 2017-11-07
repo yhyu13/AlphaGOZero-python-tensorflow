@@ -17,10 +17,41 @@ import asyncio
 c_PUCT = 5
 
 NOW_EXPANDING = set()
-PREDICTION_QUEUE = Queue(8)
 SEM = asyncio.Semaphore(8)
 LOOP = asyncio.get_event_loop()
 RUNNING_SIMULATION_NUM = 0
+
+class PolicyNetworkAPI(object):
+
+    def __init__(self, policy_network):
+        self.policy_network = policy_network
+        self.prediction_queue = Queue(8)
+
+    async def prediction_worker(self):
+        """For better performance, queueing prediction requests and predict together in this worker.
+        speed up about 45sec -> 15sec for example.
+        :return:
+        """
+        q = self.prediction_queue
+        margin = 10  # avoid finishing before other searches starting.
+        while RUNNING_SIMULATION_NUM> 0 or margin > 0:
+            if q.empty():
+                if margin > 0:
+                    margin -= 1
+                await asyncio.sleep(1e-3)
+                continue
+            item_list = [q.get_nowait() for _ in range(q.qsize())]  # type: list[QueueItem]
+            # logger.debug(f"predicting {len(item_list)} items")
+            data = np.array([x.state for x in item_list])
+            policy_ary, value_ary = self.api.predict(data)
+            for p, v, item in zip(policy_ary, value_ary, item_list):
+                item.future.set_result((p, v))
+
+    async def predict(self, x):
+        future = LOOP.create_future()
+        item = QueueItem(x, future)
+        await self.prediction_queue.put(item)
+        return future
 
 class MCTSPlayer(object):
     
@@ -108,7 +139,7 @@ class MCTSPlayer(object):
             cor = self.tree_search()
             coroutine_list.append(cor)
         coroutine_list.append(prediction_worker())
-        loop.run_until_complete(asyncio.gather(*coroutine_list))
+        LOOP.run_until_complete(asyncio.gather(*coroutine_list))
 
         print(f"Searched for {(time.time() - start):.5f} seconds", file=sys.stderr)
         return self.move_prob()
