@@ -46,7 +46,7 @@ class ResNet(object):
           mode: One of 'train' and 'eval'.
         """
         self.hps = hps 
-        self._images = images
+        self.images = images
         self.labels = labels
         self.mode = mode
 
@@ -317,5 +317,5 @@ class ResNet(object):
         return tf.reduce_mean(x, [1, 2])
 
     def total_parameters(self):
-        return np.sum([np.prod(v.shape) for v in tf.trainable_variables()])
+        return np.sum([np.prod(v.get_shape().as_list()) for v in tf.global_variables()]).astype(np.int32)
 
