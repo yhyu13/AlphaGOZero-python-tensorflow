@@ -213,7 +213,7 @@ class MCTSPlayerMixin(object):
             self.expand(move_probs[0])
             
         self.tree_search(iters=iters)
-        print(f"Searched {iters} iters for {(time.time() - start)} seconds",file=sys.stderr)
+        print(f"Searched {iters} iters for {(time.time() - start)} seconds")
         
         return self.move_prob()
 
@@ -227,12 +227,12 @@ class MCTSPlayerMixin(object):
             # lift virtual loss
             self.virtual_loss_undo()
             if position is None:
-                #print("illegal move!", file=sys.stderr)
+                #print("illegal move!")
                 # See go.Position.play_move for notes on detecting legality
                 # In Go, illegal move means loss (or resign)
                 self.backup_value_single(-1)
                 return -1*-1
-            print(f"Investigating following position:\n{position} at height {self.tree_heigh}", file=sys.stderr)
+            print(f"Investigating following position:\n{position} at height {self.tree_heigh}")
             sleep(0.1)
             move_probs,value = self.policy_network.run_many(np.vstack((bulk_extract_features([position],diheral=True),bulk_extract_features([position]))))
             #self.expand(dirichlet([1]*362))
@@ -263,7 +263,7 @@ class MCTSPlayerMixin(object):
     def tree_search(self,iters):
         for _ in range(iters):
             value = self.start_tree_search()
-            #print(f"value: {value}", file=sys.stderr)
+            #print(f"value: {value}")
 
 def simulate_game_mcts(policy, position):
     """Simulates a game starting from a position, using a policy network"""

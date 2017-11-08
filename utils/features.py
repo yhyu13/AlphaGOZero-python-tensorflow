@@ -122,8 +122,6 @@ def extract_features(position, features=DEFAULT_FEATURES,diheral=False):
     if not diheral:
         return features
     else:
-        # (di(p), v) = fθ(di(sL))
-        # rotation and flip. flip -> rot.
         flip_axis,rotate_num = np.random.randint(2),np.random.randint(4)
         return np.rot90(np.flip(features,axis=flip_axis),rotate_num)
 

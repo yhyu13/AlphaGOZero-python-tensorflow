@@ -110,7 +110,7 @@ def train(flags=FLAGS,hps=HPS):
             for file in train_chunk_files:
                 global_step += 1
                 # prepare training set
-                print(f"Using {file}", file=f)
+                print >>f , f"Using {file}"
                 train_dataset = DataSet.read(file)
                 train_dataset.shuffle()
                 with timer("training"):
@@ -120,9 +120,9 @@ def train(flags=FLAGS,hps=HPS):
                     # eval
                     with timer("test set evaluation"):
                         run.test(test_dataset,proportion=.1)
-                print(f'Global step {global_step} finshed.', file=f)
-            print(f'Global epoch {g_epoch} finshed.', file=f)
-        print('Now, I am the Master.', file=f)
+                print >>f, f'Global step {global_step} finshed.'
+            print >>f, f'Global epoch {g_epoch} finshed.'
+        print >>f , f'Now, I am the Master.'
 
 
 if __name__ == '__main__':

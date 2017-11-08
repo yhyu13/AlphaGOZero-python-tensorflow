@@ -98,7 +98,8 @@ def shuffler(iterator, pool_size=10**5, refill_threshold=0.9):
             break
         pool.extend(next_batch)
     # finish consuming whatever's left - no need for further randomization.
-    yield from pool
+    for item in pool:
+        yield item
 
 class timer(object):
     all_times = defaultdict(float)
@@ -135,7 +136,7 @@ def lazy_property(function):
 
     return decorator
 
-def timestamp() -> str:
+def timestamp():
     return strftime('%Y%m%d-%H%M%S')
 
 

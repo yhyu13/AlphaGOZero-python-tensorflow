@@ -134,8 +134,8 @@ class Network:
                     if i % 50 == 0:
                         with open("result.txt","a") as f:
                             f.write('Training...\n')
-                            print(f'Step {i} | Training loss {l:.2f} | Temperature {temp:.2f} | Magnitude of global norm {global_norm:.2f} | Total step {global_step} | Play move accuracy {ac:.4f} | Game outcome accuracy {result_ac:.2f}',file=f)
-                            print(f'Learning rate {"Adam" if self.optimizer_name=="adam" else lr}',file=f)
+                            print >>f, f'Step {i} | Training loss {l:.2f} | Temperature {temp:.2f} | Magnitude of global norm {global_norm:.2f} | Total step {global_step} | Play move accuracy {ac:.4f} | Game outcome accuracy {result_ac:.2f}'
+                            print >>f, f'Learning rate {"Adam" if self.optimizer_name=="adam" else lr}'
                         if ac > 0.7: # overfitting, abort, check evaluation
                             return 
                 except KeyboardInterrupt:
@@ -177,9 +177,9 @@ class Network:
 
         with open("result.txt","a") as f:
             f.write('Running evaluation...\n')
-            print(f'Test loss: {tot_test_loss:.2f}',file=f)
-            print(f'Play move test accuracy: {tot_test_acc:.4f}',file=f)
-            print(f'Win ratio test accuracy: {test_result_acc:.2f}',file=f)
+            print >>f, f'Test loss: {tot_test_loss:.2f}'
+            print >>f, f'Play move test accuracy: {tot_test_acc:.4f}'
+            print >>f, f'Win ratio test accuracy: {test_result_acc:.2f}'
 
         if tot_test_acc > 0.2 or self.force_save_model:
             # if test acc is bigger than 20%, save or force save model
@@ -190,7 +190,7 @@ class Network:
         """train_step equals total number of min_batch updates"""
         if not rl: # SL schedule learning rate
             if train_step < 200000:
-                self.lr = 1e-1
+                self.lr = 1e-2
             elif train_step < 400000:
                 self.lr = 1e-2
             elif train_step < 600000:
