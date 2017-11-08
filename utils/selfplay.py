@@ -20,7 +20,7 @@ from elo.elo import expected, elo
 This file requires model to have reinforcment learning feature, will implement in model alphago model
 '''
 
-net = Network.Network(main.args,main.hps,main.args.load_model_path)
+net = Network.Network(main.FLAGS,main.HPS)
 now = time.time()
 
 N_games = 1
