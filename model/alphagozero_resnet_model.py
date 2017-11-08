@@ -17,7 +17,7 @@ class AlphaGoZeroResNet(ResNet):
                            relu_leakiness=0.1,
                            optimizer='mom')
         
-        super().__init__(hps, images, labels, mode)
+        super(AlphaGoZeroResNet,self).__init__(hps, images, labels, mode)
         
     # override _batch_norm to use tf.layers.batch_normalization
     def _batch_norm(self, name, x):

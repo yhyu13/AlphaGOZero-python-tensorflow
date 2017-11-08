@@ -4,7 +4,7 @@ from model.alphagozero_resnet_model import *
 class AlphaGoZeroResNetELU(AlphaGoZeroResNet):
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(AlphaGoZeroResNetELU,self).__init__(*args, **kwargs)
 
     def _relu(self,x,leak=0):
         """change relu to elu"""
