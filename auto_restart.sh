@@ -1,8 +1,7 @@
 #!/bin/bash
 
 train(){
-    source activate py3dl
-    python main.py --mode=train
+    python main.py --mode=train --force_save
 }
 
 until train; do

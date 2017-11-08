@@ -104,7 +104,7 @@ class Network:
         
         # Set default learning rate for scheduling
         for j in range(self.num_epoch):
-            print(f'Epoch {j+1}')
+            print(f'Local epoch {j+1}')
 
             for i in range(self.num_iter):
                 batch = training_data.get_batch(self.batch_num)
@@ -131,7 +131,7 @@ class Network:
                     self.sess.run(self.model.increase_global_step)
                     self.schedule_lrn_rate(global_step, rl = not use_sparse)
                     
-                    if i % 50 == 0:
+                    if i % 25 == 0:
                         with open("result.txt","a") as f:
                             f.write('Training...\n')
                             print >>f, f'Step {i} | Training loss {l:.2f} | Temperature {temp:.2f} | Magnitude of global norm {global_norm:.2f} | Total step {global_step} | Play move accuracy {ac:.4f} | Game outcome accuracy {result_ac:.2f}'

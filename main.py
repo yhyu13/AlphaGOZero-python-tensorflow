@@ -15,21 +15,21 @@ if _PATH_ not in sys.path:
     sys.path.append(_PATH_)
 
 parser = argparse.ArgumentParser(description='Define parameters.')
-parser.add_argument('--n_epoch', type=int, default=5)
-parser.add_argument('--global_epoch', type=int, default=20)
+parser.add_argument('--n_epoch', type=int, default=1)
+parser.add_argument('--global_epoch', type=int, default=100)
 parser.add_argument('--n_batch', type=int, default=2048)
 parser.add_argument('--n_img_row', type=int, default=19)
 parser.add_argument('--n_img_col', type=int, default=19)
 parser.add_argument('--n_img_channels', type=int, default=17)
 parser.add_argument('--n_classes', type=int, default=19**2+1)
-parser.add_argument('--lr', type=float, default=0.1)
-parser.add_argument('--lr_factor', type=float, default=.01)
+parser.add_argument('--lr', type=float, default=0.01)
+parser.add_argument('--lr_factor', type=float, default=.1)
 parser.add_argument('--n_resid_units', type=int, default=20)
 parser.add_argument('--n_gpu', type=int, default=4)
 parser.add_argument('--dataset', dest='processed_dir',default='./processed_data')
 parser.add_argument('--model_path',dest='load_model_path',default='./savedmodels')
 parser.add_argument('--model_type',dest='model',default='elu',help='choose activation method')
-parser.add_argument('--optimizer',dest='opt',default='mom')
+parser.add_argument('--optimizer',dest='opt',default='adam')
 parser.add_argument('--force_save',dest='force_save_model',action='store_true',default=False,\
                     help='if Ture, then save checkpoint for every evaluation period')
 parser.add_argument('--policy',dest='policy',default='mctspolicy',help='choose gtp bot player')
@@ -103,10 +103,9 @@ def train(flags=FLAGS,hps=HPS):
     random.shuffle(train_chunk_files)
 
     global_step = 0
-    lr = flags.lr
     with open("result.txt","a") as f:
         for g_epoch in range(flags.global_epoch):
-            
+                        
             for file in train_chunk_files:
                 global_step += 1
                 # prepare training set
@@ -119,8 +118,8 @@ def train(flags=FLAGS,hps=HPS):
                 if global_step % 1 == 0:
                     # eval
                     with timer("test set evaluation"):
-                        run.test(test_dataset,proportion=.1)
-                print >>f, f'Global step {global_step} finshed.'
+                        run.test(test_dataset,proportion=1)
+                print >>f, f'Total files {global_step} finshed.'
             print >>f, f'Global epoch {g_epoch} finshed.'
         print >>f , f'Now, I am the Master.'
 
