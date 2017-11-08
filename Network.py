@@ -38,9 +38,9 @@ class Network:
            labels: ?x362
            results: ?x1
         '''
-        self.imgs = tf.placeholder(tf.float32, shape=[self.batch_num, self.img_row, self.img_col, self.img_channels])
-        self.labels = tf.placeholder(tf.float32, shape=[self.batch_num, self.nb_classes])
-        self.results = tf.placeholder(tf.float32,shape=[self.batch_num,1])
+        self.imgs = tf.placeholder(tf.float32, shape=[None, self.img_row, self.img_col, self.img_channels])
+        self.labels = tf.placeholder(tf.float32, shape=[None, self.nb_classes])
+        self.results = tf.placeholder(tf.float32,shape=[None,1])
 
         # potentially add previous alphaGo mdoels
         # Right now, there are two models,
@@ -87,8 +87,8 @@ class Network:
     '''
     def run_many(self,imgs):
         imgs[:][...,16] = (imgs[:][...,16]-0.5)*2
-        move_probabilities,value = self.sess.run([self.model.predictions,self.model.value],feed_dict={self.imgs:imgs})
-        return move_probabilities, value
+        move_probabilities,value = self.sess.run([self.model.prediction,self.model.value],feed_dict={self.imgs:imgs})
+        return np.vstack(move_probabilities), np.vstack(value)
 
     '''
     params:

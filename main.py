@@ -17,7 +17,7 @@ if _PATH_ not in sys.path:
 parser = argparse.ArgumentParser(description='Define parameters.')
 parser.add_argument('--n_epoch', type=int, default=5)
 parser.add_argument('--global_epoch', type=int, default=20)
-parser.add_argument('--n_batch', type=int, default=1)
+parser.add_argument('--n_batch', type=int, default=64)
 parser.add_argument('--n_img_row', type=int, default=19)
 parser.add_argument('--n_img_col', type=int, default=19)
 parser.add_argument('--n_img_channels', type=int, default=17)
@@ -55,13 +55,12 @@ HPS = HParams(batch_size=FLAGS.n_batch,
                global_norm=100,
                num_gpu=FLAGS.n_gpu)
 
-
 @contextmanager
 def timer(message):
     tick = time()
     yield
     tock = time()
-    print("%s: %.3f" % (message, (tock - tick)))
+    print(f"{message}: {(tock - tick):.3f}")
 
 # Credit: Brain Lee
 def gtp(flags=FLAGS,hps=HPS):

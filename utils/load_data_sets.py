@@ -88,22 +88,23 @@ class DataSet(object):
             encoded_moves = np.asarray(next_moves)
         else:
             encoded_moves = make_onehot(next_moves)
-        return DataSet(extracted_features, encoded_moves, results, is_test=is_test)
+
+        '''Ackowledge results = (metadata(result,handicap,boardsize),...,metadata(result,handicap,boardsize))'''
+        whowin,turn = 1 if 'B' in results[0].result else -1, 1
+        wrt_result =  [None]*len(self.results)
+        for i in range(len(wrt_result)):
+            wrt_result[i] = int(whowin==turn)
+            turn *= -1
+                
+        return DataSet(extracted_features, encoded_moves, wrt_result, is_test=is_test)
 
     def write(self, filename):
         try:
             header_bytes = struct.pack(CHUNK_HEADER_FORMAT, self.data_size, self.board_size, self.input_planes, self.is_test)
             position_bytes = np.packbits(self.pos_features).tostring()
             next_move_bytes = np.packbits(self.next_moves).tostring()
-
-            '''Ackowledge self.result = (metadata(result,handicap,boardsize),...,metadata(result,handicap,boardsize))'''
-            whowin,turn = 1 if 'B' in self.results[0].result else -1, 1
-            wrt_result =  [None]*len(self.results)
-            for i in range(len(wrt_result)):
-                wrt_result[i] = int(whowin==turn)
-                turn *= -1
-            result_bytes = np.packbits(wrt_result).tostring()
-            
+            result_bytes = np.packbits(self.results).tostring()
+           
             with gzip.open(filename, "wb", compresslevel=6) as f:
                 f.write(header_bytes)
                 f.write(position_bytes)

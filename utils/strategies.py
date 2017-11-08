@@ -4,7 +4,7 @@ import math
 import random
 import sys
 import time
-
+from time import sleep
 import gtp
 import numpy as np
 
@@ -135,14 +135,13 @@ class MCTSPlayerMixin(object):
         self.prior = prior
         self.position = None # lazily computed upon expansion
         self.children = {} # map of moves to resulting MCTSNode
-        self.Q = 0 # average of all outcomes involving this node
         self.U = 0 # monte carlo exploration bonus
         self.N = 0 # number of times node was visited
         self.W = 0 # all outcomes involving this node
         self.v_loss = 1000
 
     def __repr__(self):
-        return "<MCTSNode move=%s prior=%s score=%s is_expanded=%s>" % (self.move, self.prior, self.action_score, self.is_expanded())
+        return f"<MCTSNode move={self.move} prior={self.prio} score={self.action_score} is_expanded={self.is_expanded()}>"
 
     @property
     def action_score(self):
@@ -152,19 +151,24 @@ class MCTSPlayerMixin(object):
         return self.Q + self.U
 
     @property
+    def Q(self):
+        # average of all outcomes involving this node
+        return self.W/self.N if self.N !=0 else 0
+
+    @property
     def tree_height(self):
         if self.parent is None:
             return 0
         else:
             return self.parent.tree_height+1
 
-    def virtual_loss(self,add=False):
-        if add:
-            self.N += self.v_loss
-            self.W -= self.v_loss
-        else:
-            self.N -= self.v_loss
-            self.W += self.v_loss
+    def virtual_loss_do(self):
+        self.N += self.v_loss
+        self.W -= self.v_loss
+
+    def virtual_loss_undo(self):
+        self.N -= self.v_loss
+        self.W += self.v_loss
 
     def is_expanded(self):
         return self.position is not None
@@ -190,8 +194,8 @@ class MCTSPlayerMixin(object):
             return
         # This incrementally calculates node.Q = average(Q of children),
         # given the newest Q value and the previous average of N-1 values.
-        self.Q, self.U = (
-            self.Q + (value - self.Q) / self.N,
+        self.W, self.U = (
+            self.W + value,
             c_PUCT * math.sqrt(self.parent.N) * self.prior / self.N,
         )
 
@@ -200,11 +204,12 @@ class MCTSPlayerMixin(object):
         prob /= np.sum(prob) # ensure 1.
         return prob
 
-    def suggest_move_prob(self, position, iters=2):
+    def suggest_move_prob(self, position, iters=100):
         start = time.time()
         if self.parent is None: # is the ture root node right after None initialization
             move_probs,_ = self.policy_network.run_many(bulk_extract_features([position]))
             self.position = position
+            #self.expand(dirichlet([1]*362))
             self.expand(move_probs[0])
             
         self.tree_search(iters=iters)
@@ -213,17 +218,24 @@ class MCTSPlayerMixin(object):
         return self.move_prob()
 
     def start_tree_search(self):
+
+        # add virtual loss
+        self.virtual_loss_do()
         
         if not self.is_expanded(): # leaf node
             position = self.compute_position()
+            # lift virtual loss
+            self.virtual_loss_undo()
             if position is None:
                 #print("illegal move!", file=sys.stderr)
                 # See go.Position.play_move for notes on detecting legality
                 # In Go, illegal move means loss (or resign)
                 self.backup_value_single(-1)
                 return -1*-1
-            #print("Investigating following position:\n%s" % (position), file=sys.stderr)
-            move_probs,value = self.policy_network.run_many(bulk_extract_features([position]))
+            print(f"Investigating following position:\n{position} at height {self.tree_heigh}", file=sys.stderr)
+            sleep(0.1)
+            move_probs,value = self.policy_network.run_many(np.vstack((bulk_extract_features([position],diheral=True),bulk_extract_features([position]))))
+            #self.expand(dirichlet([1]*362))
             self.expand(move_probs[0])
             self.backup_value_single(value[0,0])
             return value[0,0]*-1
@@ -238,17 +250,20 @@ class MCTSPlayerMixin(object):
             all_action_score = map(lambda zipped: zipped[0].Q + zipped[0].U*(0.75+0.25*(zipped[1])/(zipped[0].prior+1e-8)),\
                                    zip(self.children.values(),dirichlet([0.03]*362)))
             move2action_score = {move:action_score for move,action_score in zip(self.children.keys(),all_action_score)}
+            
             select_move = max(move2action_score, key=move2action_score.get)
-            self.children[select_move].virtual_loss(add=True)
+            print(f'Children move {select_move} with action score {move2action_score[select_move]}')
+            #value = self.children[(np.random.randint(19),np.random.randint(19))].start_tree_search()
             value = self.children[select_move].start_tree_search()
-            self.children[select_move].virtual_loss(add=False)
+            # lift virtual loss
+            self.virtual_loss_undo()
             self.backup_value_single(value)
             return value*-1
     
-    def tree_search(self,iters=1600):
+    def tree_search(self,iters):
         for _ in range(iters):
             value = self.start_tree_search()
-            #print("value: %s" % value, file=sys.stderr)
+            #print(f"value: {value}", file=sys.stderr)
 
 def simulate_game_mcts(policy, position):
     """Simulates a game starting from a position, using a policy network"""
@@ -264,6 +279,7 @@ def simulate_game_mcts(policy, position):
         # shift to child node
         mc_policy = mc_policy.children[move]
         # discard other children nodes
+        print(mc_policy.tree_height)
         mc_policy.parent.children = None
         
     simulate_game_random(position)

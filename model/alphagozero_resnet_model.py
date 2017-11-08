@@ -72,7 +72,7 @@ class AlphaGoZeroResNet(ResNet):
                            |---add_L2_loss
                    grads---|
             tran_op---|
-
+            
         '''
         
         with tf.device('/cpu:0'):
@@ -95,6 +95,8 @@ class AlphaGoZeroResNet(ResNet):
             label_batches = tf.split(self.labels,self.hps.num_gpu,axis=0)
             z_batches = tf.split(self.zs,self.hps.num_gpu,axis=0)
             tower_grads = [None]*self.hps.num_gpu
+            self.prediction = []
+            self.value = []
             
         with tf.variable_scope(tf.get_variable_scope()):
             """Build the core model within the graph."""
@@ -104,15 +106,16 @@ class AlphaGoZeroResNet(ResNet):
                         
                         image_batch, label_batch, z_batch = image_batches[i], label_batches[i], z_batches[i]
                         loss,move_acc,result_acc,temp = self._tower_loss(scope,image_batch,label_batch,z_batch,tower_idx=i)
+                        # reuse variable happens here
                         tf.get_variable_scope().reuse_variables()
                         grad = self.optimizer.compute_gradients(loss)
+                        tower_grads[i] = grad
                         if i == 0:
                             self.cost = loss
                             self.acc = move_acc
                             self.result_acc = result_acc
                             self.temp = temp
-                        tower_grads[i] = grad
-
+        
         grads = self._average_gradients(tower_grads)
         
         if self.mode == 'train':
@@ -165,6 +168,7 @@ class AlphaGoZeroResNet(ResNet):
             temp = tf.maximum(tf.train.exponential_decay(self.hps.temperature,self.global_step,1e4,0.8),1.)
             logits = tf.divide(self._fully_connected(logits, self.hps.num_classes,'policy_fc'),temp)
             prediction = tf.nn.softmax(logits)
+            self.prediction.append(prediction)
 
         with tf.variable_scope('value_head'):
             # A convolution of 1 filter of kernel size 1x1 with stride 1
@@ -181,6 +185,7 @@ class AlphaGoZeroResNet(ResNet):
             value = self._fully_connected(value, 1, 'value_fc2')
             # A tanh non-linearity outputting a scalar in the range [1, 1]
             value = tf.tanh(value)
+            self.value.append(value)
             
         with tf.variable_scope('costs'):
             self.use_sparse_sotfmax = tf.constant(1, tf.int32, name="condition")
