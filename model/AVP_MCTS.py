@@ -1,3 +1,4 @@
+# -*- coding: future_fstrings -*-
 from _asyncio import Future
 import copy
 import math
