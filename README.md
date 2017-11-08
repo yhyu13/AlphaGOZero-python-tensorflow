@@ -21,7 +21,7 @@ This is a trial implementation of DeepMind's Oct19th publication: [Mastering the
 
 [repo: resnet-tensorflow](https://github.com/ritchieng/resnet-tensorflow)
 
-[repo: leela-zero (c++ AlphaGo Zero replica)](https://github.com/gcp/leela-zero)
+[repo: leela-zero (c++ popular 9dan Go A.I. owned by Mozilla)](https://github.com/gcp/leela-zero)
 
 [repo: reversi-alpha-zero (if you like reversi(黑白棋))](https://github.com/mokemokechicken/reversi-alpha-zero)
 
