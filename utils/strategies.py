@@ -120,7 +120,7 @@ class RandomPolicyPlayerMixin:
         move_probabilities = self.policy_network.run(position)
         return select_weighted_random(position, move_probabilities)
 
-
+'''
 from numpy.random import dirichlet
 c_PUCT = 5
 
@@ -233,19 +233,19 @@ class MCTSPlayerMixin(object):
                 return -1*-1
             print(f"Investigating following position:\n{position} at height {self.tree_heigh}", file=sys.stderr)
             sleep(0.1)
-            move_probs,value = self.policy_network.run_many(np.vstack((bulk_extract_features([position],diheral=True),bulk_extract_features([position]))))
+            move_probs,value = self.policy_network.run_many(bulk_extract_features([position]))
             #self.expand(dirichlet([1]*362))
             self.expand(move_probs[0])
             self.backup_value_single(value[0,0])
             return value[0,0]*-1
         else:
-            '''
+            ''''''
             all_action_score = map(lambda node: node.action_score, self.children.values())
             move2QU = {move:action_score for move,action_score in zip(self.children.keys(),all_action_score)}
             select_move = max(move2QU, key=move2QU.get)
             value = self.children[select_move].start_tree_search()
             self.backup_value_single(value)
-            '''
+            ''''''
             all_action_score = map(lambda zipped: zipped[0].Q + zipped[0].U*(0.75+0.25*(zipped[1])/(zipped[0].prior+1e-8)),\
                                    zip(self.children.values(),dirichlet([0.03]*362)))
             move2action_score = {move:action_score for move,action_score in zip(self.children.keys(),all_action_score)}
@@ -263,10 +263,13 @@ class MCTSPlayerMixin(object):
         for _ in range(iters):
             value = self.start_tree_search()
             #print(f"value: {value}", file=sys.stderr)
-
+'''
+from model.AVP_MCTS import *
 def simulate_game_mcts(policy, position):
+    
     """Simulates a game starting from a position, using a policy network"""
-    mc_policy = MCTSPlayerMixin(policy,None,None,0)
+    network_api = NetworkAPI(policy)
+    mc_policy = MCTSPlayerMixin(network_api,None,None,0)
     while position.n <= POLICY_CUTOFF_DEPTH:
         move_prob = mc_policy.suggest_move_prob(position)
         on_board_move_prob = np.reshape(move_prob[:-1],(go.N,go.N))
