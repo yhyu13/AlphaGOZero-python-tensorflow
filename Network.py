@@ -5,6 +5,7 @@ import sys
 
 from model.alphagozero_resnet_model import AlphaGoZeroResNet
 from model.alphagozero_resnet_elu_model import AlphaGoZeroResNetELU
+from model.alphagozero_resnet_full_model import AlphaGoZeroResNetFULL
 import utils.features as features
 
 class Network:
@@ -42,6 +43,7 @@ class Network:
         # One bing the original AlphaGo Zero relu
         # Two being the elu deep residul net with AlphaGo Zero architecture
         models = {'elu': lambda: AlphaGoZeroResNetELU(hps, self.imgs, self.labels, self.results,'train'),
+                  'full': lambda: AlphaGoZeroResNetFULL(hps, self.imgs, self.labels, self.results,'train'),
                   'relu': lambda: AlphaGoZeroResNet(hps, self.imgs, self.labels, self.results,'train')}
         print('Building Model...')
         self.model = models[flags.model]()
