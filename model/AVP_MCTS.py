@@ -24,7 +24,7 @@ SEM = asyncio.Semaphore(8)
 LOOP = asyncio.get_event_loop()
 RUNNING_SIMULATION_NUM = 0
 QueueItem = namedtuple("QueueItem", "feature future")
-QUEUE = Queue(8)
+QUEUE = Queue(16)
 
 class NetworkAPI(object):
 
@@ -136,7 +136,7 @@ class MCTSPlayerMixin(object):
         # This incrementally calculates node.Q = average(Q of children),
         # given the newest Q value and the previous average of N-1 values.
         self.W, self.U = (
-            self.W +value,
+            self.W + value,
             c_PUCT * np.sqrt(self.parent.N) * self.prior / self.N,
         )
 
@@ -145,7 +145,7 @@ class MCTSPlayerMixin(object):
         prob /= np.sum(prob) # ensure 1.
         return prob
 
-    def suggest_move_prob(self, position, iters=100):
+    def suggest_move_prob(self, position, iters=1600):
         """Async tree search controller"""
         global LOOP
         
@@ -193,7 +193,7 @@ class MCTSPlayerMixin(object):
                 # See go.Position.play_move for notes on detecting legality
                 # In Go, illegal move means loss (or resign)
                 self.backup_value_single(-1)
-                
+                NOW_EXPANDING.remove(self)
                 return -1*-1
             
             """Show thinking history for fun"""

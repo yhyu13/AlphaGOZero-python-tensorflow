@@ -44,7 +44,7 @@ class Network:
         # Two being the elu deep residul net with AlphaGo Zero architecture
         models = {'elu': lambda: AlphaGoZeroResNetELU(hps, self.imgs, self.labels, self.results,'train'),
                   'full': lambda: AlphaGoZeroResNetFULL(hps, self.imgs, self.labels, self.results,'train'),
-                  'relu': lambda: AlphaGoZeroResNet(hps, self.imgs, self.labels, self.results,'train')}
+                  'original': lambda: AlphaGoZeroResNet(hps, self.imgs, self.labels, self.results,'train')}
         print('Building Model...')
         self.model = models[flags.model]()
         self.model.build_graph()

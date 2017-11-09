@@ -27,7 +27,7 @@ parser.add_argument('--n_resid_units', type=int, default=1)
 parser.add_argument('--n_gpu', type=int, default=1)
 parser.add_argument('--dataset', dest='processed_dir',default='./processed_data')
 parser.add_argument('--model_path',dest='load_model_path',default='./savedmodels')
-parser.add_argument('--model_type',dest='model',default='elu',help='choose activation method')
+parser.add_argument('--model_type',dest='model',default='full',help='choose residual block architecture')
 parser.add_argument('--optimizer',dest='opt',default='mom')
 parser.add_argument('--force_save',dest='force_save_model',action='store_true',default=False,\
                     help='if Ture, then save checkpoint for every evaluation period')
