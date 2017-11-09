@@ -121,7 +121,6 @@ class RandomPolicyPlayerMixin:
         move_probabilities = self.policy_network.run(position)
         return select_weighted_random(position, move_probabilities)
 
-
 from numpy.random import dirichlet
 c_PUCT = 5
 
@@ -234,7 +233,7 @@ class MCTSPlayerMixin(object):
                 return -1*-1
             print(f"Investigating following position:\n{position} at height {self.tree_heigh}")
             sleep(0.1)
-            move_probs,value = self.policy_network.run_many(np.vstack((bulk_extract_features([position],diheral=True),bulk_extract_features([position]))))
+            move_probs,value = self.policy_network.run_many(bulk_extract_features([position]))
             #self.expand(dirichlet([1]*362))
             self.expand(move_probs[0])
             self.backup_value_single(value[0,0])
@@ -252,7 +251,7 @@ class MCTSPlayerMixin(object):
             move2action_score = {move:action_score for move,action_score in zip(self.children.keys(),all_action_score)}
             
             select_move = max(move2action_score, key=move2action_score.get)
-            print(f'Children move {select_move} with action score {move2action_score[select_move]}')
+            #print(f'Children move {select_move} with action score {move2action_score[select_move]}')
             #value = self.children[(np.random.randint(19),np.random.randint(19))].start_tree_search()
             value = self.children[select_move].start_tree_search()
             # lift virtual loss
@@ -265,9 +264,13 @@ class MCTSPlayerMixin(object):
             value = self.start_tree_search()
             #print(f"value: {value}")
 
+from model.AVP_MCTS import *
 def simulate_game_mcts(policy, position):
+    
     """Simulates a game starting from a position, using a policy network"""
-    mc_policy = MCTSPlayerMixin(policy,None,None,0)
+    network_api = NetworkAPI(policy)
+    mc_policy = MCTSPlayerMixin(network_api,None,None,0)
+    #mc_policy = MCTSPlayerMixin(policy,None,None,0)
     while position.n <= POLICY_CUTOFF_DEPTH:
         move_prob = mc_policy.suggest_move_prob(position)
         on_board_move_prob = np.reshape(move_prob[:-1],(go.N,go.N))
@@ -279,7 +282,6 @@ def simulate_game_mcts(policy, position):
         # shift to child node
         mc_policy = mc_policy.children[move]
         # discard other children nodes
-        print(mc_policy.tree_height)
         mc_policy.parent.children = None
         
     simulate_game_random(position)

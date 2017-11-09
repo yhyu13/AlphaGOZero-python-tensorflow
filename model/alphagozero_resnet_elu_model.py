@@ -10,11 +10,12 @@ class AlphaGoZeroResNetELU(AlphaGoZeroResNet):
         """change relu to elu"""
         return tf.nn.elu(x)
 
-    # override _residual block to repliate AlphaGoZero architecture
+    # override _residual block with ELU model
+    # https://arxiv.org/pdf/1604.04112.pdf
     def _residual(self, x, in_filter, out_filter, stride,
                   activate_before_residual=False):
 
-        """suplit+conv+elu+conv+bach_norm+merge"""
+        """split+conv+elu+conv+bach_norm+merge"""
         orig_x = x
         
         with tf.variable_scope('sub1'):

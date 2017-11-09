@@ -6,6 +6,7 @@ import sys
 
 from model.alphagozero_resnet_model import AlphaGoZeroResNet
 from model.alphagozero_resnet_elu_model import AlphaGoZeroResNetELU
+from model.alphagozero_resnet_full_model import AlphaGoZeroResNetFULL
 import utils.features as features
 
 class Network:
@@ -13,13 +14,9 @@ class Network:
     def __init__(self,flags,hps):
 
         config = tf.ConfigProto()
-        config.gpu_options.allow_growth = True
+        #config.gpu_options.allow_growth = True
         config.allow_soft_placement = True
         self.sess = tf.Session(config=config)
-
-        # For generator
-        self.index_in_epoch = 0
-        self.epochs_completed = 0
 
         # Basic info
         self.batch_num = flags.n_batch
@@ -34,7 +31,7 @@ class Network:
         self.optimizer_name = hps.optimizer
 
         '''
-           img: 19x19x17
+           img: ?x19x19x17
            labels: ?x362
            results: ?x1
         '''
@@ -47,7 +44,8 @@ class Network:
         # One bing the original AlphaGo Zero relu
         # Two being the elu deep residul net with AlphaGo Zero architecture
         models = {'elu': lambda: AlphaGoZeroResNetELU(hps, self.imgs, self.labels, self.results,'train'),
-                  'relu': lambda: AlphaGoZeroResNet(hps, self.imgs, self.labels, self.results,'train')}
+                  'full': lambda: AlphaGoZeroResNetFULL(hps, self.imgs, self.labels, self.results,'train'),
+                  'original': lambda: AlphaGoZeroResNet(hps, self.imgs, self.labels, self.results,'train')}
         print('Building Model...')
         self.model = models[flags.model]()
         self.model.build_graph()
@@ -83,12 +81,16 @@ class Network:
     '''
     params:
          @ imgs: bulk_extracted_feature(positions)
-         usage: queue prediction, self-play
+         # usage: queue prediction, self-play
     '''
     def run_many(self,imgs):
         imgs[:][...,16] = (imgs[:][...,16]-0.5)*2
-        move_probabilities,value = self.sess.run([self.model.prediction,self.model.value],feed_dict={self.imgs:imgs})
-        return np.vstack(move_probabilities), np.vstack(value)
+        feed_dict = {self.imgs:imgs,self.model.training: False}
+        move_probabilities,value = self.sess.run([self.model.prediction,self.model.value],feed_dict=feed_dict)
+
+        # with multi-gpu, porbs and values are separated in each outputs
+        # so vstack will merge them together.
+        return np.vstack(move_probabilities), np.vstack(value) 
 
     '''
     params:
@@ -96,10 +98,10 @@ class Network:
          @ reinforcement direction
          @ use sparse softmax to compute cross entropy
          @ learning rate
+         # mini-batch training
     '''
     def train(self, training_data, direction=1.0, use_sparse=True):        
         print('Training model...')
-        self.model.mode = 'train'
         self.num_iter = training_data.data_size // self.batch_num
         
         # Set default learning rate for scheduling
@@ -119,6 +121,7 @@ class Network:
                              self.results: batch[2],
                              self.model.reinforce_dir: direction, # +1 or -1 only used for self-play data, trivial in SL
                              self.model.use_sparse_sotfmax: 1 if use_sparse else -1, # +1 in SL, -1 in RL
+                             self.model.training: True,
                              self.model.lrn_rate: self.lr} # scheduled learning rate
                 
                 try:
@@ -148,14 +151,14 @@ class Network:
     params:
        @ test_data: test.chunk.gz 10**5 positions
        @ proportion: how much proportion to evaluate
+       usage: evaluate
     '''
     def test(self,test_data, proportion=0.1):
         
         print('Running evaluation...')
-        self.model.mode = 'eval'
         num_minibatches = test_data.data_size // self.batch_num
 
-        test_loss, test_acc, test_result_acc ,n_batch = 0, 0, 0,0
+        test_loss, test_acc, test_result_acc , n_batch = 0, 0, 0,0
         for i in range(int(num_minibatches * proportion)):
             batch = test_data.get_batch(self.batch_num)
             batch = [np.asarray(item).astype(np.float32) for item in batch]
@@ -163,7 +166,10 @@ class Network:
             batch[0][...,16] = (batch[0][...,16]-0.5)*2
             batch[2] = (batch[2]-0.5)*2
             
-            feed_dict_eval = {self.imgs: batch[0], self.labels: batch[1],self.results:batch[2]}
+            feed_dict_eval = {self.imgs: batch[0],
+                              self.labels: batch[1],
+                              self.results:batch[2],
+                              self.model.training: False}
 
             loss, ac, result_acc = self.sess.run([self.model.cost, self.model.acc,self.model.result_acc], feed_dict=feed_dict_eval)
             test_loss += loss

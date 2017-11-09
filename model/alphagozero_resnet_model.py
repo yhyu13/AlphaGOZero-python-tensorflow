@@ -6,24 +6,66 @@ class AlphaGoZeroResNet(ResNet):
 
     def __init__(self, hps, images, labels, zs, mode):
         self.zs = zs
-        if hps is None:        
-            hps = HParams(batch_size=1,
-                           num_classes=362,
-                           min_lrn_rate=0.0001,
-                           lrn_rate=0.1,
-                           num_residual_units=20,
-                           use_bottleneck=False,
-                           weight_decay_rate=0.0001,
-                           relu_leakiness=0.1,
-                           optimizer='mom')
-        
+        self.training = tf.placeholder(tf.bool)
         super(AlphaGoZeroResNet,self).__init__(hps, images, labels, mode)
         
-    # override _batch_norm to use tf.layers.batch_normalization
+    # override _batch_norm 
     def _batch_norm(self, name, x):
-        """Build a batch norm layer for the model."""
-        return tf.layers.batch_normalization(x,training=self.mode=='train',name=name,fused=True)
+        """Batch normalization."""
+        with tf.variable_scope(name):
+            params_shape = [x.get_shape()[-1]]
 
+            beta = tf.get_variable(
+                'beta', params_shape, tf.float32,
+                initializer=tf.constant_initializer(0.0, tf.float32))
+            gamma = tf.get_variable(
+                'gamma', params_shape, tf.float32,
+                initializer=tf.constant_initializer(1.0, tf.float32))
+
+            mean, variance = tf.nn.moments(x, [0, 1, 2], name='moments')
+
+            moving_mean = tf.get_variable(
+                    'moving_mean', params_shape, tf.float32,
+                    initializer=tf.constant_initializer(0.0, tf.float32),
+                    trainable=False)
+            moving_variance = tf.get_variable(
+                    'moving_variance', params_shape, tf.float32,
+                    initializer=tf.constant_initializer(1.0, tf.float32),
+                    trainable=False)
+            
+            self._extra_train_ops.append(
+                    moving_averages.assign_moving_average(
+                        moving_mean, mean, 0.99))
+            self._extra_train_ops.append(
+                moving_averages.assign_moving_average(
+                    moving_variance, variance, 0.99))
+
+            tf.summary.histogram(moving_mean.op.name, moving_mean)
+            tf.summary.histogram(moving_variance.op.name, moving_variance)
+
+            def train():
+                # elipson used to be 1e-5. Maybe 0.001 solves NaN problem in deeper net.
+                return tf.nn.batch_normalization(x, mean, variance, beta, gamma, 0.001)
+
+            def test():
+                return tf.nn.batch_normalization(x, moving_mean, moving_variance, beta, gamma, 0.001)
+            
+            y = tf.cond(tf.equal(self.training, tf.constant(True)), train, test)
+            y.set_shape(x.get_shape())
+            return y
+
+    # override _conv to use He initialization with truncated normal to prevent dead neural
+    def _conv(self, name, x, filter_size, in_filters, out_filters, strides):
+        """Convolution."""
+        with tf.variable_scope(name):
+            n = in_filters + out_filters
+            kernel = tf.get_variable(
+                'DW', [filter_size, filter_size, in_filters, out_filters],
+                tf.float32, initializer=tf.truncated_normal_initializer(
+                    stddev=np.sqrt(2.0 / n)))
+            return tf.nn.conv2d(x, kernel, strides, padding='SAME')
+
+        
     # override _residual block to repliate AlphaGoZero architecture
     def _residual(self, x, in_filter, out_filter, stride):
         
@@ -97,6 +139,7 @@ class AlphaGoZeroResNet(ResNet):
             tower_grads = [None]*self.hps.num_gpu
             self.prediction = []
             self.value = []
+            self.cost,self.acc,self.result_acc,self.temp = 0,0,0,0
             
         with tf.variable_scope(tf.get_variable_scope()):
             """Build the core model within the graph."""
@@ -108,14 +151,18 @@ class AlphaGoZeroResNet(ResNet):
                         loss,move_acc,result_acc,temp = self._tower_loss(scope,image_batch,label_batch,z_batch,tower_idx=i)
                         # reuse variable happens here
                         tf.get_variable_scope().reuse_variables()
+                        loss *= self.reinforce_dir
                         grad = self.optimizer.compute_gradients(loss)
                         tower_grads[i] = grad
-                        if i == 0:
-                            self.cost = loss
-                            self.acc = move_acc
-                            self.result_acc = result_acc
-                            self.temp = temp
+                        self.cost += loss
+                        self.acc += move_acc
+                        self.result_acc += result_acc
+                        self.temp += temp
         
+        self.cost /= self.hps.num_gpu
+        self.acc /= self.hps.num_gpu
+        self.result_acc /= self.hps.num_gpu
+        self.temp /= self.hps.num_gpu
         grads = self._average_gradients(tower_grads)
         
         if self.mode == 'train':
@@ -123,7 +170,7 @@ class AlphaGoZeroResNet(ResNet):
             
         self.summaries = tf.summary.merge_all()
 
-    # overrride _build_model to be empty
+    # overrride _build_model to be an empty method
     def _build_model(self):
         pass
 
@@ -193,22 +240,25 @@ class AlphaGoZeroResNet(ResNet):
             def f2(): return tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=label_batch)
             xent = tf.cond(self.use_sparse_sotfmax > 0, f1 , f2 )
             squared_diff = tf.squared_difference(z_batch,value)
-            cost = tf.reduce_mean(xent, name='xent') + 0.01*tf.reduce_mean(squared_diff,name='squared_diff')
-            cost += self._decay()
+            ce = tf.reduce_mean(xent, name='cross_entropy')
+            mse = tf.reduce_mean(squared_diff,name='mean_square_error')
+            cost = ce + 0.01*mse + self._decay()
             tf.summary.scalar(f'cost_tower_{tower_idx}', cost)
+            tf.summary.scalar(f'ce_tower_{tower_idx}', ce)
+            tf.summary.scalar(f'mse_tower_{tower_idx}', mse)
 
         with tf.variable_scope('move_acc'):
             correct_prediction = tf.equal(
                 tf.argmax(logits, 1), tf.argmax(label_batch,1))
             acc = tf.reduce_mean(
-                tf.cast(correct_prediction, tf.float32), name=f'move_accu')
+                tf.cast(correct_prediction, tf.float32), name='move_accu')
             tf.summary.scalar(f'move_accuracy_tower_{tower_idx}', acc)
 
         with tf.variable_scope('result_acc'):
             correct_prediction_2 = tf.equal(
                 tf.sign(value), z_batch)
             result_acc = tf.reduce_mean(
-                tf.cast(correct_prediction_2, tf.float32), name=f'result_accu')
+                tf.cast(correct_prediction_2, tf.float32), name='result_accu')
             tf.summary.scalar(f'result_accuracy_tower_{tower_idx}', result_acc)
 
         return cost, acc, result_acc, temp
@@ -252,6 +302,17 @@ class AlphaGoZeroResNet(ResNet):
     # override build train op
     def _build_train_op(self, grads_vars):
         """Build training specific ops for the graph."""
+        # Add histograms for trainable variables.
+        # Add histograms for gradients.
+        for grad, var in grads_vars:
+            if grad is not None:
+                tf.summary.histogram(var.op.name, var)
+                tf.summary.histogram(var.op.name + '/gradients', grad)
+
+        # Track the moving averages of all trainable variables.
+        variable_averages = tf.train.ExponentialMovingAverage(0.999,self.global_step)
+        variables_averages_op = variable_averages.apply(tf.trainable_variables())
+        
         # defensive step 2 to clip norm
         clipped_grads,self.norm = tf.clip_by_global_norm([g for g,_ in grads_vars],self.hps.global_norm)
 
@@ -259,17 +320,13 @@ class AlphaGoZeroResNet(ResNet):
         # See: https://stackoverflow.com/questions/40701712/how-to-check-nan-in-gradients-in-tensorflow-when-updating
         grad_check = [tf.check_numerics(g,message='Nan Found!') for g in clipped_grads]
         with tf.control_dependencies(grad_check):
-            """update_ops means to be batch_norm update"""
-            update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-            with tf.control_dependencies(update_ops):
-                apply_op = self.optimizer.apply_gradients(
-                    zip(clipped_grads, [v for _,v in grads_vars]),
-                    global_step=self.global_step, name='train_step')
-                # since we include moving statistics in contrib.layer.batch_norm
-                # there is no need to add _extra_train_ops
-                #train_ops = [apply_op] + self._extra_train_ops
-                #self.train_op = tf.group(*train_ops)
-                self.train_op = apply_op
+            apply_op = self.optimizer.apply_gradients(
+                zip(clipped_grads, [v for _,v in grads_vars]),
+                global_step=self.global_step, name='train_step')
+
+            train_ops = [apply_op] + self._extra_train_ops
+            # Group all updates to into a single train op.
+            self.train_op = tf.group(*train_ops,variables_averages_op)
 
         
             

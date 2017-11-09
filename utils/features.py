@@ -89,27 +89,23 @@ def would_capture_feature(position):
 # AlphaGo Zero Features
 @planes(16)
 def player_opponent_recent_eight_move(position):
-    onehot_features = np.zeros([go.N, go.N, 16], dtype=np.uint8)
+    state_features = np.zeros([go.N, go.N, 16], dtype=np.uint8)
     player_colour = position.to_play
-    # odd number of recent play indicate it is opponet's round
-    if len(position.recent) % 2 == 1:
-        player_colour *= -1
-    # if recent play history is smaller than 16, then pad
-    padding = max((16-len(position.recent),0))
-    for i, board in enumerate(reversed(position.recent_board[-16:])):
+    for i, board in enumerate(reversed(np.repeat(position.recent_board[-8:],repeats=2,axis=0))):
         if board is not None:
             board *= player_colour
-            onehot_features[board>0, i+padding] = 1
-            #print(np.sum(onehot_features[:,:,i+padding]))
+            state_features[board>0, i] = 1
+            #print(np.sum(onehot_features[:,:,i]))
+            #print(state_features[:,:,i])
         player_colour *= -1
-    return onehot_features
+    return state_features
 
 # AlphaGo Zero Features
 @planes(1)
 def player_colour(position):
     # In principle, white=-1 and black=1, here, unint8 can't express -1.
     # So the conversion is left to train.py
-    return np.ones([go.N, go.N, 1], dtype=np.uint8)*(1 if position.to_play==1 else 0)
+    return np.ones([go.N, go.N, 1], dtype=np.uint8)*(1 if position.to_play==go.BLACK else 0)
 
 # AlphaGo Zero Features
 DEFAULT_FEATURES = [
@@ -117,19 +113,18 @@ DEFAULT_FEATURES = [
     player_colour,
 ]
 
-def extract_features(position, features=DEFAULT_FEATURES,diheral=False):
+def extract_features(position, features=DEFAULT_FEATURES,dihedral=None):
     features = np.concatenate([feature(position) for feature in features], axis=2)
-    if not diheral:
-        return features
+    if dihedral is not None:
+        return np.rot90(np.flip(features,axis=dihedral[0]),dihedral[1])
     else:
-        flip_axis,rotate_num = np.random.randint(2),np.random.randint(4)
-        return np.rot90(np.flip(features,axis=flip_axis),rotate_num)
+        return features
 
-def bulk_extract_features(positions, features=DEFAULT_FEATURES,diheral=False):
+def bulk_extract_features(positions, features=DEFAULT_FEATURES):
     num_positions = len(positions)
     num_planes = sum(f.planes for f in features)
     output = np.zeros([num_positions, go.N, go.N, num_planes], dtype=np.uint8)
     for i, pos in enumerate(positions):
-        output[i] = extract_features(pos, features=features,diheral=diheral)
+        output[i] = extract_features(pos, features=features)
     return output
         
