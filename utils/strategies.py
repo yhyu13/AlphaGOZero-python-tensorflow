@@ -120,7 +120,6 @@ class RandomPolicyPlayerMixin:
         move_probabilities = self.policy_network.run(position)
         return select_weighted_random(position, move_probabilities)
 
-'''
 from numpy.random import dirichlet
 c_PUCT = 5
 
@@ -203,7 +202,7 @@ class MCTSPlayerMixin(object):
         prob /= np.sum(prob) # ensure 1.
         return prob
 
-    def suggest_move_prob(self, position, iters=100):
+    def suggest_move_prob(self, position, iters=1600):
         start = time.time()
         if self.parent is None: # is the ture root node right after None initialization
             move_probs,_ = self.policy_network.run_many(bulk_extract_features([position]))
@@ -231,7 +230,7 @@ class MCTSPlayerMixin(object):
                 # In Go, illegal move means loss (or resign)
                 self.backup_value_single(-1)
                 return -1*-1
-            print(f"Investigating following position:\n{position} at height {self.tree_heigh}", file=sys.stderr)
+            #print(f"Investigating following position:\n{position} at height {self.tree_heigh}", file=sys.stderr)
             sleep(0.1)
             move_probs,value = self.policy_network.run_many(bulk_extract_features([position]))
             #self.expand(dirichlet([1]*362))
@@ -239,19 +238,19 @@ class MCTSPlayerMixin(object):
             self.backup_value_single(value[0,0])
             return value[0,0]*-1
         else:
-            ''''''
+            '''
             all_action_score = map(lambda node: node.action_score, self.children.values())
             move2QU = {move:action_score for move,action_score in zip(self.children.keys(),all_action_score)}
             select_move = max(move2QU, key=move2QU.get)
             value = self.children[select_move].start_tree_search()
             self.backup_value_single(value)
-            ''''''
+            '''
             all_action_score = map(lambda zipped: zipped[0].Q + zipped[0].U*(0.75+0.25*(zipped[1])/(zipped[0].prior+1e-8)),\
                                    zip(self.children.values(),dirichlet([0.03]*362)))
             move2action_score = {move:action_score for move,action_score in zip(self.children.keys(),all_action_score)}
             
             select_move = max(move2action_score, key=move2action_score.get)
-            print(f'Children move {select_move} with action score {move2action_score[select_move]}')
+            #print(f'Children move {select_move} with action score {move2action_score[select_move]}')
             #value = self.children[(np.random.randint(19),np.random.randint(19))].start_tree_search()
             value = self.children[select_move].start_tree_search()
             # lift virtual loss
@@ -263,13 +262,14 @@ class MCTSPlayerMixin(object):
         for _ in range(iters):
             value = self.start_tree_search()
             #print(f"value: {value}", file=sys.stderr)
-'''
+
 from model.AVP_MCTS import *
 def simulate_game_mcts(policy, position):
     
     """Simulates a game starting from a position, using a policy network"""
     network_api = NetworkAPI(policy)
     mc_policy = MCTSPlayerMixin(network_api,None,None,0)
+    #mc_policy = MCTSPlayerMixin(policy,None,None,0)
     while position.n <= POLICY_CUTOFF_DEPTH:
         move_prob = mc_policy.suggest_move_prob(position)
         on_board_move_prob = np.reshape(move_prob[:-1],(go.N,go.N))
@@ -281,7 +281,6 @@ def simulate_game_mcts(policy, position):
         # shift to child node
         mc_policy = mc_policy.children[move]
         # discard other children nodes
-        print(mc_policy.tree_height)
         mc_policy.parent.children = None
         
     simulate_game_random(position)

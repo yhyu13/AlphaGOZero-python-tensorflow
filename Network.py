@@ -82,8 +82,12 @@ class Network:
     '''
     def run_many(self,imgs):
         imgs[:][...,16] = (imgs[:][...,16]-0.5)*2
-        move_probabilities,value = self.sess.run([self.model.prediction,self.model.value],feed_dict={self.imgs:imgs})
-        return np.vstack(move_probabilities), np.vstack(value)
+        feed_dict = {self.imgs:imgs,self.model.training: False}
+        move_probabilities,value = self.sess.run([self.model.prediction,self.model.value],feed_dict=feed_dict)
+
+        # with multi-gpu, porbs and values are separated in each outputs
+        # so vstack will merge them together.
+        return np.vstack(move_probabilities), np.vstack(value) 
 
     '''
     params:

@@ -21,39 +21,33 @@ class AlphaGoZeroResNet(ResNet):
                 'gamma', params_shape, tf.float32,
                 initializer=tf.constant_initializer(1.0, tf.float32))
 
-            def train():
-                mean, variance = tf.nn.moments(x, [0, 1, 2], name='moments')
+            mean, variance = tf.nn.moments(x, [0, 1, 2], name='moments')
 
-                moving_mean = tf.get_variable(
+            moving_mean = tf.get_variable(
                     'moving_mean', params_shape, tf.float32,
                     initializer=tf.constant_initializer(0.0, tf.float32),
                     trainable=False)
-                moving_variance = tf.get_variable(
+            moving_variance = tf.get_variable(
                     'moving_variance', params_shape, tf.float32,
                     initializer=tf.constant_initializer(1.0, tf.float32),
                     trainable=False)
-
-                self._extra_train_ops.append(
+            
+            self._extra_train_ops.append(
                     moving_averages.assign_moving_average(
                         moving_mean, mean, 0.99))
-                self._extra_train_ops.append(
-                    moving_averages.assign_moving_average(
-                        moving_variance, variance, 0.99))
+            self._extra_train_ops.append(
+                moving_averages.assign_moving_average(
+                    moving_variance, variance, 0.99))
+
+            tf.summary.histogram(moving_mean.op.name, moving_mean)
+            tf.summary.histogram(moving_variance.op.name, moving_variance)
+
+            def train():
                 # elipson used to be 1e-5. Maybe 0.001 solves NaN problem in deeper net.
                 return tf.nn.batch_normalization(x, mean, variance, beta, gamma, 0.001)
 
             def test():
-                mean_test = tf.get_variable(
-                    'moving_mean', params_shape, tf.float32,
-                    initializer=tf.constant_initializer(0.0, tf.float32),
-                    trainable=False)
-                variance_test = tf.get_variable(
-                    'moving_variance', params_shape, tf.float32,
-                    initializer=tf.constant_initializer(1.0, tf.float32),
-                    trainable=False)
-                tf.summary.histogram(mean_test.op.name, mean_test)
-                tf.summary.histogram(variance_test.op.name, variance_test)
-                return tf.nn.batch_normalization(x, mean_test, variance_test, beta, gamma, 0.001)
+                return tf.nn.batch_normalization(x, moving_mean, moving_variance, beta, gamma, 0.001)
             
             y = tf.cond(tf.equal(self.training, tf.constant(True)), train, test)
             y.set_shape(x.get_shape())
@@ -144,6 +138,7 @@ class AlphaGoZeroResNet(ResNet):
             tower_grads = [None]*self.hps.num_gpu
             self.prediction = []
             self.value = []
+            self.cost,self.acc,self.result_acc,self.temp = 0,0,0,0
             
         with tf.variable_scope(tf.get_variable_scope()):
             """Build the core model within the graph."""
@@ -246,7 +241,7 @@ class AlphaGoZeroResNet(ResNet):
             squared_diff = tf.squared_difference(z_batch,value)
             ce = tf.reduce_mean(xent, name='cross_entropy')
             mse = tf.reduce_mean(squared_diff,name='mean_square_error')
-            cost = cd + 0.01*mse + self._decay()
+            cost = ce + 0.01*mse + self._decay()
             tf.summary.scalar(f'cost_tower_{tower_idx}', cost)
             tf.summary.scalar(f'ce_tower_{tower_idx}', ce)
             tf.summary.scalar(f'mse_tower_{tower_idx}', mse)
