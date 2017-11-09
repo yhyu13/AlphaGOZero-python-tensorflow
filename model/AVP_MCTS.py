@@ -1,6 +1,8 @@
 from _asyncio import Future
 import asyncio
 from asyncio.queues import Queue
+import uvloop
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 import copy
 import sys
@@ -143,7 +145,7 @@ class MCTSPlayerMixin(object):
         prob /= np.sum(prob) # ensure 1.
         return prob
 
-    def suggest_move_prob(self, position, iters=1600):
+    def suggest_move_prob(self, position, iters=100):
         """Async tree search controller"""
         global LOOP
         
@@ -256,7 +258,7 @@ class MCTSPlayerMixin(object):
             value = await self.start_tree_search()
             
             #print(f"value: {value}", file=sys.stderr)
-            #print(f'Current running threads : {RUNNING_SIMULATION_NUM}')
+            print(f'Current running threads : {RUNNING_SIMULATION_NUM}')
             
             RUNNING_SIMULATION_NUM -= 1
             

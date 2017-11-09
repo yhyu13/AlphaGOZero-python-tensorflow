@@ -202,7 +202,7 @@ class MCTSPlayerMixin(object):
         prob /= np.sum(prob) # ensure 1.
         return prob
 
-    def suggest_move_prob(self, position, iters=1600):
+    def suggest_move_prob(self, position, iters=100):
         start = time.time()
         if self.parent is None: # is the ture root node right after None initialization
             move_probs,_ = self.policy_network.run_many(bulk_extract_features([position]))
@@ -263,13 +263,13 @@ class MCTSPlayerMixin(object):
             value = self.start_tree_search()
             #print(f"value: {value}", file=sys.stderr)
 
-from model.AVP_MCTS import *
+#from model.AVP_MCTS import *
 def simulate_game_mcts(policy, position):
     
     """Simulates a game starting from a position, using a policy network"""
-    network_api = NetworkAPI(policy)
-    mc_policy = MCTSPlayerMixin(network_api,None,None,0)
-    #mc_policy = MCTSPlayerMixin(policy,None,None,0)
+    #network_api = NetworkAPI(policy)
+    #mc_policy = MCTSPlayerMixin(network_api,None,None,0)
+    mc_policy = MCTSPlayerMixin(policy,None,None,0)
     while position.n <= POLICY_CUTOFF_DEPTH:
         move_prob = mc_policy.suggest_move_prob(position)
         on_board_move_prob = np.reshape(move_prob[:-1],(go.N,go.N))
