@@ -263,7 +263,7 @@ class MCTSPlayerMixin(object):
             value = self.start_tree_search()
             #print(f"value: {value}", file=sys.stderr)
 
-from model.AVP_MCTS import *
+from model.APV_MCTS import *
 def simulate_game_mcts(policy, position):
     
     """Simulates a game starting from a position, using a policy network"""
@@ -275,6 +275,7 @@ def simulate_game_mcts(policy, position):
         on_board_move_prob = np.reshape(move_prob[:-1],(go.N,go.N))
         if position.n < 30:
             move = select_weighted_random(position, on_board_move_prob)
+            return
         else:
             move = select_most_likely(position, on_board_move_prob)
         position.play_move(move, mutate=True,move_prob=move_prob)
