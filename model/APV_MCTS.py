@@ -5,12 +5,19 @@ import uvloop
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 from profilehooks import profile
+import logging
+
 import copy
 import sys
 import time
 import numpy as np
 from numpy.random import dirichlet
 from collections import namedtuple
+import logging
+import daiquiri
+
+daiquiri.setup(level=logging.DEBUG)
+logger = daiquiri.getLogger(__name__)
 
 import utils.go as go
 from utils.features import extract_features,bulk_extract_features
@@ -48,7 +55,7 @@ class NetworkAPI(object):
                 await asyncio.sleep(1e-3)
                 continue
             item_list = [q.get_nowait() for _ in range(q.qsize())]  # type: list[QueueItem]
-            # logger.debug(f"predicting {len(item_list)} items")
+            #logger.debug(f"predicting {len(item_list)} items")
             bulk_features = np.asarray([item.feature for item in item_list])
             policy_ary, value_ary = self.run_many(bulk_features)
             for p, v, item in zip(policy_ary, value_ary, item_list):
@@ -71,7 +78,7 @@ class MCTSPlayerMixin(object):
 
     __slot__ = ["api","parent","move","prior","position","children","U",
                 "N","W","v_loss"]
-    
+
     def __init__(self, network_api, parent, move, prior):
         self.api = network_api
         self.parent = parent # pointer to another MCTSNode
@@ -80,7 +87,7 @@ class MCTSPlayerMixin(object):
         self.position = None # lazily computed upon expansion
         self.children = {} # map of moves to resulting MCTSNode
         self.U,self.N,self.W = 0,0,0
-        self.v_loss = 1000
+        self.v_loss = 3
 
     def __repr__(self):
         return "<MCTSNode move=%s prior=%s score=%s is_expanded=%s>" % (self.move, self.prior, self.action_score, self.is_expanded())
@@ -107,10 +114,7 @@ class MCTSPlayerMixin(object):
     @profile
     def compute_position(self):
         """Evolve the game board, and return current position"""
-        try:
-            self.position = self.parent.position.play_move(self.move)
-        except:
-            self.position = None
+        self.position = self.parent.position.play_move(self.move)
 
     @profile
     def expand(self, move_probabilities):
@@ -119,16 +123,16 @@ class MCTSPlayerMixin(object):
             for move, prob in np.ndenumerate(np.reshape(move_probabilities[:-1],(go.N,go.N)))}
         # Pass should always be an option! Say, for example, seki.
         self.children[None] = MCTSPlayerMixin(self.api,self,None, move_probabilities[-1])
-        
+
     def backup_value_single(self,value):
         """Backup value of a single tree node"""
         self.N += 1
         if self.parent is None:
-            
+
             # No point in updating Q / U values for root, since they are
             # used to decide between children nodes.
             return
-        
+
         # This incrementally calculates node.Q = average(Q of children),
         # given the newest Q value and the previous average of N-1 values.
         self.W, self.U = (
@@ -144,34 +148,34 @@ class MCTSPlayerMixin(object):
     def suggest_move_prob(self, position, iters=1600):
         """Async tree search controller"""
         global LOOP
-        
+
         start = time.time()
 
-        if self.parent is None: 
+        if self.parent is None:
             move_probs,_ = self.api.run_many(bulk_extract_features([position]))
             self.position = position
             self.expand(move_probs[0])
-            
+
         coroutine_list = []
         for _ in range(iters):
             coroutine_list.append(self.tree_search())
         coroutine_list.append(self.api.prediction_worker())
         LOOP.run_until_complete(asyncio.gather(*coroutine_list))
 
-        print(f"Searched for {(time.time() - start):.5f} seconds", file=sys.stderr)
+        logger.debug(f"Searched for {(time.time() - start):.5f} seconds")
         return self.move_prob()
 
     async def start_tree_search(self):
         global NOW_EXPANDING
-        
+
         #TODO: add proper game over condition
 
         # add virtual loss
-        self.virtual_loss_do() 
-        
+        self.virtual_loss_do()
+
         while self in NOW_EXPANDING:
             await asyncio.sleep(1e-4)
-        
+
         if not self.is_expanded(): #  is leaf node
 
             # add leaf node to expanding list
@@ -181,8 +185,8 @@ class MCTSPlayerMixin(object):
             self.compute_position()
 
             # subtract virtual loss imposed at the beginnning
-            self.virtual_loss_undo() 
-            
+            self.virtual_loss_undo()
+
             if self.position is None:
                 #print("illegal move!", file=sys.stderr)
                 # See go.Position.play_move for notes on detecting legality
@@ -190,11 +194,11 @@ class MCTSPlayerMixin(object):
                 self.backup_value_single(-1)
                 NOW_EXPANDING.remove(self)
                 return -1*-1
-            
-            """Show thinking history for fun"""
-            #print(f"Investigating following position:\n{self.position}", file=sys.stderr)
 
-            # perform dihedral manipuation            
+            """Show thinking history for fun"""
+            #logger.debug(f"Investigating following position:\n{self.position}")
+
+            # perform dihedral manipuation
             flip_axis,num_rot = np.random.randint(2),np.random.randint(4)
             dihedral_features = extract_features(self.position,dihedral=[flip_axis,num_rot])
 
@@ -202,9 +206,10 @@ class MCTSPlayerMixin(object):
             future = await self.api.push_queue(dihedral_features)  # type: Future
             await future
             move_probs, value = future.result()
-            
+
             # perform reversed dihedral maniputation to move_prob
-            move_probs = np.append(np.reshape(np.flip(np.rot90(np.reshape(move_probs[:-1],(go.N,go.N)),4-num_rot),axis=flip_axis),(go.N**2,)),move_probs[-1])
+            move_probs = np.append(np.reshape(np.flip(np.rot90(np.reshape(\
+            move_probs[:-1],(go.N,go.N)),4-num_rot),axis=flip_axis),(go.N**2,)),move_probs[-1])
 
             # expand by move probabilities
             self.expand(move_probs)
@@ -217,13 +222,16 @@ class MCTSPlayerMixin(object):
 
             # must invert, because alternative layer has opposite objective
             return value[0]*-1
-        
+
         else: # not a leaf node
 
             # perform dirichlet perturbed action score
-            all_action_score = map(lambda zipped: zipped[0].Q + zipped[0].U*(0.75+0.25*(zipped[1])/(zipped[0].prior+1e-8)),\
+            all_action_score = map(lambda zipped: zipped[0].Q + \
+            zipped[0].U*(0.75+0.25*(zipped[1])/(zipped[0].prior+1e-8)),\
                                    zip(self.children.values(),dirichlet([0.03]*362)))
-            move2action_score = {move:action_score for move,action_score in zip(self.children.keys(),all_action_score)}
+
+            move2action_score = {move:action_score for move,action_score in \
+            zip(self.children.keys(),all_action_score)}
 
             # select the move with maximum action score
             select_move = max(move2action_score, key=move2action_score.get)
@@ -239,23 +247,22 @@ class MCTSPlayerMixin(object):
 
             # must invert
             return value*-1
-    
+
     async def tree_search(self):
         """Independent tree search, stands for one simulation"""
         global RUNNING_SIMULATION_NUM
         global SEM
-        
+
         RUNNING_SIMULATION_NUM += 1
 
         # reduce parallel search number
         with await SEM:
-            
-            value = await self.start_tree_search()
-            
-            #print(f"value: {value}", file=sys.stderr)
-            #print(f'Current running threads : {RUNNING_SIMULATION_NUM}')
-            
-            RUNNING_SIMULATION_NUM -= 1
-            
-            return value
 
+            value = await self.start_tree_search()
+
+            #logger.debug(f"value: {value}")
+            #logger.debug(f'Current running threads : {RUNNING_SIMULATION_NUM}')
+
+            RUNNING_SIMULATION_NUM -= 1
+
+            return value
