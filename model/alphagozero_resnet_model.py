@@ -8,8 +8,8 @@ class AlphaGoZeroResNet(ResNet):
         self.zs = zs
         self.training = tf.placeholder(tf.bool)
         super(AlphaGoZeroResNet,self).__init__(hps, images, labels, mode)
-        
-    # override _batch_norm 
+
+    # override _batch_norm
     def _batch_norm(self, name, x):
         """Batch normalization."""
         with tf.variable_scope(name):
@@ -32,7 +32,7 @@ class AlphaGoZeroResNet(ResNet):
                     'moving_variance', params_shape, tf.float32,
                     initializer=tf.constant_initializer(1.0, tf.float32),
                     trainable=False)
-            
+
             self._extra_train_ops.append(
                     moving_averages.assign_moving_average(
                         moving_mean, mean, 0.99))
@@ -49,7 +49,7 @@ class AlphaGoZeroResNet(ResNet):
 
             def test():
                 return tf.nn.batch_normalization(x, moving_mean, moving_variance, beta, gamma, 0.001)
-            
+
             y = tf.cond(tf.equal(self.training, tf.constant(True)), train, test)
             y.set_shape(x.get_shape())
             return y
@@ -65,13 +65,13 @@ class AlphaGoZeroResNet(ResNet):
                     stddev=np.sqrt(2.0 / n)))
             return tf.nn.conv2d(x, kernel, strides, padding='SAME')
 
-        
+
     # override _residual block to repliate AlphaGoZero architecture
     def _residual(self, x, in_filter, out_filter, stride):
-        
+
         """Build a residual block for the model."""
         orig_x = x
-        
+
         with tf.variable_scope('sub1'):
             # A convolution of 256 filters of kernel size 3x3 with stride 1
             x = self._conv('conv1', x, 3, in_filter, out_filter, stride)
@@ -103,7 +103,7 @@ class AlphaGoZeroResNet(ResNet):
 
     # override build graph
     def build_graph(self):
-        
+
         """Build a whole graph for the model."""
 
         ''' https://github.com/tensorflow/models/blob/master/tutorials/image/cifar10/cifar10_multi_gpu_train.py
@@ -114,18 +114,18 @@ class AlphaGoZeroResNet(ResNet):
                            |---add_L2_loss
                    grads---|
             tran_op---|
-            
+
         '''
-        
+
         with tf.device('/cpu:0'):
-            
+
             self.global_step = tf.Variable(0, trainable=False, name='global_step')
             self.increase_global_step = self.global_step.assign_add(1)
 
             self.lrn_rate = tf.Variable(self.hps.lrn_rate, dtype=tf.float32, trainable=False)
-            tf.summary.scalar('learning rate', self.lrn_rate)
+            tf.summary.scalar('learning_rate', self.lrn_rate)
             self.reinforce_dir = tf.Variable(1., dtype=tf.float32, trainable=False)
-            
+
             if self.hps.optimizer == 'sgd':
                 self.optimizer = tf.train.GradientDescentOptimizer(self.lrn_rate)
             elif self.hps.optimizer == 'mom':
@@ -140,13 +140,13 @@ class AlphaGoZeroResNet(ResNet):
             self.prediction = []
             self.value = []
             self.cost,self.acc,self.result_acc,self.temp = 0,0,0,0
-            
+
         with tf.variable_scope(tf.get_variable_scope()):
             """Build the core model within the graph."""
             for i in range(self.hps.num_gpu):
                 with tf.device(f'/gpu:{i}'):
                     with tf.name_scope(f'TOWER_{i}') as scope:
-                        
+
                         image_batch, label_batch, z_batch = image_batches[i], label_batches[i], z_batches[i]
                         loss,move_acc,result_acc,temp = self._tower_loss(scope,image_batch,label_batch,z_batch,tower_idx=i)
                         # reuse variable happens here
@@ -158,16 +158,16 @@ class AlphaGoZeroResNet(ResNet):
                         self.acc += move_acc
                         self.result_acc += result_acc
                         self.temp += temp
-        
+
         self.cost /= self.hps.num_gpu
         self.acc /= self.hps.num_gpu
         self.result_acc /= self.hps.num_gpu
         self.temp /= self.hps.num_gpu
         grads = self._average_gradients(tower_grads)
-        
+
         if self.mode == 'train':
             self._build_train_op(grads)
-            
+
         self.summaries = tf.summary.merge_all()
 
     # overrride _build_model to be an empty method
@@ -175,7 +175,7 @@ class AlphaGoZeroResNet(ResNet):
         pass
 
     def _tower_loss(self,scope,image_batch,label_batch,z_batch,tower_idx):
-        
+
         """Build the residual tower within the model."""
         with tf.variable_scope('init'):
                 x = image_batch
@@ -185,21 +185,21 @@ class AlphaGoZeroResNet(ResNet):
                 x = self._batch_norm('initial_bn', x)
                 # A rectifier non-linearity
                 x = self._relu(x, self.hps.relu_leakiness)
-                
+
         strides = [1, 1, 1]
         res_func = self._residual
         filters = [256, 256]
-        
+
         with tf.variable_scope('res_block_0'):
             # _residual block to repliate AlphaGoZero architecture
             x = res_func(x, filters[0], filters[1],
                          self._stride_arr(strides[0]))
-            
+
         for i in range(1, self.hps.num_residual_units):
             with tf.variable_scope('res_block_%d' % i):
                 # _residual block to repliate AlphaGoZero architecture
                 x = res_func(x, filters[1], filters[1], self._stride_arr(1))
-                
+
         with tf.variable_scope('policy_head'):
             # A convolution of 1 filter of kernel size 1x1 with stride 1
             logits = self._conv('policy_conv', x, 1, 256, 2, self._stride_arr(1))
@@ -233,7 +233,7 @@ class AlphaGoZeroResNet(ResNet):
             # A tanh non-linearity outputting a scalar in the range [1, 1]
             value = tf.tanh(value)
             self.value.append(value)
-            
+
         with tf.variable_scope('costs'):
             self.use_sparse_sotfmax = tf.constant(1, tf.int32, name="condition")
             def f1(): return tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits,labels=tf.argmax(label_batch,axis=1))
@@ -296,7 +296,7 @@ class AlphaGoZeroResNet(ResNet):
             v = grad_and_vars[0][1]
             grad_and_var = (grad, v)
             average_grads.append(grad_and_var)
-            
+
         return average_grads
 
     # override build train op
@@ -312,7 +312,7 @@ class AlphaGoZeroResNet(ResNet):
         # Track the moving averages of all trainable variables.
         variable_averages = tf.train.ExponentialMovingAverage(0.999,self.global_step)
         variables_averages_op = variable_averages.apply(tf.trainable_variables())
-        
+
         # defensive step 2 to clip norm
         clipped_grads,self.norm = tf.clip_by_global_norm([g for g,_ in grads_vars],self.hps.global_norm)
 
@@ -327,7 +327,3 @@ class AlphaGoZeroResNet(ResNet):
             train_ops = [apply_op] + self._extra_train_ops
             # Group all updates to into a single train op.
             self.train_op = tf.group(*train_ops,variables_averages_op)
-
-        
-            
-        
