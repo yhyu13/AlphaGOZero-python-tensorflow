@@ -89,23 +89,23 @@ def train(flags=FLAGS,hps=HPS):
 
     from utils.load_data_sets import DataSet
     from Network import Network
-    
+
     TRAINING_CHUNK_RE = re.compile(r"train\d+\.chunk.gz")
 
     run = Network(flags,hps)
 
     test_dataset = DataSet.read(os.path.join(flags.processed_dir, "test.chunk.gz"))
-    
-    train_chunk_files = [os.path.join(flags.processed_dir, fname) 
+
+    train_chunk_files = [os.path.join(flags.processed_dir, fname)
         for fname in os.listdir(flags.processed_dir)
         if TRAINING_CHUNK_RE.match(fname)]
-    
+
     random.shuffle(train_chunk_files)
 
     global_step = 0
     with open("result.txt","a") as f:
         for g_epoch in range(flags.global_epoch):
-                        
+
             for file in train_chunk_files:
                 global_step += 1
                 # prepare training set
@@ -113,12 +113,12 @@ def train(flags=FLAGS,hps=HPS):
                 train_dataset = DataSet.read(file)
                 train_dataset.shuffle()
                 with timer("training"):
-                    # train 
+                    # train
                     run.train(train_dataset)
                 if global_step % 1 == 0:
                     # eval
                     with timer("test set evaluation"):
-                        run.test(test_dataset,proportion=1)
+                        run.test(test_dataset,proportion=0.1)
                 print >>f, f'Total files {global_step} finshed.'
             print >>f, f'Global epoch {g_epoch} finshed.'
         print >>f , f'Now, I am the Master.'

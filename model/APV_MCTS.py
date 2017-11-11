@@ -29,7 +29,7 @@ from utils.features import extract_features,bulk_extract_features
 c_PUCT = 5
 
 NOW_EXPANDING = set()
-SEM = asyncio.Semaphore(16)
+SEM = asyncio.Semaphore(8)
 LOOP = asyncio.get_event_loop()
 RUNNING_SIMULATION_NUM = 0
 QueueItem = namedtuple("QueueItem", "feature future")
@@ -91,7 +91,7 @@ class MCTSPlayerMixin(object):
         self.v_loss = 3
 
     def __repr__(self):
-        return "<MCTSNode move=%s prior=%s score=%s is_expanded=%s>" % (self.move, self.prior, self.action_score, self.is_expanded())
+        return f"<MCTSNode move=self.move prior=self.prior score=self.action_score is_expanded=self.is_expanded()>"
 
     @property
     def Q(self):
@@ -120,10 +120,12 @@ class MCTSPlayerMixin(object):
     @profile
     def expand(self, move_probabilities):
         """Expand leaf node"""
-        self.children = {move: MCTSPlayerMixin(self.api,self,move,prob)
+        api,parent = self.api,self
+        children_dict = {move: MCTSPlayerMixin(api,parent,move,prob)
             for move, prob in np.ndenumerate(np.reshape(move_probabilities[:-1],(go.N,go.N)))}
         # Pass should always be an option! Say, for example, seki.
-        self.children[None] = MCTSPlayerMixin(self.api,self,None, move_probabilities[-1])
+        children_dict[None] = MCTSPlayerMixin(api,parent,None,move_probabilities[-1])
+        self.children = children_dict
 
     def backup_value_single(self,value):
         """Backup value of a single tree node"""
@@ -227,16 +229,15 @@ class MCTSPlayerMixin(object):
         else: # not a leaf node
 
             # perform dirichlet perturbed action score
-            all_action_score = map(lambda zipped: zipped[0].Q + \
-            zipped[0].U*(0.75+0.25*(zipped[1])/(zipped[0].prior+1e-8)),\
-                                   zip(self.children.values(),dirichlet([0.03]*362)))
+            all_action_score = [child.Q + \
+            child.U*(0.75+0.25*(noise)/(child.prior+1e-8)) for child,noise in\
+            zip(self.children.values(),dirichlet([0.03]*362))]
 
             move2action_score = {move:action_score for move,action_score in \
             zip(self.children.keys(),all_action_score)}
 
             # select the move with maximum action score
             select_move = max(move2action_score, key=move2action_score.get)
-            select_move = (np.random.randint(19),np.random.randint(19))
             # start async tree search from child node
             value = await self.children[select_move].start_tree_search()
 
