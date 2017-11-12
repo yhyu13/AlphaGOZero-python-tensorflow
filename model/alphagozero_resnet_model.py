@@ -323,7 +323,5 @@ class AlphaGoZeroResNet(ResNet):
             apply_op = self.optimizer.apply_gradients(
                 zip(clipped_grads, [v for _,v in grads_vars]),
                 global_step=self.global_step, name='train_step')
-
-            train_ops = [apply_op] + self._extra_train_ops
             # Group all updates to into a single train op.
-            self.train_op = tf.group(*train_ops,variables_averages_op)
+            self.train_op = tf.group(apply_op,variables_averages_op)

@@ -22,7 +22,7 @@ parser.add_argument('--n_img_row', type=int, default=19)
 parser.add_argument('--n_img_col', type=int, default=19)
 parser.add_argument('--n_img_channels', type=int, default=17)
 parser.add_argument('--n_classes', type=int, default=19**2+1)
-parser.add_argument('--lr', type=float, default=0.01)
+parser.add_argument('--lr', type=float, default=0.001)
 parser.add_argument('--lr_factor', type=float, default=.1)
 parser.add_argument('--n_resid_units', type=int, default=20)
 parser.add_argument('--n_gpu', type=int, default=4)
@@ -99,6 +99,7 @@ def train(flags=FLAGS,hps=HPS):
     train_chunk_files = [os.path.join(flags.processed_dir, fname)
         for fname in os.listdir(flags.processed_dir)
         if TRAINING_CHUNK_RE.match(fname)]
+    train_datasets = [DataSet.read(file) for file in train_chunk_files]
 
     random.shuffle(train_chunk_files)
 
@@ -106,11 +107,10 @@ def train(flags=FLAGS,hps=HPS):
     with open("result.txt","a") as f:
         for g_epoch in range(flags.global_epoch):
 
-            for file in train_chunk_files:
+            for train_dataset in train_datasets:
                 global_step += 1
                 # prepare training set
                 print >>f , f"Using {file}"
-                train_dataset = DataSet.read(file)
                 train_dataset.shuffle()
                 with timer("training"):
                     # train

@@ -125,8 +125,8 @@ class Network:
                              self.model.lrn_rate: self.lr} # scheduled learning rate
 
                 try:
-                    _, l, ac, result_ac,summary, lr,temp, global_norm = \
-                    self.sess.run([self.model.train_op, self.model.cost,self.model.acc,\
+                    _,_, l, ac, result_ac,summary, lr,temp, global_norm = \
+                    self.sess.run([self.model._extra_train_ops,self.model.train_op, self.model.cost,self.model.acc,\
                                    self.model.result_acc , self.summary, self.model.lrn_rate,\
                                    self.model.temp,self.model.norm], feed_dict=feed_dict)
                     global_step = self.sess.run(self.model.global_step)
@@ -194,15 +194,15 @@ class Network:
 
     def schedule_lrn_rate(self, train_step):
         """train_step equals total number of min_batch updates"""
-        if train_step < 200000:
-            self.lr = 1e-2
-        elif train_step < 400000:
-            self.lr = 1e-2
-        elif train_step < 600000:
+        if train_step < 2000:
+            self.lr = 5e-3
+        elif train_step < 4000:
             self.lr = 1e-3
-        elif train_step < 700000:
+        elif train_step < 6000:
+            self.lr = 1e-3
+        elif train_step < 7000:
             self.lr = 1e-4
-        elif train_step < 800000:
+        elif train_step < 8000:
             self.lr = 1e-5
         else:
             self.lr = 1e-5

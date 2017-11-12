@@ -3,11 +3,7 @@ from model.alphagozero_resnet_model import *
 class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def _relu(self,x,leak=0):
-        """change relu to elu"""
-        return tf.nn.elu(x)
+        super(AlphaGoZeroResNetFULL,self).__init__(*args, **kwargs)
 
     # override _residual block to be full pre-activation residual block
     # https://arxiv.org/pdf/1603.05027.pdf
@@ -19,7 +15,7 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
            @ BN first impose stronger regularization which reduce overfitting
         """
         orig_x = x
-        
+
         with tf.variable_scope('sub1'):
             # Batch normalisation
             x = self._batch_norm('bn1', x)
