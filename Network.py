@@ -38,14 +38,11 @@ class Network:
            img: ?x19x19x17
            labels: ?x362
            results: ?x1
-           self.imgs = tf.placeholder(tf.float32, shape=[None, self.img_row, self.img_col, self.img_channels])
-           self.labels = tf.placeholder(tf.float32, shape=[None, self.nb_classes])
-           self.results = tf.placeholder(tf.float32,shape=[None,1])
         '''
         """defined shape is only used in supervised training"""
-        self.imgs = tf.placeholder(tf.float32, shape=[flags.n_batch, self.img_row, self.img_col, self.img_channels])
-        self.labels = tf.placeholder(tf.float32, shape=[flags.n_batch, self.nb_classes])
-        self.results = tf.placeholder(tf.float32,shape=[flags.n_batch,1])
+        self.imgs = tf.placeholder(tf.float32, shape=[flags.n_batch if flags.MODE == 'train' else None, self.img_row, self.img_col, self.img_channels])
+        self.labels = tf.placeholder(tf.float32, shape=[flags.n_batch if flags.MODE == 'train' else None, self.nb_classes])
+        self.results = tf.placeholder(tf.float32,shape=[flags.n_batch if flags.MODE == 'train' else None,1])
 
         # potentially add previous alphaGo mdoels
         # Right now, there are two models,

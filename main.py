@@ -28,7 +28,7 @@ parser.add_argument('--n_img_col', type=int, default=19)
 parser.add_argument('--n_img_channels', type=int, default=17)
 parser.add_argument('--n_classes', type=int, default=19**2+1)
 parser.add_argument('--lr', type=float, default=0.01)
-parser.add_argument('--n_resid_units', type=int, default=2)
+parser.add_argument('--n_resid_units', type=int, default=1)
 parser.add_argument('--n_gpu', type=int, default=1)
 parser.add_argument('--dataset', dest='processed_dir',default='./processed_data')
 parser.add_argument('--model_path',dest='load_model_path',default='./savedmodels')
@@ -117,7 +117,10 @@ def selfplay(flags=FLAGS,hps=HPS):
     from utils.strategies import simulate_game_mcts,extract_moves
     from Network import Network
 
+    """set the batch size to -1"""
+    flags.n_batch = -1
     net = Network(flags,hps)
+
     N_games = 25000
     position = go.Position(to_play=go.BLACK)
     final_position_collections = []
