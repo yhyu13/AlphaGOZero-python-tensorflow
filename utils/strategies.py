@@ -14,9 +14,13 @@ import daiquiri
 daiquiri.setup(level=logging.DEBUG)
 logger = daiquiri.getLogger(__name__)
 
+from elo.elo import expected, elo
+
 import utils.go as go
 import utils.utilities as utils
 from utils.features import extract_features,bulk_extract_features
+import utils.sgf_wrapper as sgf_wrapper
+import utils.load_data_sets as load_data_sets
 
 # Draw moves from policy net until this threshold, then play moves randomly.
 # This speeds up the simulation, and it also provides a logical cutoff
@@ -104,6 +108,54 @@ def simulate_many_games(policy1, policy2, positions):
 
     return positions
 
+"""Using .pyx Cython or using .py CPython"""
+#import pyximport; pyximport.install()
+#from model.APV_MCTS_C import *
+from model.APV_MCTS import *
+def simulate_game_mcts(policy, position):
+
+    """Simulates a game starting from a position, using a policy network"""
+    network_api = NetworkAPI(policy)
+    mc_policy = MCTSPlayerMixin(network_api,None,None,0)
+    while position.n <= POLICY_CUTOFF_DEPTH:
+        move_prob = mc_policy.suggest_move_prob(position)
+        on_board_move_prob = np.reshape(move_prob[:-1],(go.N,go.N))
+        if position.n < 30:
+            move = select_weighted_random(position, on_board_move_prob)
+            return
+        else:
+            move = select_most_likely(position, on_board_move_prob)
+        position.play_move(move, mutate=True, move_prob=move_prob)
+        # shift to child node
+        mc_policy = mc_policy.children[move]
+
+    simulate_game_random(position)
+
+    return position
+
+def get_winrate(final_positions):
+    black_win = [utils.parse_game_result(pos.result()) == go.BLACK
+                 for pos in final_positions]
+    return sum(black_win) / len(black_win)
+
+def extract_moves(final_positions):
+    winning_moves = []
+    losing_moves = []
+    #logger.debug(f'Game final positions{final_positions}')
+    for final_position in final_positions:
+        positions_w_context = utils.take_n(
+            POLICY_CUTOFF_DEPTH,
+            sgf_wrapper.replay_position(final_position,extract_move_probs=True))
+        winner = utils.parse_game_result(final_position.result())
+        #logger.debug(f'positions_w_context length: {len(positions_w_context)}')
+        for pwc in positions_w_context:
+            if pwc.position.to_play == winner:
+                winning_moves.append(pwc)
+            else:
+                losing_moves.append(pwc)
+    return load_data_sets.DataSet.from_positions_w_context(winning_moves,extract_move_prob=True),\
+           load_data_sets.DataSet.from_positions_w_context(losing_moves,extract_move_prob=True)
+
 
 class RandomPlayerMixin:
     def suggest_move(self, position):
@@ -126,29 +178,3 @@ class RandomPolicyPlayerMixin:
     def suggest_move(self, position):
         move_probabilities = self.policy_network.run(position)
         return select_weighted_random(position, move_probabilities)
-
-
-"""Using .pyx Cython or using .py CPython"""
-#import pyximport; pyximport.install()
-#from model.APV_MCTS_C import *
-from model.APV_MCTS import *
-def simulate_game_mcts(policy, position):
-
-    """Simulates a game starting from a position, using a policy network"""
-    network_api = NetworkAPI(policy)
-    mc_policy = MCTSPlayerMixin(network_api,None,None,0)
-    while position.n <= POLICY_CUTOFF_DEPTH:
-        move_prob = mc_policy.suggest_move_prob(position)
-        on_board_move_prob = np.reshape(move_prob[:-1],(go.N,go.N))
-        if position.n < 30:
-            move = select_weighted_random(position, on_board_move_prob)
-            return
-        else:
-            move = select_most_likely(position, on_board_move_prob)
-        position.play_move(move, mutate=True,move_prob=move_prob)
-        # shift to child node
-        mc_policy = mc_policy.children[move]
-
-    simulate_game_random(position)
-
-    return position

@@ -1,5 +1,5 @@
 # AlphaGOZero
-This is a trial implementation of DeepMind's Oct19th publication: [Mastering the Game of Go without Human Knowledge](https://www.nature.com/articles/nature24270.epdf?author_access_token=VJXbVjaSHxFoctQQ4p2k4tRgN0jAjWel9jnR3ZoTv0PVW4gB86EEpGqTRDtpIz-2rmo8-KG06gqVobU5NSCFeHILHcVFUeMsbvwS-lxjqQGg98faovwjxeTUgZAUMnRQ). 
+This is a trial implementation of DeepMind's Oct19th publication: [Mastering the Game of Go without Human Knowledge](https://www.nature.com/articles/nature24270.epdf?author_access_token=VJXbVjaSHxFoctQQ4p2k4tRgN0jAjWel9jnR3ZoTv0PVW4gB86EEpGqTRDtpIz-2rmo8-KG06gqVobU5NSCFeHILHcVFUeMsbvwS-lxjqQGg98faovwjxeTUgZAUMnRQ).
 
 ---
 # From Paper
@@ -56,7 +56,7 @@ python main.py --mode=gtp —-policy=randompolicy --model_path='./savedmodels/mo
 Under repo’s root  dir
 
 ```
-python utils/selfplay.py
+python main.py --mode=selfplay
 ```
 
 # Supervised Learning result (11/8/2017)
@@ -91,7 +91,7 @@ Server:
 ## Remark
 
 1. Training acc > 70%, but evaluation acc < 6%. Therefore, no model is saved.
-2. Need code review, presumably use batch norm incorrectly. 
+2. Need code review, presumably use batch norm incorrectly.
 3. Validate covergence of supervised learning, and the training accuracy proposed by DeepMind
 4. Total training time: 7h 12m 47s
 

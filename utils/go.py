@@ -365,7 +365,7 @@ class Position():
             return pos
         if not self.is_move_legal(c):
             """if a illegal move occur, then return None"""
-            logger.info("Move at {} is illegal: \n{}".format(c, self))
+            #logger.info("Move at {} is illegal: \n{}".format(c, self))
             return None
         # check must be done before potentially mutating the board
         potential_ko = is_koish(self.board, c)
@@ -421,7 +421,7 @@ class Position():
         if score > 0:
             return 'B+' + f'{score:.1f}'
         elif score < 0:
-            return 'W+' + f'{abs(score):.1f}'
+            return 'W+' + f'{score*-1:.1f}'
         else:
             return 'DRAW'
 

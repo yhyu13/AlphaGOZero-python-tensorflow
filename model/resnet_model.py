@@ -45,7 +45,7 @@ class ResNet(object):
           labels: Batches of labels. [batch_size, num_classes]
           mode: One of 'train' and 'eval'.
         """
-        self.hps = hps 
+        self.hps = hps
         self.images = images
         self.labels = labels
         self.mode = mode
@@ -120,7 +120,7 @@ class ResNet(object):
         with tf.variable_scope('logit'):
             logits = self._fully_connected(x, self.hps.num_classes)
             self.predictions = tf.nn.softmax(logits)
-            
+
         with tf.variable_scope('costs'):
             xent = tf.nn.sparse_softmax_cross_entropy_with_logits(
                 logits=logits, labels=self.labels)
@@ -317,5 +317,4 @@ class ResNet(object):
         return tf.reduce_mean(x, [1, 2])
 
     def total_parameters(self):
-        return np.sum([np.prod(v.get_shape().as_list()) for v in tf.global_variables()]).astype(np.int32)
-
+        return np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()+[var for var in tf.global_variables() if 'bn' in var.name]]).astype(np.int32)

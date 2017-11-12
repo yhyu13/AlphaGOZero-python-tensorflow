@@ -11,10 +11,17 @@ import utils.features as features
 
 class Network:
 
+    """
+    funcs:
+        @ Build graph.
+        @ Training
+        @ Testing
+        @ Evaluating
+    """
     def __init__(self,flags,hps):
 
         config = tf.ConfigProto()
-        #config.gpu_options.allow_growth = True
+        config.gpu_options.allow_growth = True
         config.allow_soft_placement = True
         self.sess = tf.Session(config=config)
 
@@ -25,8 +32,6 @@ class Network:
         self.img_col = flags.n_img_col
         self.img_channels = flags.n_img_channels
         self.nb_classes = flags.n_classes
-        self.lr = flags.lr
-        self.lr_factor = flags.lr_factor
         self.force_save_model = flags.force_save_model
         self.optimizer_name = hps.optimizer
 
@@ -34,10 +39,14 @@ class Network:
            img: ?x19x19x17
            labels: ?x362
            results: ?x1
+           self.imgs = tf.placeholder(tf.float32, shape=[None, self.img_row, self.img_col, self.img_channels])
+           self.labels = tf.placeholder(tf.float32, shape=[None, self.nb_classes])
+           self.results = tf.placeholder(tf.float32,shape=[None,1])
         '''
-        self.imgs = tf.placeholder(tf.float32, shape=[None, self.img_row, self.img_col, self.img_channels])
-        self.labels = tf.placeholder(tf.float32, shape=[None, self.nb_classes])
-        self.results = tf.placeholder(tf.float32,shape=[None,1])
+        """defined shape is only used in supervised training"""
+        self.imgs = tf.placeholder(tf.float32, shape=[flags.n_batch, self.img_row, self.img_col, self.img_channels])
+        self.labels = tf.placeholder(tf.float32, shape=[flags.n_batch, self.nb_classes])
+        self.results = tf.placeholder(tf.float32,shape=[flags.n_batch,1])
 
         # potentially add previous alphaGo mdoels
         # Right now, there are two models,
@@ -64,7 +73,7 @@ class Network:
             open("result.txt", "a").close()
 
         self.train_writer = tf.summary.FileWriter("./train_log", self.sess.graph)
-        self.saver = tf.train.Saver(tf.global_variables(),max_to_keep=10)
+        self.saver = tf.train.Saver(tf.trainable_variables()+[var for var in tf.global_variables() if 'bn' in var.name],max_to_keep=10)
 
         if flags.load_model_path is not None:
             print('Loading Model...')
@@ -81,7 +90,7 @@ class Network:
     '''
     params:
          @ imgs: bulk_extracted_feature(positions)
-         # usage: queue prediction, self-play
+         usage: queue prediction, self-play
     '''
     def run_many(self,imgs):
         imgs[:][...,16] = (imgs[:][...,16]-0.5)*2
@@ -94,13 +103,11 @@ class Network:
 
     '''
     params:
-         @ training_data
-         @ reinforcement direction
-         @ use sparse softmax to compute cross entropy
-         @ learning rate
-         # mini-batch training
+         @ training_data: training dataset
+         @ direction: reinforcement direction
+         @ use_sparse: use sparse softmax to compute cross entropy
     '''
-    def train(self, training_data, direction=1.0, use_sparse=True):
+    def train(self, training_data, direction=1.0, use_sparse=True, lrn_rate=1e-4):
         print('Training model...')
         self.num_iter = training_data.data_size // self.batch_num
 
@@ -122,7 +129,7 @@ class Network:
                              self.model.reinforce_dir: direction, # +1 or -1 only used for self-play data, trivial in SL
                              self.model.use_sparse_sotfmax: 1 if use_sparse else -1, # +1 in SL, -1 in RL
                              self.model.training: True,
-                             self.model.lrn_rate: self.lr} # scheduled learning rate
+                             self.model.lrn_rate: lrn_rate} # scheduled learning rate
 
                 try:
                     _,_, l, ac, result_ac,summary, lr,temp, global_norm = \
@@ -132,19 +139,20 @@ class Network:
                     global_step = self.sess.run(self.model.global_step)
                     self.train_writer.add_summary(summary,global_step)
                     self.sess.run(self.model.increase_global_step)
-                    self.schedule_lrn_rate(global_step)
 
-                    if i % 25 == 0:
+                    if i % 50 == 0:
                         with open("result.txt","a") as f:
                             f.write('Training...\n')
                             print >>f, f'Step {i} | Training loss {l:.2f} | Temperature {temp:.2f} | Magnitude of global norm {global_norm:.2f} | Total step {global_step} | Play move accuracy {ac:.4f} | Game outcome accuracy {result_ac:.2f}'
                             print >>f, f'Learning rate {"Adam" if self.optimizer_name=="adam" else lr}'
+                        '''
                         if ac > 0.7: # overfitting, abort, check evaluation
                             return
+                        '''
                 except KeyboardInterrupt:
                     sys.exit()
                 except tf.errors.InvalidArgumentError:
-                    print(f'Step {i+1} corrupts. Discard.')
+                    print(f'Step {i+1} contains NaN gradients. Discard.')
                     continue
 
     '''
@@ -159,6 +167,7 @@ class Network:
         num_minibatches = test_data.data_size // self.batch_num
         test_data.shuffle()
         test_loss, test_acc, test_result_acc , n_batch = 0, 0, 0,0
+        test_data.shuffle()
         for i in range(int(num_minibatches * proportion)):
             batch = test_data.get_batch(self.batch_num)
             batch = [np.asarray(item).astype(np.float32) for item in batch]
@@ -188,21 +197,6 @@ class Network:
             print >>f, f'Win ratio test accuracy: {test_result_acc:.2f}'
 
         if tot_test_acc > 0.2 or self.force_save_model:
-            # if test acc is bigger than 20%, save or force save model
+            # save when test acc is bigger than 20% or  force save model
             self.saver.save(self.sess,f'./savedmodels/model-{tot_test_acc:.4f}.ckpt',\
                             global_step=self.sess.run(self.model.global_step))
-
-    def schedule_lrn_rate(self, train_step):
-        """train_step equals total number of min_batch updates"""
-        if train_step < 2000:
-            self.lr = 5e-3
-        elif train_step < 4000:
-            self.lr = 1e-3
-        elif train_step < 6000:
-            self.lr = 1e-3
-        elif train_step < 7000:
-            self.lr = 1e-4
-        elif train_step < 8000:
-            self.lr = 1e-5
-        else:
-            self.lr = 1e-5
