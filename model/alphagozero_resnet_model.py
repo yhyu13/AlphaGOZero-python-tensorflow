@@ -309,10 +309,6 @@ class AlphaGoZeroResNet(ResNet):
                 tf.summary.histogram(var.op.name, var)
                 tf.summary.histogram(var.op.name + '/gradients', grad)
 
-        # Track the moving averages of all trainable variables.
-        variable_averages = tf.train.ExponentialMovingAverage(0.999,self.global_step)
-        variables_averages_op = variable_averages.apply(tf.trainable_variables())
-
         # defensive step 2 to clip norm
         clipped_grads,self.norm = tf.clip_by_global_norm([g for g,_ in grads_vars],self.hps.global_norm)
 
@@ -320,8 +316,7 @@ class AlphaGoZeroResNet(ResNet):
         # See: https://stackoverflow.com/questions/40701712/how-to-check-nan-in-gradients-in-tensorflow-when-updating
         grad_check = [tf.check_numerics(g,message='Nan Found!') for g in clipped_grads]
         with tf.control_dependencies(grad_check):
-            apply_op = self.optimizer.apply_gradients(
+            self.train_op = self.optimizer.apply_gradients(
                 zip(clipped_grads, [v for _,v in grads_vars]),
                 global_step=self.global_step, name='train_step')
-            # Group all updates to into a single train op.
-            self.train_op = tf.group(apply_op,variables_averages_op)
+            

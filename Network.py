@@ -194,8 +194,8 @@ class Network:
 
     def schedule_lrn_rate(self, train_step):
         """train_step equals total number of min_batch updates"""
-        if train_step < 2000:
-            self.lr = 5e-3
+        if train_step < 2000::
+            self.lr = 1e-2
         elif train_step < 4000:
             self.lr = 1e-3
         elif train_step < 6000:
