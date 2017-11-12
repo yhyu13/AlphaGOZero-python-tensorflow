@@ -31,8 +31,6 @@ class Network:
         self.img_col = flags.n_img_col
         self.img_channels = flags.n_img_channels
         self.nb_classes = flags.n_classes
-        self.lr = flags.lr
-        self.lr_factor = flags.lr_factor
         self.force_save_model = flags.force_save_model
         self.optimizer_name = hps.optimizer
 
@@ -40,10 +38,14 @@ class Network:
            img: ?x19x19x17
            labels: ?x362
            results: ?x1
+           self.imgs = tf.placeholder(tf.float32, shape=[None, self.img_row, self.img_col, self.img_channels])
+           self.labels = tf.placeholder(tf.float32, shape=[None, self.nb_classes])
+           self.results = tf.placeholder(tf.float32,shape=[None,1])
         '''
-        self.imgs = tf.placeholder(tf.float32, shape=[None, self.img_row, self.img_col, self.img_channels])
-        self.labels = tf.placeholder(tf.float32, shape=[None, self.nb_classes])
-        self.results = tf.placeholder(tf.float32,shape=[None,1])
+        """defined shape is only used in supervised training"""
+        self.imgs = tf.placeholder(tf.float32, shape=[flags.n_batch, self.img_row, self.img_col, self.img_channels])
+        self.labels = tf.placeholder(tf.float32, shape=[flags.n_batch, self.nb_classes])
+        self.results = tf.placeholder(tf.float32,shape=[flags.n_batch,1])
 
         # potentially add previous alphaGo mdoels
         # Right now, there are two models,
@@ -70,7 +72,7 @@ class Network:
             open("result.txt", "a").close()
 
         self.train_writer = tf.summary.FileWriter("./train_log", self.sess.graph)
-        self.saver = tf.train.Saver(tf.global_variables(),max_to_keep=10)
+        self.saver = tf.train.Saver(tf.trainable_variables()+[var for var in tf.global_variables() if 'bn' in var.name],max_to_keep=10)
 
         if flags.load_model_path is not None:
             print('Loading Model...')
@@ -104,7 +106,7 @@ class Network:
          @ direction: reinforcement direction
          @ use_sparse: use sparse softmax to compute cross entropy
     '''
-    def train(self, training_data, direction=1.0, use_sparse=True):
+    def train(self, training_data, direction=1.0, use_sparse=True, lrn_rate=1e-4):
         print('Training model...')
         self.num_iter = training_data.data_size // self.batch_num
 
@@ -126,7 +128,7 @@ class Network:
                              self.model.reinforce_dir: direction, # +1 or -1 only used for self-play data, trivial in SL
                              self.model.use_sparse_sotfmax: 1 if use_sparse else -1, # +1 in SL, -1 in RL
                              self.model.training: True,
-                             self.model.lrn_rate: self.lr} # scheduled learning rate
+                             self.model.lrn_rate: lrn_rate} # scheduled learning rate
 
                 try:
                     _, l, ac, result_ac,summary, lr,temp, global_norm = \
@@ -198,24 +200,3 @@ class Network:
             # save when test acc is bigger than 20% or  force save model
             self.saver.save(self.sess,f'./savedmodels/model-{tot_test_acc:.4f}.ckpt',\
                             global_step=self.sess.run(self.model.global_step))
-
-
-    '''
-    params:
-        @ train_step: total number of mini-batch updates
-        @ usage: learning rate annealling
-    '''
-    def schedule_lrn_rate(self, train_step):
-        """train_step equals total number of min_batch updates"""
-        if train_step < 200000:
-            self.lr = 1e-2 #1e-1 blows up, sometimes 1e-2 blows up too.
-        elif train_step < 400000:
-            self.lr = 1e-2
-        elif train_step < 600000:
-            self.lr = 1e-3
-        elif train_step < 700000:
-            self.lr = 1e-4
-        elif train_step < 800000:
-            self.lr = 1e-5
-        else:
-            self.lr = 1e-5

@@ -38,10 +38,10 @@ class AlphaGoZeroResNet(ResNet):
             self._extra_train_ops.append(
                 moving_averages.assign_moving_average(
                     moving_variance, variance, 0.99))
-
+            '''
             tf.summary.histogram(moving_mean.op.name, moving_mean)
             tf.summary.histogram(moving_variance.op.name, moving_variance)
-
+            '''
             def train():
                 # elipson used to be 1e-5. Maybe 0.001 solves NaN problem in deeper net.
                 return tf.nn.batch_normalization(x, mean, variance, beta, gamma, 0.001)
@@ -301,17 +301,14 @@ class AlphaGoZeroResNet(ResNet):
     # override build train op
     def _build_train_op(self, grads_vars):
         """Build training specific ops for the graph."""
+        '''
         # Add histograms for trainable variables.
         # Add histograms for gradients.
         for grad, var in grads_vars:
             if grad is not None:
                 tf.summary.histogram(var.op.name, var)
                 tf.summary.histogram(var.op.name + '/gradients', grad)
-
-        # Track the moving averages of all trainable variables.
-        variable_averages = tf.train.ExponentialMovingAverage(0.999,self.global_step)
-        variables_averages_op = variable_averages.apply(tf.trainable_variables())
-
+        '''
         # defensive step 2 to clip norm
         clipped_grads,self.norm = tf.clip_by_global_norm([g for g,_ in grads_vars],self.hps.global_norm)
 
@@ -325,4 +322,4 @@ class AlphaGoZeroResNet(ResNet):
 
             train_ops = [apply_op] + self._extra_train_ops
             # Group all updates to into a single train op.
-            self.train_op = tf.group(*train_ops,variables_averages_op)
+            self.train_op = tf.group(*train_ops)

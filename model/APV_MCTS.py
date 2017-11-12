@@ -7,7 +7,6 @@ asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 from profilehooks import profile
 import logging
 
-import copy
 import sys
 import time
 import numpy as np
@@ -79,10 +78,10 @@ class NetworkAPI(object):
 
     #@profile
     def run_many(self,bulk_features):
-        return self.net.run_many(bulk_features)
+        #return self.net.run_many(bulk_features)
         """simulate I/O & evaluate"""
         #sleep(np.random.random()*5e-2)
-        #return np.random.random((len(bulk_features),362)), np.random.random((len(bulk_features),1))
+        return np.random.random((len(bulk_features),362)), np.random.random((len(bulk_features),1))
 
 class MCTSPlayerMixin(object):
 
@@ -158,7 +157,7 @@ class MCTSPlayerMixin(object):
         prob /= np.sum(prob) # ensure 1.
         return prob
 
-    def suggest_move_prob(self, position, iters=200):
+    def suggest_move_prob(self, position, iters=1600):
         """Async tree search controller"""
         global LOOP
 

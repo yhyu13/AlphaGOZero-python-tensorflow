@@ -27,9 +27,8 @@ parser.add_argument('--n_img_row', type=int, default=19)
 parser.add_argument('--n_img_col', type=int, default=19)
 parser.add_argument('--n_img_channels', type=int, default=17)
 parser.add_argument('--n_classes', type=int, default=19**2+1)
-parser.add_argument('--lr', type=float, default=0.1)
-parser.add_argument('--lr_factor', type=float, default=.1)
-parser.add_argument('--n_resid_units', type=int, default=1)
+parser.add_argument('--lr', type=float, default=0.01)
+parser.add_argument('--n_resid_units', type=int, default=2)
 parser.add_argument('--n_gpu', type=int, default=1)
 parser.add_argument('--dataset', dest='processed_dir',default='./processed_data')
 parser.add_argument('--model_path',dest='load_model_path',default='./savedmodels')
@@ -68,6 +67,29 @@ def timer(message):
     tock = time()
     logger.info(f"{message}: {(tock - tick):.3f} seconds")
 
+'''
+params:
+    @ train_step: total number of mini-batch updates
+    @ usage: learning rate annealling
+'''
+def schedule_lrn_rate(train_step):
+    """train_step equals total number of min_batch updates"""
+    f = 10 # rl schedule factor
+    lr = 1e-2
+    if train_step < 1*f:
+        lr = 1e-2 #1e-1 blows up, sometimes 1e-2 blows up too.
+    elif train_step < 2*f:
+        lr = 1e-2
+    elif train_step < 3*f:
+        lr = 1e-3
+    elif train_step < int(3.5*f):
+        lr = 1e-4
+    elif train_step < 4*f:
+        lr = 1e-5
+    else:
+        lr = 1e-5
+    return lr
+
 # Credit: Brain Lee
 def gtp(flags=FLAGS,hps=HPS):
     from utils.gtp_wrapper import make_gtp_instance
@@ -101,6 +123,7 @@ def selfplay(flags=FLAGS,hps=HPS):
     final_position_collections = []
     for g_epoch in range(flags.global_epoch):
         logger.info(f'Global epoch {g_epoch} start.')
+        lr = schedule_lrn_rate(g_epoch)
         for i in range(N_games):
             """self play with MCTS search"""
             with timer(f"Self-Play Simulation Game #{i}"):
@@ -110,8 +133,8 @@ def selfplay(flags=FLAGS,hps=HPS):
 
             if (i+1) % 1 == 0:
                 winners_training_samples, losers_training_samples = extract_moves(final_position_collections)
-                net.train(winners_training_samples, direction=1.)
-                net.train(losers_training_samples, direction=-1.)
+                net.train(winners_training_samples, direction=1.,lrn_rate=lr)
+                net.train(losers_training_samples, direction=-1.,lrn_rate=lr)
                 final_position_collections = []
 
         logger.info(f'Global epoch {g_epoch} finish.')
@@ -138,6 +161,8 @@ def train(flags=FLAGS,hps=HPS):
     with open("result.txt","a") as f:
         for g_epoch in range(flags.global_epoch):
 
+            lr = schedule_lrn_rate(g_epoch)
+
             for file in train_chunk_files:
                 global_step += 1
                 # prepare training set
@@ -146,7 +171,7 @@ def train(flags=FLAGS,hps=HPS):
                 train_dataset.shuffle()
                 with timer("training"):
                     # train
-                    run.train(train_dataset)
+                    run.train(train_dataset,lrn_rate=lr)
                 if global_step % 1 == 0:
                     # eval
                     with timer("test set evaluation"):
