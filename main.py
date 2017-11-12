@@ -8,6 +8,12 @@ import re
 import sys
 from collections import namedtuple
 
+import logging
+import daiquiri
+
+daiquiri.setup(level=logging.DEBUG)
+logger = daiquiri.getLogger(__name__)
+
 _PATH_ = os.path.dirname(os.path.dirname(__file__))
 
 if _PATH_ not in sys.path:
@@ -27,7 +33,8 @@ parser.add_argument('--n_resid_units', type=int, default=1)
 parser.add_argument('--n_gpu', type=int, default=1)
 parser.add_argument('--dataset', dest='processed_dir',default='./processed_data')
 parser.add_argument('--model_path',dest='load_model_path',default='./savedmodels')
-parser.add_argument('--model_type',dest='model',default='full',help='choose residual block architecture')
+parser.add_argument('--model_type',dest='model',default='full',\
+                    help='choose residual block architecture {original,elu,full}')
 parser.add_argument('--optimizer',dest='opt',default='mom')
 parser.add_argument('--force_save',dest='force_save_model',action='store_true',default=False,\
                     help='if Ture, then save checkpoint for every evaluation period')
@@ -59,7 +66,7 @@ def timer(message):
     tick = time()
     yield
     tock = time()
-    print(f"{message}: {(tock - tick):.3f}")
+    logger.info(f"{message}: {(tock - tick):.3f} seconds")
 
 # Credit: Brain Lee
 def gtp(flags=FLAGS,hps=HPS):
@@ -83,29 +90,54 @@ def gtp(flags=FLAGS,hps=HPS):
             sys.stdout.write(engine_reply)
             sys.stdout.flush()
 
-# Credit: Brain Lee
-def train(flags=FLAGS,hps=HPS):
+def selfplay(flags=FLAGS,hps=HPS):
+    import utils.go as go
+    from utils.strategies import simulate_game_mcts,extract_moves
+    from Network import Network
 
+    net = Network(flags,hps)
+    N_games = 25000
+    position = go.Position(to_play=go.BLACK)
+    final_position_collections = []
+    for g_epoch in range(flags.global_epoch):
+        logger.info(f'Global epoch {g_epoch} start.')
+        for i in range(N_games):
+            """self play with MCTS search"""
+            with timer(f"Self-Play Simulation Game #{i}"):
+                final_position = simulate_game_mcts(net,position)
+                logger.debug(f'\n{final_position}')
+            final_position_collections.append(final_position)
+
+            if (i+1) % 1 == 0:
+                winners_training_samples, losers_training_samples = extract_moves(final_position_collections)
+                net.train(winners_training_samples, direction=1.)
+                net.train(losers_training_samples, direction=-1.)
+                final_position_collections = []
+
+        logger.info(f'Global epoch {g_epoch} finish.')
+    logger.info('Now, I am the Master.')
+
+def train(flags=FLAGS,hps=HPS):
     from utils.load_data_sets import DataSet
     from Network import Network
-    
+
     TRAINING_CHUNK_RE = re.compile(r"train\d+\.chunk.gz")
 
     run = Network(flags,hps)
 
     test_dataset = DataSet.read(os.path.join(flags.processed_dir, "test.chunk.gz"))
-    
-    train_chunk_files = [os.path.join(flags.processed_dir, fname) 
+
+    train_chunk_files = [os.path.join(flags.processed_dir, fname)
         for fname in os.listdir(flags.processed_dir)
         if TRAINING_CHUNK_RE.match(fname)]
-    
+
     random.shuffle(train_chunk_files)
 
     global_step = 0
     lr = flags.lr
     with open("result.txt","a") as f:
         for g_epoch in range(flags.global_epoch):
-            
+
             for file in train_chunk_files:
                 global_step += 1
                 # prepare training set
@@ -113,23 +145,26 @@ def train(flags=FLAGS,hps=HPS):
                 train_dataset = DataSet.read(file)
                 train_dataset.shuffle()
                 with timer("training"):
-                    # train 
+                    # train
                     run.train(train_dataset)
                 if global_step % 1 == 0:
                     # eval
                     with timer("test set evaluation"):
                         run.test(test_dataset,proportion=.1)
+
                 print(f'Global step {global_step} finshed.', file=f)
             print(f'Global epoch {g_epoch} finshed.', file=f)
         print('Now, I am the Master.', file=f)
 
 
+
 if __name__ == '__main__':
 
     fn = {'train': lambda: train(),
-          'gtp': lambda: gtp()}
+          'gtp': lambda: gtp(),
+          'selfplay': lambda: selfplay()}
 
     if fn.get(FLAGS.MODE,0) != 0:
         fn[FLAGS.MODE]()
     else:
-        print('Please choose a mode between "train" and "gtp".')
+        print('Please choose a mode among "train", "selfplay", and "gtp".')

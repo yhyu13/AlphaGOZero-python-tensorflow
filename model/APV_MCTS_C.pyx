@@ -28,11 +28,20 @@ from utils.features import extract_features,bulk_extract_features
 c_PUCT = 5
 
 NOW_EXPANDING = set()
-SEM = asyncio.Semaphore(16)
+# queue size should be >= the number of semmphores
+# in order to maxout the coroutines
+# There is not rule of thumbs to choose optimal semmphores
+# And keep in mind: the more coroutines, the less (?) quality (?)
+# of the Monte Carlo Tree obtains. As my searching is less deep
+# w.r.t a sequential MCTS. However, since MCTS is a randomnized
+# algorithm that tries to approximate a value by averaging over run_many
+# random processes, the quality of the search tree is hard to define.
+# It's a trade off among time, accuracy, and the frequency of NN updates.
+SEM = asyncio.Semaphore(64)
+QUEUE = Queue(64)
 LOOP = asyncio.get_event_loop()
 RUNNING_SIMULATION_NUM = 0
 QueueItem = namedtuple("QueueItem", "feature future")
-QUEUE = Queue(16)
 
 class NetworkAPI(object):
 
@@ -42,7 +51,6 @@ class NetworkAPI(object):
     async def prediction_worker(self):
         """For better performance, queueing prediction requests and predict together in this worker.
         speed up about 45sec -> 15sec for example.
-        :return:
         """
         global QUEUE
         global RUNNING_SIMULATION_NUM
@@ -69,10 +77,12 @@ class NetworkAPI(object):
         await QUEUE.put(item)
         return future
 
-    @profile
+    #@profile
     def run_many(self,bulk_features):
-        #return self.net.run_many(bulk_features)
-        return np.random.random((len(bulk_features),362)),np.random.random((len(bulk_features),1))
+        return self.net.run_many(bulk_features)
+        """simulate I/O & evaluate"""
+        #sleep(np.random.random()*5e-2)
+        #return np.random.random((len(bulk_features),362)), np.random.random((len(bulk_features),1))
 
 class MCTSPlayerMixin(object):
 
@@ -90,7 +100,7 @@ class MCTSPlayerMixin(object):
         self.v_loss = 3
 
     def __repr__(self):
-        return "<MCTSNode move=%s prior=%s score=%s is_expanded=%s>" % (self.move, self.prior, self.action_score, self.is_expanded())
+        return f"<MCTSNode move=self.move prior=self.prior score=self.action_score is_expanded=self.is_expanded()>"
 
     @property
     def Q(self):
@@ -111,18 +121,21 @@ class MCTSPlayerMixin(object):
     def is_expanded(self):
         return self.position is not None
 
-    @profile
+    #@profile
     def compute_position(self):
         """Evolve the game board, and return current position"""
-        self.position = self.parent.position.play_move(self.move)
+        position = self.parent.position.play_move(self.move)
+        self.position = position
+        return position
 
-    @profile
+    #@profile
     def expand(self, move_probabilities):
         """Expand leaf node"""
+        #api,parent = self.api,self
         self.children = {move: MCTSPlayerMixin(self.api,self,move,prob)
             for move, prob in np.ndenumerate(np.reshape(move_probabilities[:-1],(go.N,go.N)))}
         # Pass should always be an option! Say, for example, seki.
-        self.children[None] = MCTSPlayerMixin(self.api,self,None, move_probabilities[-1])
+        self.children[None] = MCTSPlayerMixin(self.api,self,None,move_probabilities[-1])
 
     def backup_value_single(self,value):
         """Backup value of a single tree node"""
@@ -145,7 +158,7 @@ class MCTSPlayerMixin(object):
         prob /= np.sum(prob) # ensure 1.
         return prob
 
-    def suggest_move_prob(self, position, iters=1600):
+    def suggest_move_prob(self, position, iters=200):
         """Async tree search controller"""
         global LOOP
 
@@ -182,15 +195,14 @@ class MCTSPlayerMixin(object):
             NOW_EXPANDING.add(self)
 
             # compute leaf node position
-            self.compute_position()
+            pos = self.compute_position()
 
-            # subtract virtual loss imposed at the beginnning
-            self.virtual_loss_undo()
-
-            if self.position is None:
+            if pos is None:
                 #print("illegal move!", file=sys.stderr)
                 # See go.Position.play_move for notes on detecting legality
                 # In Go, illegal move means loss (or resign)
+                # subtract virtual loss imposed at the beginnning
+                self.virtual_loss_undo()
                 self.backup_value_single(-1)
                 NOW_EXPANDING.remove(self)
                 return -1*-1
@@ -200,7 +212,7 @@ class MCTSPlayerMixin(object):
 
             # perform dihedral manipuation
             flip_axis,num_rot = np.random.randint(2),np.random.randint(4)
-            dihedral_features = extract_features(self.position,dihedral=[flip_axis,num_rot])
+            dihedral_features = extract_features(pos,dihedral=[flip_axis,num_rot])
 
             # push extracted dihedral features of leaf node to the evaluation queue
             future = await self.api.push_queue(dihedral_features)  # type: Future
@@ -214,6 +226,9 @@ class MCTSPlayerMixin(object):
             # expand by move probabilities
             self.expand(move_probs)
 
+            # subtract virtual loss imposed at the beginnning
+            self.virtual_loss_undo()
+
             # back up value just for current tree node
             self.backup_value_single(value[0])
 
@@ -226,17 +241,17 @@ class MCTSPlayerMixin(object):
         else: # not a leaf node
 
             # perform dirichlet perturbed action score
-            all_action_score = map(lambda zipped: zipped[0].Q + \
-            zipped[0].U*(0.75+0.25*(zipped[1])/(zipped[0].prior+1e-8)),\
-                                   zip(self.children.values(),dirichlet([0.03]*362)))
+            all_action_score = [child.Q + \
+            child.U*(0.75+0.25*(noise)/(child.prior+1e-8)) for child,noise in\
+            zip(self.children.values(),dirichlet([0.03]*362))]
 
             move2action_score = {move:action_score for move,action_score in \
             zip(self.children.keys(),all_action_score)}
 
             # select the move with maximum action score
             select_move = max(move2action_score, key=move2action_score.get)
-            select_move = (np.random.randint(19),np.random.randint(19))
             # start async tree search from child node
+            # select_move = (np.random.randint(19), np.random.randint(19))
             value = await self.children[select_move].start_tree_search()
 
             # subtract virtual loss imposed at the beginning

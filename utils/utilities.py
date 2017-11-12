@@ -138,7 +138,6 @@ def lazy_property(function):
 def timestamp() -> str:
     return strftime('%Y%m%d-%H%M%S')
 
-
 # from https://gist.github.com/danijar/8663d3bbfd586bffecf6a0094cd116f2:
 
 def doublewrap(function):
@@ -194,13 +193,13 @@ def single(list):
     return first
 
 from multiprocessing import Pool
-  
+
 def stupid_parallel(function, nprocesses=None):
     '''
     Works similar to a decorator to paralelize "stupidly parallel"
     problems. Decorators and multiprocessing don't play nicely because
-    of naming issues. 
-  
+    of naming issues.
+
     Inputs
     ======
     function : the function that will be parallelized. The FIRST
@@ -209,17 +208,17 @@ def stupid_parallel(function, nprocesses=None):
         (they can be named or unnamedarguments).
     nprocesses : int, the number of processes to run. Default is None.
         It is passed to multiprocessing.Pool (see that for details).
-  
+
     Output
     ======
     A paralelized function. DO NOT NAME IT THE SAME AS THE INPUT
     FUNCTION.
-  
+
     Example
     =======
     def _square_and_offset(value, offset=0):
         return value**2 + offset
-  
+
     parallel_square_and_offset = stupid_parallel(_square_and_offset,
                                                  nprocesses=5)
     print square_and_offset_parallel(range(10), offset=3)
@@ -229,7 +228,7 @@ def stupid_parallel(function, nprocesses=None):
         args = list(args)
         p = Pool(nprocesses)
         result = [p.apply_async(function, args=[value]+args,
-                                kwds=kwargs) 
+                                kwds=kwargs)
                   for value in iterable_values]
         p.close()
         return [r.get() for r in result]

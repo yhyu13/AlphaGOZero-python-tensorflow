@@ -11,7 +11,7 @@ from utils.sgf_wrapper import replay_sgf
 import utils.utilities as utils
 
 # Number of data points to store in a chunk on disk
-CHUNK_SIZE = 2**20
+CHUNK_SIZE = 2**16
 CHUNK_HEADER_FORMAT = "iii?"
 CHUNK_HEADER_SIZE = struct.calcsize(CHUNK_HEADER_FORMAT)
 
@@ -89,13 +89,8 @@ class DataSet(object):
         else:
             encoded_moves = make_onehot(next_moves)
 
-        '''Ackowledge results = (metadata(result,handicap,boardsize),...,metadata(result,handicap,boardsize))'''
-        whowin,turn = 1 if 'B' in results[0].result else -1, 1
-        wrt_result =  [None]*len(self.results)
-        for i in range(len(wrt_result)):
-            wrt_result[i] = int(whowin==turn)
-            turn *= -1
-                
+        wrt_result =  [-1 if (positions[i].to_play == 1)^('B' in results[i].result) else 1 for i in range(len(results))]
+
         return DataSet(extracted_features, encoded_moves, wrt_result, is_test=is_test)
 
     def write(self, filename):
@@ -104,7 +99,7 @@ class DataSet(object):
             position_bytes = np.packbits(self.pos_features).tostring()
             next_move_bytes = np.packbits(self.next_moves).tostring()
             result_bytes = np.packbits(self.results).tostring()
-           
+
             with gzip.open(filename, "wb", compresslevel=6) as f:
                 f.write(header_bytes)
                 f.write(position_bytes)
@@ -113,7 +108,7 @@ class DataSet(object):
         except:
             print(filename, 'Discard.')
             return
-            
+
     @staticmethod
     def read(filename):
         with gzip.open(filename, "rb") as f:
@@ -128,14 +123,14 @@ class DataSet(object):
             packed_position_bytes = f.read((position_dims + 7) // 8)
             packed_next_move_bytes = f.read((next_move_dims + 7) // 8)
             packed_result_bytes = f.read((result_dims + 7) // 8)
-            
+
             # should have cleanly finished reading all bytes from file!
             assert len(f.read()) == 0
 
             flat_position = np.unpackbits(np.fromstring(packed_position_bytes, dtype=np.uint8))[:position_dims]
             flat_nextmoves = np.unpackbits(np.fromstring(packed_next_move_bytes, dtype=np.uint8))[:next_move_dims]
             flat_results = np.unpackbits(np.fromstring(packed_result_bytes, dtype=np.uint8))[:result_dims]
-            
+
             pos_features = flat_position.reshape(data_size, board_size, board_size, input_planes)
             next_moves = flat_nextmoves.reshape(data_size, board_size * board_size + 1)
             results = flat_results.reshape(data_size,1)

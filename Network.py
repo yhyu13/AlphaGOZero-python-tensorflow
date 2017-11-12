@@ -10,10 +10,17 @@ import utils.features as features
 
 class Network:
 
+    """
+    funcs:
+        @ Build graph.
+        @ Training
+        @ Testing
+        @ Evaluating
+    """
     def __init__(self,flags,hps):
 
         config = tf.ConfigProto()
-        #config.gpu_options.allow_growth = True
+        config.gpu_options.allow_growth = True
         config.allow_soft_placement = True
         self.sess = tf.Session(config=config)
 
@@ -57,7 +64,7 @@ class Network:
 
         if not os.path.exists('./savedmodels'):
             os.makedirs('./savedmodels')
-            
+
         if not os.path.exists('./result.txt'):
             # hacky way to creat a file
             open("result.txt", "a").close()
@@ -80,7 +87,7 @@ class Network:
     '''
     params:
          @ imgs: bulk_extracted_feature(positions)
-         # usage: queue prediction, self-play
+         usage: queue prediction, self-play
     '''
     def run_many(self,imgs):
         imgs[:][...,16] = (imgs[:][...,16]-0.5)*2
@@ -89,20 +96,18 @@ class Network:
 
         # with multi-gpu, porbs and values are separated in each outputs
         # so vstack will merge them together.
-        return np.vstack(move_probabilities), np.vstack(value) 
+        return np.vstack(move_probabilities), np.vstack(value)
 
     '''
     params:
-         @ training_data
-         @ reinforcement direction
-         @ use sparse softmax to compute cross entropy
-         @ learning rate
-         # mini-batch training
+         @ training_data: training dataset
+         @ direction: reinforcement direction
+         @ use_sparse: use sparse softmax to compute cross entropy
     '''
-    def train(self, training_data, direction=1.0, use_sparse=True):        
+    def train(self, training_data, direction=1.0, use_sparse=True):
         print('Training model...')
         self.num_iter = training_data.data_size // self.batch_num
-        
+
         # Set default learning rate for scheduling
         for j in range(self.num_epoch):
             print(f'Epoch {j+1}')
@@ -114,7 +119,7 @@ class Network:
                 batch[0][...,16] = (batch[0][...,16]-0.5)*2
                 # convert the game result: -1 & 1 rather than 0 & 1
                 batch[2] = (batch[2]-0.5)*2
-                
+
                 feed_dict = {self.imgs: batch[0],
                              self.labels: batch[1],
                              self.results: batch[2],
@@ -122,7 +127,7 @@ class Network:
                              self.model.use_sparse_sotfmax: 1 if use_sparse else -1, # +1 in SL, -1 in RL
                              self.model.training: True,
                              self.model.lrn_rate: self.lr} # scheduled learning rate
-                
+
                 try:
                     _, l, ac, result_ac,summary, lr,temp, global_norm = \
                     self.sess.run([self.model.train_op, self.model.cost,self.model.acc,\
@@ -131,19 +136,21 @@ class Network:
                     global_step = self.sess.run(self.model.global_step)
                     self.train_writer.add_summary(summary,global_step)
                     self.sess.run(self.model.increase_global_step)
-                    self.schedule_lrn_rate(global_step, rl = not use_sparse)
-                    
+                    self.schedule_lrn_rate(global_step)
+
                     if i % 50 == 0:
                         with open("result.txt","a") as f:
                             f.write('Training...\n')
                             print(f'Step {i} | Training loss {l:.2f} | Temperature {temp:.2f} | Magnitude of global norm {global_norm:.2f} | Total step {global_step} | Play move accuracy {ac:.4f} | Game outcome accuracy {result_ac:.2f}',file=f)
                             print(f'Learning rate {"Adam" if self.optimizer_name=="adam" else lr}',file=f)
-                        if ac > 0.7: # overfitting, abort, check evaluation
-                            return 
+                        '''
+                            if ac > 0.7: # overfitting, abort, check evaluation
+                            return
+                        '''
                 except KeyboardInterrupt:
                     sys.exit()
                 except tf.errors.InvalidArgumentError:
-                    print(f'Step {i+1} corrupts. Discard.')
+                    print(f'Step {i+1} contains NaN gradients. Discard.')
                     continue
 
     '''
@@ -153,18 +160,19 @@ class Network:
        usage: evaluate
     '''
     def test(self,test_data, proportion=0.1):
-        
+
         print('Running evaluation...')
         num_minibatches = test_data.data_size // self.batch_num
 
         test_loss, test_acc, test_result_acc , n_batch = 0, 0, 0,0
+        test_data.shuffle()
         for i in range(int(num_minibatches * proportion)):
             batch = test_data.get_batch(self.batch_num)
             batch = [np.asarray(item).astype(np.float32) for item in batch]
             # convert the last feature: player colour to -1 & 1 from 0 & 1
             batch[0][...,16] = (batch[0][...,16]-0.5)*2
             batch[2] = (batch[2]-0.5)*2
-            
+
             feed_dict_eval = {self.imgs: batch[0],
                               self.labels: batch[1],
                               self.results:batch[2],
@@ -187,36 +195,27 @@ class Network:
             print(f'Win ratio test accuracy: {test_result_acc:.2f}',file=f)
 
         if tot_test_acc > 0.2 or self.force_save_model:
-            # if test acc is bigger than 20%, save or force save model
+            # save when test acc is bigger than 20% or  force save model
             self.saver.save(self.sess,f'./savedmodels/model-{tot_test_acc:.4f}.ckpt',\
                             global_step=self.sess.run(self.model.global_step))
 
-    def schedule_lrn_rate(self, train_step, rl=False):
-        """train_step equals total number of min_batch updates"""
-        if not rl: # SL schedule learning rate
-            if train_step < 200000:
-                self.lr = 1e-1
-            elif train_step < 400000:
-                self.lr = 1e-2
-            elif train_step < 600000:
-                self.lr = 1e-3
-            elif train_step < 700000:
-                self.lr = 1e-4
-            elif train_step < 800000:
-                self.lr = 1e-5
-            else:
-                self.lr = 1e-5
-        else: # RL schedule learning rate
-            if train_step < 200000:
-                self.lr = 1e-2
-            elif train_step < 400000:
-                self.lr = 1e-2
-            elif train_step < 600000:
-                self.lr = 1e-3
-            elif train_step < 700000:
-                self.lr = 1e-4
-            elif train_step < 800000:
-                self.lr = 1e-4
-            else:
-                self.lr = 1e-4
 
+    '''
+    params:
+        @ train_step: total number of mini-batch updates
+        @ usage: learning rate annealling
+    '''
+    def schedule_lrn_rate(self, train_step):
+        """train_step equals total number of min_batch updates"""
+        if train_step < 200000:
+            self.lr = 1e-2 #1e-1 blows up, sometimes 1e-2 blows up too.
+        elif train_step < 400000:
+            self.lr = 1e-2
+        elif train_step < 600000:
+            self.lr = 1e-3
+        elif train_step < 700000:
+            self.lr = 1e-4
+        elif train_step < 800000:
+            self.lr = 1e-5
+        else:
+            self.lr = 1e-5
