@@ -1,5 +1,5 @@
 # AlphaGOZero
-This is a trial implementation of DeepMind's Oct19th publication: [Mastering the Game of Go without Human Knowledge](https://www.nature.com/articles/nature24270.epdf?author_access_token=VJXbVjaSHxFoctQQ4p2k4tRgN0jAjWel9jnR3ZoTv0PVW4gB86EEpGqTRDtpIz-2rmo8-KG06gqVobU5NSCFeHILHcVFUeMsbvwS-lxjqQGg98faovwjxeTUgZAUMnRQ). 
+This is a trial implementation of DeepMind's Oct19th publication: [Mastering the Game of Go without Human Knowledge](https://www.nature.com/articles/nature24270.epdf?author_access_token=VJXbVjaSHxFoctQQ4p2k4tRgN0jAjWel9jnR3ZoTv0PVW4gB86EEpGqTRDtpIz-2rmo8-KG06gqVobU5NSCFeHILHcVFUeMsbvwS-lxjqQGg98faovwjxeTUgZAUMnRQ).
 
 ---
 
@@ -82,10 +82,10 @@ From Paper:
   4. A fully connected linear layer that outputs a vector of size 192^2 + 1 = 362 corresponding to logit probabilities for all intersections and the pass move
 
 **Value Head**
-* 1. A convolution of 1 filter of kernel size 1 x 1 with stride 1 
+* 1. A convolution of 1 filter of kernel size 1 x 1 with stride 1
   2. Batch normalisation
   3. A rectifier non-linearity
-  4. A fully connected linear layer to a hidden layer of size 256 
+  4. A fully connected linear layer to a hidden layer of size 256
   5. A rectifier non-linearity
   6. A fully connected linear layer to a scalar
   7. A tanh non-linearity outputting a scalar in the range [ 1, 1]
@@ -137,7 +137,7 @@ python main.py --mode=gtp —-policy=random --model_path='./savedmodels/model--0
 Under repo’s root  dir
 
 ```
-python utils/selfplay.py
+python main.py --mode=selfplay
 ```
 
 # Credit:
