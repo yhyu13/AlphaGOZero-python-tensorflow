@@ -135,7 +135,6 @@ class Network:
                     global_step = self.sess.run(self.model.global_step)
                     self.train_writer.add_summary(summary,global_step)
                     self.sess.run(self.model.increase_global_step)
-                    self.schedule_lrn_rate(global_step)
 
                     if i % 50 == 0:
                         with open("result.txt","a") as f:
