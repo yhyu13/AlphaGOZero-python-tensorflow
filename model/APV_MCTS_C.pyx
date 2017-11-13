@@ -1,47 +1,40 @@
 """
 Cython version:
-2017-11-12 18:59:10,738 [59758] INFO     __main__: Global epoch 0 start.
-2017-11-12 18:59:13,397 [59758] DEBUG    model.APV_MCTS_C: Searched for 2.65194 seconds
-2017-11-12 18:59:13,400 [59758] DEBUG    __main__:
-
+2017-11-13 13:59:17,446 [64569] INFO     __main__: Global epoch 0 start.
+2017-11-13 13:59:20,415 [64569] DEBUG    model.APV_MCTS_C: Searched for 2.96041 seconds
+2017-11-13 13:59:20,417 [64569] DEBUG    __main__:
 None
-2017-11-12 18:59:13,400 [59758] INFO     __main__: Self-Play Simulation Game #0: 2.663 seconds
+2017-11-13 13:59:20,418 [64569] INFO     __main__: Self-Play Simulation Game #0: 2.971 seconds
+
 
 Python version:
 *** PROFILER RESULTS ***
-suggest_move_prob (/Users/yuhang/Desktop/AlphaGOZero-python-tensorflow/model/APV_MCTS.py:160)
+suggest_move_prob (/Users/yuhang/Desktop/AlphaGOZero-python-tensorflow/model/APV_MCTS.py:198)
+
 function called 1 times
 
-
-         5840512 function calls (5832268 primitive calls) in 3.911 seconds
+         5591653 function calls (5583728 primitive calls) in 4.388 seconds
 
    Ordered by: cumulative time, internal time, call count
-   List reduced from 208 to 40 due to restriction <40>
+   List reduced from 203 to 40 due to restriction <40>
 
    ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-        1    0.002    0.002    3.914    3.914 APV_MCTS.py:160(suggest_move_prob)
-        1    0.013    0.013    3.896    3.896 {method 'run_until_complete' of 'uvloop.loop.Loop' objects}
-     4440    0.009    0.000    3.857    0.001 APV_MCTS.py:270(tree_search)
-9548/2904    0.046    0.000    3.830    0.001 APV_MCTS.py:181(start_tree_search)
-     1305    0.009    0.000    1.823    0.001 APV_MCTS.py:130(expand)
-     1305    0.625    0.000    1.807    0.001 APV_MCTS.py:133(<dictcomp>)
-     3801    0.497    0.000    1.570    0.000 {built-in method builtins.max}
-  1375962    0.364    0.000    1.072    0.000 APV_MCTS.py:258(<lambda>)
-   472410    0.713    0.000    0.713    0.000 APV_MCTS.py:91(__init__)
-  1375962    0.407    0.000    0.708    0.000 APV_MCTS.py:107(action_score)
-   472410    0.393    0.000    0.471    0.000 index_tricks.py:516(__next__)
-  1375962    0.301    0.000    0.301    0.000 APV_MCTS.py:103(Q)
-     1600    0.003    0.000    0.146    0.000 APV_MCTS.py:123(compute_position)
-     1600    0.013    0.000    0.142    0.000 go.py:354(play_move)
-     1305    0.006    0.000    0.131    0.000 features.py:116(extract_features)
-     1305    0.002    0.000    0.090    0.000 features.py:117(<listcomp>)
-   472410    0.077    0.000    0.077    0.000 {built-in method builtins.next}
-     1305    0.042    0.000    0.073    0.000 features.py:90(player_opponent_recent_eight_move)
-3200/1600    0.011    0.000    0.065    0.000 copy.py:132(deepcopy)
-     1600    0.007    0.000    0.055    0.000 go.py:269(__deepcopy__)
-     6492    0.009    0.000    0.041    0.000 fromnumeric.py:55(_wrapfunc)
-     2608    0.021    0.000    0.038    0.000 function_base.py:54(rot90)
-    12652    0.035    0.000    0.035    0.000 {built-in method numpy.core.multiarray.array}
+        1    0.002    0.002    4.389    4.389 APV_MCTS.py:198(suggest_move_prob)
+        1    0.014    0.014    4.359    4.359 {method 'run_until_complete' of 'uvloop.loop.Loop' objects}
+     4455    0.010    0.000    4.317    0.001 APV_MCTS.py:298(tree_search)
+9244/2919    0.054    0.000    4.287    0.001 APV_MCTS.py:219(start_tree_search)
+     1320    0.027    0.000    2.290    0.002 APV_MCTS.py:166(expand)
+     1320    0.555    0.000    2.170    0.002 APV_MCTS.py:171(<dictcomp>)
+     3561    0.483    0.000    1.546    0.000 {built-in method builtins.max}
+  1289082    0.368    0.000    1.063    0.000 APV_MCTS.py:282(<lambda>)
+   477840    1.053    0.000    1.053    0.000 APV_MCTS.py:127(__init__)
+  1289082    0.407    0.000    0.695    0.000 APV_MCTS.py:143(action_score)
+   477840    0.471    0.000    0.564    0.000 index_tricks.py:516(__next__)
+  1289082    0.288    0.000    0.288    0.000 APV_MCTS.py:139(Q)
+     1320    0.006    0.000    0.138    0.000 features.py:116(extract_features)
+     1600    0.004    0.000    0.136    0.000 APV_MCTS.py:159(compute_position)
+     1600    0.015    0.000    0.133    0.000 go.py:357(play_move)
+     1320    0.003    0.000    0.095    0.000 features.py:117(<listcomp>)
 """
 from _asyncio import Future
 import asyncio
@@ -172,9 +165,11 @@ class MCTSPlayerMixin(object):
         return position
 
     #@profile
-    def expand(self, move_probabilities):
+    def expand(self, move_probabilities, noise=True):
         """Expand leaf node"""
-        #api,parent = self.api,self
+        if noise:
+            move_probabilities = move_probabilities*.75 + 0.25*dirichlet([0.03]*362)
+
         self.children = {move: MCTSPlayerMixin(self.api,self,move,prob)
             for move, prob in np.ndenumerate(np.reshape(move_probabilities[:-1],(go.N,go.N)))}
         # Pass should always be an option! Say, for example, seki.
@@ -202,6 +197,7 @@ class MCTSPlayerMixin(object):
         prob /= np.sum(prob) # ensure 1.
         return prob
 
+    #@profile
     def suggest_move_prob(self, position, iters=1600):
         """Async tree search controller"""
         global LOOP
@@ -226,9 +222,6 @@ class MCTSPlayerMixin(object):
         global NOW_EXPANDING
 
         #TODO: add proper game over condition
-
-        # add virtual loss
-        self.virtual_loss_do()
 
         while self in NOW_EXPANDING:
             await asyncio.sleep(1e-4)
@@ -284,22 +277,15 @@ class MCTSPlayerMixin(object):
 
         else: # not a leaf node
 
-            '''
-            # perform dirichlet perturbed action score
-            all_action_score = [child.Q + \
-            child.U*(0.75+0.25*(noise)/(child.prior+1e-8)) for child,noise in\
-            zip(self.children.values(),dirichlet([0.03]*362))]
+            # add virtual loss
+            self.virtual_loss_do()
 
-            move2action_score = {move:action_score for move,action_score in \
-            zip(self.children.keys(),all_action_score)}
-
-            # select the move with maximum action score
-            select_move = max(move2action_score, key=move2action_score.get)
-            # start async tree search from child node
-            # select_move = (np.random.randint(19), np.random.randint(19))
-            value = await self.children[select_move].start_tree_search()
-            '''
+            # select child node with maximum action scroe
             child = max(self.children.values(), key=lambda node: node.action_score)
+
+            # add virtual loss
+            child.virtual_loss_do()
+
             value = await child.start_tree_search()
 
             # subtract virtual loss imposed at the beginning

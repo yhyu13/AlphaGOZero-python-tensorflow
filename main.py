@@ -20,8 +20,8 @@ if _PATH_ not in sys.path:
     sys.path.append(_PATH_)
 
 parser = argparse.ArgumentParser(description='Define parameters.')
-parser.add_argument('--n_epoch', type=int, default=5)
-parser.add_argument('--global_epoch', type=int, default=20)
+parser.add_argument('--n_epoch', type=int, default=1)
+parser.add_argument('--global_epoch', type=int, default=50)
 parser.add_argument('--n_batch', type=int, default=128)
 parser.add_argument('--n_img_row', type=int, default=19)
 parser.add_argument('--n_img_col', type=int, default=19)
@@ -120,7 +120,7 @@ def selfplay(flags=FLAGS,hps=HPS):
     """set the batch size to -1"""
     flags.n_batch = -1
     net = Network(flags,hps)
-
+    N_gamer_per_train = 10
     N_games = 25000
     position = go.Position(to_play=go.BLACK)
     final_position_collections = []
@@ -134,7 +134,7 @@ def selfplay(flags=FLAGS,hps=HPS):
                 logger.debug(f'\n{final_position}')
             final_position_collections.append(final_position)
 
-            if (i+1) % 1 == 0:
+            if (i+1) % N_gamer_per_train == 0:
                 winners_training_samples, losers_training_samples = extract_moves(final_position_collections)
                 net.train(winners_training_samples, direction=1.,lrn_rate=lr)
                 net.train(losers_training_samples, direction=-1.,lrn_rate=lr)
@@ -159,6 +159,8 @@ def train(flags=FLAGS,hps=HPS):
 
     random.shuffle(train_chunk_files)
 
+    #training_datasets = [DataSet.read(file) for file in train_chunk_files]
+
     global_step = 0
     lr = flags.lr
     with open("result.txt","a") as f:
@@ -166,6 +168,7 @@ def train(flags=FLAGS,hps=HPS):
 
             lr = schedule_lrn_rate(g_epoch)
 
+            #for train_dataset in training_datasets:
             for file in train_chunk_files:
                 global_step += 1
                 # prepare training set

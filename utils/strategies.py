@@ -114,7 +114,7 @@ from model.APV_MCTS_2_C import *
 def simulate_game_mcts(policy, position):
 
     """Simulates a game starting from a position, using a policy network"""
-    
+
     MCTSPlayerMixin.set_network_api(policy)
     current_root = MCTSPlayerMixin(parent=None,move=None,prior=0)
     MCTSPlayerMixin.set_root_node(current_root)
@@ -129,6 +129,7 @@ def simulate_game_mcts(policy, position):
         on_board_move_prob = np.reshape(move_prob[:-1],(go.N,go.N))
         if position.n < 30:
             move = select_weighted_random(position, on_board_move_prob)
+            return
         else:
             move = select_most_likely(position, on_board_move_prob)
         position.play_move(move, mutate=True, move_prob=move_prob)
