@@ -110,22 +110,22 @@ def simulate_many_games(policy1, policy2, positions):
 """Using .pyx Cython or using .py CPython"""
 import pyximport; pyximport.install()
 #from model.APV_MCTS_C import *
-from model.APV_MCTS_C import *
+from model.APV_MCTS_2_C import *
 def simulate_game_mcts(policy, position):
 
     """Simulates a game starting from a position, using a policy network"""
-    '''
+    
     MCTSPlayerMixin.set_network_api(policy)
     current_root = MCTSPlayerMixin(parent=None,move=None,prior=0)
     MCTSPlayerMixin.set_root_node(current_root)
     '''
     network_api = NetworkAPI(policy)
     mc_policy = MCTSPlayerMixin(network_api,None,None,0)
-
+    '''
 
     while position.n <= POLICY_CUTOFF_DEPTH:
-        #move_prob = MCTSPlayerMixin.suggest_move_prob(position)
-        move_prob = mc_policy.suggest_move_prob(position)
+        move_prob = MCTSPlayerMixin.suggest_move_prob(position)
+        #move_prob = mc_policy.suggest_move_prob(position)
         on_board_move_prob = np.reshape(move_prob[:-1],(go.N,go.N))
         if position.n < 30:
             move = select_weighted_random(position, on_board_move_prob)
