@@ -1,3 +1,39 @@
+"""
+*** PROFILER RESULTS ***
+suggest_move_prob (/Users/yuhang/Desktop/AlphaGOZero-python-tensorflow/model/APV_MCTS.py:160)
+function called 1 times
+
+
+         5840512 function calls (5832268 primitive calls) in 3.911 seconds
+
+   Ordered by: cumulative time, internal time, call count
+   List reduced from 208 to 40 due to restriction <40>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.002    0.002    3.914    3.914 APV_MCTS.py:160(suggest_move_prob)
+        1    0.013    0.013    3.896    3.896 {method 'run_until_complete' of 'uvloop.loop.Loop' objects}
+     4440    0.009    0.000    3.857    0.001 APV_MCTS.py:270(tree_search)
+9548/2904    0.046    0.000    3.830    0.001 APV_MCTS.py:181(start_tree_search)
+     1305    0.009    0.000    1.823    0.001 APV_MCTS.py:130(expand)
+     1305    0.625    0.000    1.807    0.001 APV_MCTS.py:133(<dictcomp>)
+     3801    0.497    0.000    1.570    0.000 {built-in method builtins.max}
+  1375962    0.364    0.000    1.072    0.000 APV_MCTS.py:258(<lambda>)
+   472410    0.713    0.000    0.713    0.000 APV_MCTS.py:91(__init__)
+  1375962    0.407    0.000    0.708    0.000 APV_MCTS.py:107(action_score)
+   472410    0.393    0.000    0.471    0.000 index_tricks.py:516(__next__)
+  1375962    0.301    0.000    0.301    0.000 APV_MCTS.py:103(Q)
+     1600    0.003    0.000    0.146    0.000 APV_MCTS.py:123(compute_position)
+     1600    0.013    0.000    0.142    0.000 go.py:354(play_move)
+     1305    0.006    0.000    0.131    0.000 features.py:116(extract_features)
+     1305    0.002    0.000    0.090    0.000 features.py:117(<listcomp>)
+   472410    0.077    0.000    0.077    0.000 {built-in method builtins.next}
+     1305    0.042    0.000    0.073    0.000 features.py:90(player_opponent_recent_eight_move)
+3200/1600    0.011    0.000    0.065    0.000 copy.py:132(deepcopy)
+     1600    0.007    0.000    0.055    0.000 go.py:269(__deepcopy__)
+     6492    0.009    0.000    0.041    0.000 fromnumeric.py:55(_wrapfunc)
+     2608    0.021    0.000    0.038    0.000 function_base.py:54(rot90)
+    12652    0.035    0.000    0.035    0.000 {built-in method numpy.core.multiarray.array}
+"""
 from _asyncio import Future
 import asyncio
 from asyncio.queues import Queue
@@ -10,7 +46,7 @@ import logging
 import sys
 import time
 import numpy as np
-from numpy.random import dirichlet
+from numpy.random import dirichlet,gamma
 from collections import namedtuple
 import logging
 import daiquiri
@@ -78,15 +114,15 @@ class NetworkAPI(object):
 
     #@profile
     def run_many(self,bulk_features):
-        #return self.net.run_many(bulk_features)
+        return self.net.run_many(bulk_features)
         """simulate I/O & evaluate"""
         #sleep(np.random.random()*5e-2)
-        return np.random.random((len(bulk_features),362)), np.random.random((len(bulk_features),1))
+        #return np.random.random((len(bulk_features),362)), np.random.random((len(bulk_features),1))
 
 class MCTSPlayerMixin(object):
 
     __slot__ = ["api","parent","move","prior","position","children","U",
-                "N","W","v_loss"]
+                "N","W"]
 
     def __init__(self, network_api, parent, move, prior):
         self.api = network_api
@@ -96,26 +132,25 @@ class MCTSPlayerMixin(object):
         self.position = None # lazily computed upon expansion
         self.children = {} # map of moves to resulting MCTSNode
         self.U,self.N,self.W = 0,0,0
-        self.v_loss = 3
 
     def __repr__(self):
         return f"<MCTSNode move=self.move prior=self.prior score=self.action_score is_expanded=self.is_expanded()>"
 
     @property
     def Q(self):
-        return self.W / self.N if self.N != 0 else 0
+        return self.W/self.N if self.N !=0 else 0
 
     @property
     def action_score(self):
         return self.Q + self.U
 
     def virtual_loss_do(self):
-        self.N += self.v_loss
-        self.W -= self.v_loss
+        self.N += 3
+        self.W -= 3
 
     def virtual_loss_undo(self):
-        self.N -= self.v_loss
-        self.W += self.v_loss
+        self.N -= 3
+        self.W += 3
 
     def is_expanded(self):
         return self.position is not None
@@ -151,12 +186,14 @@ class MCTSPlayerMixin(object):
             self.W + value,
             c_PUCT * np.sqrt(self.parent.N) * self.prior / self.N,
         )
+        #self.Q = self.W/self.N
 
     def move_prob(self):
         prob = np.asarray([child.N for child in self.children.values()]) / self.N
         prob /= np.sum(prob) # ensure 1.
         return prob
 
+    @profile
     def suggest_move_prob(self, position, iters=1600):
         """Async tree search controller"""
         global LOOP
@@ -239,6 +276,7 @@ class MCTSPlayerMixin(object):
 
         else: # not a leaf node
 
+            '''
             # perform dirichlet perturbed action score
             all_action_score = [child.Q + \
             child.U*(0.75+0.25*(noise)/(child.prior+1e-8)) for child,noise in\
@@ -252,6 +290,9 @@ class MCTSPlayerMixin(object):
             # start async tree search from child node
             # select_move = (np.random.randint(19), np.random.randint(19))
             value = await self.children[select_move].start_tree_search()
+            '''
+            child = max(self.children.values(), key=lambda node: node.action_score)
+            value = await child.start_tree_search()
 
             # subtract virtual loss imposed at the beginning
             self.virtual_loss_undo()
