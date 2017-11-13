@@ -245,12 +245,8 @@ class MCTSPlayerMixin(object):
         #return np.random.random((len(bulk_features),362)), np.random.random((len(bulk_features),1))
 
     @classmethod
-    def set_root_node(cls, root: object):
-        cls.ROOT = root
-        cls.NOW_EXPANDING = set()
-        if root.parent is not None:
-            """Help python interpreter to collect garbage???"""
-            del root.parent.children
+    def set_root_node(cls, child: object):
+        cls.ROOT = child
 
     @classmethod
     def move_prob(cls):
