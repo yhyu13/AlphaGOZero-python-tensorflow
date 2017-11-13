@@ -171,6 +171,8 @@ class LibertyTracker():
             else:
                 empty_neighbors.add(n)
 
+        '''
+        """Liberty already checked in is_move_legal()"""
         new_group = self._create_group(color, c, empty_neighbors)
 
         for group_id in friendly_neighboring_group_ids:
@@ -180,6 +182,7 @@ class LibertyTracker():
         if len(new_group.liberties) == 0:
             logger.info("Move at {} would commit suicide!\n".format(c))
             return None
+        '''
 
         for group_id in opponent_neighboring_group_ids:
             neighbor_group = self.groups[group_id]
@@ -370,10 +373,12 @@ class Position():
         potential_ko = is_koish(self.board, c)
         place_stones(pos.board, color, [c])
         captured_stones = pos.lib_tracker.add_stone(color, c)
+        '''
         if captured_stones is None:
             # suicide is illegal
             """if a illegal move occur, then return None"""
             return None
+        '''
         place_stones(pos.board, EMPTY, captured_stones)
         opp_color = color * -1
         if len(captured_stones) == 1 and potential_ko == opp_color:
