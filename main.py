@@ -154,23 +154,23 @@ def train(flags=FLAGS,hps=HPS):
     train_chunk_files = [os.path.join(flags.processed_dir, fname)
         for fname in os.listdir(flags.processed_dir)
         if TRAINING_CHUNK_RE.match(fname)]
-    train_datasets = [DataSet.read(file) for file in train_chunk_files]
 
-    random.shuffle(train_chunk_files)
+    def train_datasets():
+        random.shuffle(train_chunk_files)
+        return (DataSet.read(file) for file in train_chunk_files)
 
     global_step = 0
     with open("result.txt","a") as f:
         for g_epoch in range(flags.global_epoch):
             lr = schedule_lrn_rate(g_epoch)
-            for train_dataset in train_datasets:
-
+            for train_dataset in train_datasets():
                 global_step += 1
                 # prepare training set
                 print >>f , f"Using {file}"
                 train_dataset.shuffle()
                 with timer("training"):
                     # train
-                    run.train(train_dataset)
+                    run.train(train_dataset,lrn_rate=lr)
                 if global_step % 1 == 0:
                     # eval
                     with timer("test set evaluation"):
