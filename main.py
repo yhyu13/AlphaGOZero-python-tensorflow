@@ -159,7 +159,8 @@ def train(flags=FLAGS,hps=HPS):
 
     random.shuffle(train_chunk_files)
 
-    #training_datasets = [DataSet.read(file) for file in train_chunk_files]
+    def training_datasets():
+        return (DataSet.read(file) for file in train_chunk_files)
 
     global_step = 0
     lr = flags.lr
@@ -168,7 +169,7 @@ def train(flags=FLAGS,hps=HPS):
 
             lr = schedule_lrn_rate(g_epoch)
 
-            #for train_dataset in training_datasets:
+            #for train_dataset in training_datasets():
             for file in train_chunk_files:
                 global_step += 1
                 # prepare training set
