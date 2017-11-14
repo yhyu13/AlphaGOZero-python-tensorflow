@@ -134,7 +134,7 @@ def selfplay(flags=FLAGS,hps=HPS):
                 logger.debug(f'\n{final_position}')
             final_position_collections.append(final_position)
 
-            if (i+1) % N_gamer_per_train == 0:
+            if (i+1) % 1 == 0:
                 winners_training_samples, losers_training_samples = extract_moves(final_position_collections)
                 net.train(winners_training_samples, direction=1.,lrn_rate=lr)
                 net.train(losers_training_samples, direction=-1.,lrn_rate=lr)

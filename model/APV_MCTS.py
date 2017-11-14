@@ -1,32 +1,3 @@
-"""
-*** PROFILER RESULTS ***
-suggest_move_prob (/Users/yuhang/Desktop/AlphaGOZero-python-tensorflow/model/APV_MCTS.py:198)
-
-function called 1 times
-
-         5591653 function calls (5583728 primitive calls) in 4.388 seconds
-
-   Ordered by: cumulative time, internal time, call count
-   List reduced from 203 to 40 due to restriction <40>
-
-   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-        1    0.002    0.002    4.389    4.389 APV_MCTS.py:198(suggest_move_prob)
-        1    0.014    0.014    4.359    4.359 {method 'run_until_complete' of 'uvloop.loop.Loop' objects}
-     4455    0.010    0.000    4.317    0.001 APV_MCTS.py:298(tree_search)
-9244/2919    0.054    0.000    4.287    0.001 APV_MCTS.py:219(start_tree_search)
-     1320    0.027    0.000    2.290    0.002 APV_MCTS.py:166(expand)
-     1320    0.555    0.000    2.170    0.002 APV_MCTS.py:171(<dictcomp>)
-     3561    0.483    0.000    1.546    0.000 {built-in method builtins.max}
-  1289082    0.368    0.000    1.063    0.000 APV_MCTS.py:282(<lambda>)
-   477840    1.053    0.000    1.053    0.000 APV_MCTS.py:127(__init__)
-  1289082    0.407    0.000    0.695    0.000 APV_MCTS.py:143(action_score)
-   477840    0.471    0.000    0.564    0.000 index_tricks.py:516(__next__)
-  1289082    0.288    0.000    0.288    0.000 APV_MCTS.py:139(Q)
-     1320    0.006    0.000    0.138    0.000 features.py:116(extract_features)
-     1600    0.004    0.000    0.136    0.000 APV_MCTS.py:159(compute_position)
-     1600    0.015    0.000    0.133    0.000 go.py:357(play_move)
-     1320    0.003    0.000    0.095    0.000 features.py:117(<listcomp>)
-"""
 from _asyncio import Future
 import asyncio
 from asyncio.queues import Queue
@@ -39,7 +10,7 @@ import logging
 import sys
 import time
 import numpy as np
-from numpy.random import dirichlet,gamma
+from numpy.random import dirichlet
 from collections import namedtuple
 import logging
 import daiquiri
@@ -54,37 +25,34 @@ from utils.features import extract_features,bulk_extract_features
 # AlphaGo paper.
 # Exploration constant
 c_PUCT = 5
-
-NOW_EXPANDING = set()
-# queue size should be >= the number of semmphores
-# in order to maxout the coroutines
-# There is not rule of thumbs to choose optimal semmphores
-# And keep in mind: the more coroutines, the less (?) quality (?)
-# of the Monte Carlo Tree obtains. As my searching is less deep
-# w.r.t a sequential MCTS. However, since MCTS is a randomnized
-# algorithm that tries to approximate a value by averaging over run_many
-# random processes, the quality of the search tree is hard to define.
-# It's a trade off among time, accuracy, and the frequency of NN updates.
-SEM = asyncio.Semaphore(64)
-QUEUE = Queue(64)
-LOOP = asyncio.get_event_loop()
-RUNNING_SIMULATION_NUM = 0
 QueueItem = namedtuple("QueueItem", "feature future")
 
 class NetworkAPI(object):
 
     def __init__(self, net):
         self.net = net
+        self.now_expanding = set()
+        # queue size should be >= the number of semmphores
+        # in order to maxout the coroutines
+        # There is not rule of thumbs to choose optimal semmphores
+        # And keep in mind: the more coroutines, the less (?) quality (?)
+        # of the Monte Carlo Tree obtains. As my searching is less deep
+        # w.r.t a sequential MCTS. However, since MCTS is a randomnized
+        # algorithm that tries to approximate a value by averaging over run_many
+        # random processes, the quality of the search tree is hard to define.
+        # It's a trade off among time, accuracy, and the frequency of NN updates.
+        self.sem = asyncio.Semaphore(64)
+        self.queue = Queue(64)
+        self.loop = asyncio.get_event_loop()
+        self.running_simulation_num = 0
 
     async def prediction_worker(self):
         """For better performance, queueing prediction requests and predict together in this worker.
         speed up about 45sec -> 15sec for example.
         """
-        global QUEUE
-        global RUNNING_SIMULATION_NUM
-        q = QUEUE
+        q = self.queue
         margin = 10  # avoid finishing before other searches starting.
-        while RUNNING_SIMULATION_NUM> 0 or margin > 0:
+        while self.running_simulation_num> 0 or margin > 0:
             if q.empty():
                 if margin > 0:
                     margin -= 1
@@ -98,11 +66,9 @@ class NetworkAPI(object):
                 item.future.set_result((p, v))
 
     async def push_queue(self, features):
-        global QUEUE
-        global LOOP
-        future = LOOP.create_future()
+        future = self.loop.create_future()
         item = QueueItem(features, future)
-        await QUEUE.put(item)
+        await self.queue.put(item)
         return future
 
     #@profile
@@ -117,14 +83,20 @@ class MCTSPlayerMixin(object):
     __slot__ = ["api","parent","move","prior","position","children","U",
                 "N","W"]
 
+    '''
+    params:
+        @ api: NetworkAPI
+        @ parent: pointer to parent MCTS nodes
+        @ move: the move that leads to this node
+        @ prior: the probability that leads to this node
+        @ position: the board diagram of this node
+        @ children: the children nodes of this node
+        @ U,N,W: Upper confidence,total encouters,cumulative value
+    '''
     def __init__(self, network_api, parent, move, prior):
-        self.api = network_api
-        self.parent = parent # pointer to another MCTSNode
-        self.move = move # the move that led to this node
-        self.prior = prior
-        self.position = None # lazily computed upon expansion
-        self.children = {} # map of moves to resulting MCTSNode
-        self.U,self.N,self.W = 0,0,0
+        self.api,self.parent,self.move,self.prior,self.position,\
+        self.children,self.U,self.N,self.W \
+        = network_api,parent,move,prior,None,{},0,0,0
 
     def __repr__(self):
         return f"<MCTSNode move=self.move prior=self.prior score=self.action_score is_expanded=self.is_expanded()>"
@@ -151,14 +123,14 @@ class MCTSPlayerMixin(object):
     #@profile
     def compute_position(self):
         """Evolve the game board, and return current position"""
-        position = self.parent.position.play_move(self.move)
-        self.position = position
-        return position
+        self.position = self.parent.position.play_move(self.move)
+        return self.position
 
     #@profile
     def expand(self, move_probabilities, noise=True):
         """Expand leaf node"""
         if noise:
+            """add dirichlet noise on the fly"""
             move_probabilities = move_probabilities*.75 + 0.25*dirichlet([0.03]*362)
 
         self.children = {move: MCTSPlayerMixin(self.api,self,move,prob)
@@ -170,7 +142,6 @@ class MCTSPlayerMixin(object):
         """Backup value of a single tree node"""
         self.N += 1
         if self.parent is None:
-
             # No point in updating Q / U values for root, since they are
             # used to decide between children nodes.
             return
@@ -181,18 +152,15 @@ class MCTSPlayerMixin(object):
             self.W + value,
             c_PUCT * np.sqrt(self.parent.N) * self.prior / self.N,
         )
-        #self.Q = self.W/self.N
 
     def move_prob(self):
         prob = np.asarray([child.N for child in self.children.values()]) / self.N
         prob /= np.sum(prob) # ensure 1.
         return prob
 
-    @profile
+    #@profile
     def suggest_move_prob(self, position, iters=1600):
         """Async tree search controller"""
-        global LOOP
-
         start = time.time()
 
         if self.parent is None:
@@ -204,35 +172,37 @@ class MCTSPlayerMixin(object):
         for _ in range(iters):
             coroutine_list.append(self.tree_search())
         coroutine_list.append(self.api.prediction_worker())
-        LOOP.run_until_complete(asyncio.gather(*coroutine_list))
+        self.api.loop.run_until_complete(asyncio.gather(*coroutine_list))
 
         logger.debug(f"Searched for {(time.time() - start):.5f} seconds")
         return self.move_prob()
 
     async def start_tree_search(self):
-        global NOW_EXPANDING
+        """Monte Carlo Tree search starts here!"""
 
+        now_expanding = self.api.now_expanding
         #TODO: add proper game over condition
 
-        while self in NOW_EXPANDING:
+        while self in now_expanding:
             await asyncio.sleep(1e-4)
 
-        if not self.is_expanded(): #  is leaf node
+        if not self.is_expanded():
+            """when is leaf node try evaluate and expand"""
 
             # add leaf node to expanding list
-            NOW_EXPANDING.add(self)
+            now_expanding.add(self)
 
-            # compute leaf node position
+            # compute leaf node position on the fly
             pos = self.compute_position()
 
             if pos is None:
                 #print("illegal move!", file=sys.stderr)
                 # See go.Position.play_move for notes on detecting legality
                 # In Go, illegal move means loss (or resign)
-                # subtract virtual loss imposed at the beginnning
-                self.virtual_loss_undo()
-                self.backup_value_single(-1)
-                NOW_EXPANDING.remove(self)
+
+                # remove leaf node from expanding list
+                now_expanding.remove(self)
+
                 return -1*-1
 
             """Show thinking history for fun"""
@@ -254,30 +224,29 @@ class MCTSPlayerMixin(object):
             # expand by move probabilities
             self.expand(move_probs)
 
-            # subtract virtual loss imposed at the beginnning
-            self.virtual_loss_undo()
-
-            # back up value just for current tree node
-            self.backup_value_single(value[0])
-
             # remove leaf node from expanding list
-            NOW_EXPANDING.remove(self)
+            now_expanding.remove(self)
 
             # must invert, because alternative layer has opposite objective
             return value[0]*-1
 
-        else: # not a leaf node
+        else:
+            """node has already expanded. Enter select phase."""
 
-            # add virtual loss
+            # add virtual loss to current node
             self.virtual_loss_do()
 
             # select child node with maximum action scroe
             child = max(self.children.values(), key=lambda node: node.action_score)
 
-            # add virtual loss
+            # add virtual loss to child node
             child.virtual_loss_do()
 
+            # start child's tree search
             value = await child.start_tree_search()
+
+            child.virtual_loss_undo()
+            child.backup_value_single(value*-1)
 
             # subtract virtual loss imposed at the beginning
             self.virtual_loss_undo()
@@ -290,19 +259,17 @@ class MCTSPlayerMixin(object):
 
     async def tree_search(self):
         """Independent tree search, stands for one simulation"""
-        global RUNNING_SIMULATION_NUM
-        global SEM
 
-        RUNNING_SIMULATION_NUM += 1
+        self.api.running_simulation_num += 1
 
         # reduce parallel search number
-        with await SEM:
+        with await self.api.sem:
 
             value = await self.start_tree_search()
 
             #logger.debug(f"value: {value}")
             #logger.debug(f'Current running threads : {RUNNING_SIMULATION_NUM}')
 
-            RUNNING_SIMULATION_NUM -= 1
+            self.api.running_simulation_num  -= 1
 
             return value

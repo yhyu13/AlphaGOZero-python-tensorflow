@@ -97,9 +97,9 @@ def simulate_many_games(policy1, policy2, positions):
             all_move_probs = policy.run_many(bulk_extract_features(to_play))
             for i, pos in enumerate(to_play):
                 if pos.n < 30:
-                    move = select_weighted_random(pos, np.reshape(all_move_probs[i],(go.N,go.N)))
+                    move = select_weighted_random(pos, np.reshape(all_move_probs[i][:-1],(go.N,go.N)))
                 else:
-                    move = select_most_likely(pos, np.reshape(all_move_probs[i],(go.N,go.N)))
+                    move = select_most_likely(pos, np.reshape(all_move_probs[i][:-1],(go.N,go.N)))
                 pos.play_move(move, mutate=True, move_prob=all_move_probs[i])
 
     for pos in positions:
@@ -114,18 +114,17 @@ from model.APV_MCTS_2_C import *
 def simulate_game_mcts(policy, position):
 
     """Simulates a game starting from a position, using a policy network"""
-
+    '''
     MCTSPlayerMixin.set_network_api(policy)
     current_root = MCTSPlayerMixin(parent=None,move=None,prior=0)
     MCTSPlayerMixin.set_root_node(current_root)
     '''
     network_api = NetworkAPI(policy)
-    mc_policy = MCTSPlayerMixin(network_api,None,None,0)
-    '''
+    mc_root = MCTSPlayerMixin(network_api,None,None,0)
 
     while position.n <= POLICY_CUTOFF_DEPTH:
-        move_prob = MCTSPlayerMixin.suggest_move_prob(position)
-        #move_prob = mc_policy.suggest_move_prob(position)
+        #move_prob = MCTSPlayerMixin.suggest_move_prob(position)
+        move_prob = mc_root.suggest_move_prob(position)
         on_board_move_prob = np.reshape(move_prob[:-1],(go.N,go.N))
         if position.n < 30:
             move = select_weighted_random(position, on_board_move_prob)
@@ -134,7 +133,9 @@ def simulate_game_mcts(policy, position):
             move = select_most_likely(position, on_board_move_prob)
         position.play_move(move, mutate=True, move_prob=move_prob)
         # shift to child node
-        MCTSPlayerMixin.set_root_node(current_root.children[move])
+        #MCTSPlayerMixin.set_root_node(current_root.children[move])
+        mc_root = mc_root.children[move]
+        mc_root.parent = None
 
     simulate_game_random(position)
 
