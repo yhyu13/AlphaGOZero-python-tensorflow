@@ -324,12 +324,19 @@ class Position():
         'Checks that a move is on an empty space, not on ko, and not suicide'
         if move is None:
             return True
-        if self.board[move] != EMPTY:
-            return False
+        try:
+            if self.board[move] != EMPTY:
+                return False
+        except IndexError:
+            logger.debug(f'Index of out bound: {move}')
+
         if move == self.ko:
             return False
-        if self.is_move_suicidal(move):
-            return False
+        try:
+            if self.is_move_suicidal(move):
+                return False
+        except KeyError:
+            logger.debug(f'Key Error: {move}')
 
         return True
 
