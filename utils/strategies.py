@@ -58,6 +58,7 @@ def select_weighted_random(position, move_probabilities):
     cdf = move_probabilities.cumsum()
     selected_move = utils.unflatten_coords(
         cdf.searchsorted(selection, side="right"))
+    #logger.debug(f'The selected move is:{selected_move}')
     if is_move_reasonable(position, selected_move):
         return selected_move
     else:
@@ -94,14 +95,19 @@ def simulate_many_games(policy1, policy2, positions):
 
         for policy, to_play in ((policy1, black_to_play),
                                 (policy2, white_to_play)):
-            all_move_probs = policy.run_many(bulk_extract_features(to_play))
-            for i, pos in enumerate(to_play):
-                if pos.n < 30:
-                    move = select_weighted_random(pos, np.reshape(all_move_probs[i][:-1],(go.N,go.N)))
-                else:
-                    move = select_most_likely(pos, np.reshape(all_move_probs[i][:-1],(go.N,go.N)))
-                pos.play_move(move, mutate=True, move_prob=all_move_probs[i])
+            if len(to_play) == 0:
+                continue
+            else:
+                all_move_probs,_ = policy.run_many(bulk_extract_features(to_play))
+                #logger.debug(all_move_probs.shape)
+                for i, pos in enumerate(to_play):
+                    if pos.n < 30:
+                        move = select_weighted_random(pos, np.reshape(all_move_probs[i][:-1],(go.N,go.N)))
+                    else:
+                        move = select_most_likely(pos, np.reshape(all_move_probs[i][:-1],(go.N,go.N)))
+                    pos.play_move(move, mutate=True, move_prob=all_move_probs[i])
 
+    # TODO: implement proper end game
     for pos in positions:
         simulate_game_random(pos)
 
@@ -110,25 +116,69 @@ def simulate_many_games(policy1, policy2, positions):
 """Using .pyx Cython or using .py CPython"""
 import pyximport; pyximport.install()
 #from model.APV_MCTS_C import *
-from model.APV_MCTS_2_C import *
-def simulate_game_mcts(policy, position):
+from model.APV_MCTS_C import *
 
-    """Simulates a game starting from a position, using a policy network"""
-    '''
-    MCTSPlayerMixin.set_network_api(policy)
-    current_root = MCTSPlayerMixin(parent=None,move=None,prior=0)
-    MCTSPlayerMixin.set_root_node(current_root)
-    '''
-    network_api = NetworkAPI(policy)
+def simulate_rival_games_mcts(policy1, policy2, positions):
+    """Simulates many games in parallel, utilizing GPU parallelization to
+    run the policy network for multiple games simultaneously.
+
+    policy1 is black; policy2 is white."""
+    network_api1 = NetworkAPI(policy1,num_playouts=playouts)
     mc_root = MCTSPlayerMixin(network_api,None,None,0)
 
-    while position.n <= POLICY_CUTOFF_DEPTH:
-        #move_prob = MCTSPlayerMixin.suggest_move_prob(position)
+    network_api = NetworkAPI(policy,num_playouts=playouts)
+    mc_root = MCTSPlayerMixin(network_api,None,None,0)
+
+    # Assumes that all positions are on the same move number. May not be true
+    # if, say, we are exploring multiple MCTS branches in parallel
+    while positions[0].n <= POLICY_CUTOFF_DEPTH + POLICY_FINISH_MOVES:
+        black_to_play = [pos for pos in positions if pos.to_play == go.BLACK]
+        white_to_play = [pos for pos in positions if pos.to_play == go.WHITE]
+
+        for policy, to_play in ((policy1, black_to_play),
+                                (policy2, white_to_play)):
+            all_move_probs,_ = policy.run_many(bulk_extract_features(to_play))
+            on_board_move_probs = (np.reshape(move_probs[:-1],(go.N,go.N)) for move_probs in all_move_probs)
+            for i, pos in enumerate(to_play):
+                if pos.n < 30:
+                    move = select_weighted_random(pos, on_board_move_probs.next())
+                else:
+                    move = select_most_likely(pos, on_board_move_probs.next())
+                pos.play_move(move, mutate=True, move_prob=all_move_probs[i])
+
+    # TODO: implement proper end game
+    for pos in positions:
+        simulate_game_random(pos)
+
+    return positions
+
+def simulate_game_mcts(policy, position, playouts=1600,resignThreshold=-0.8,no_resign=True):
+
+    """Simulates a game starting from a position, using a policy network"""
+
+    network_api = NetworkAPI(policy,num_playouts=playouts)
+    mc_root = MCTSPlayerMixin(network_api,None,None,0)
+
+    """Keep dancing until the music stops"""
+    agent_resigned = False
+    false_positive = False
+    who_should_lose = 1
+
+    def resign_condition():
+        return mc_root.Q < resignThreshold
+
+    def game_end_condition():
+        if len(position.recent)>=2:
+            return not (position.recent[-2].move is None and position.recent[-1].move is None)
+        else:
+            return True
+
+    while game_end_condition():
+
         move_prob = mc_root.suggest_move_prob(position)
         on_board_move_prob = np.reshape(move_prob[:-1],(go.N,go.N))
         if position.n < 30:
             move = select_weighted_random(position, on_board_move_prob)
-            return
         else:
             move = select_most_likely(position, on_board_move_prob)
         position.play_move(move, mutate=True, move_prob=move_prob)
@@ -137,13 +187,24 @@ def simulate_game_mcts(policy, position):
         mc_root = mc_root.children[move]
         mc_root.parent = None
 
-    simulate_game_random(position)
+        if resign_condition():
+            agent_resigned = True
+            who_should_lose = 'W' if position.to_play==1 else 'B'
+            if no_resign:
+                continue
+            else:
+                return position, agent_resigned, false_positive
 
-    return position
+    if agent_resigned:
+        if who_should_lose in position.result():
+            false_positive = True
+
+    return position, agent_resigned, false_positive
 
 def get_winrate(final_positions):
-    black_win = [utils.parse_game_result(pos.result()) == go.BLACK
-                 for pos in final_positions]
+    results = [pos.result() for pos in final_positions]
+    black_win = ['B' in i for i in results]
+    logger.debug(f'Model evaluation game results : {results}')
     return sum(black_win) / len(black_win)
 
 def extract_moves(final_positions):

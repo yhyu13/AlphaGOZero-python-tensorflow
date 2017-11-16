@@ -3,6 +3,12 @@ import numpy as np
 import os
 import sys
 
+import logging
+import daiquiri
+
+daiquiri.setup(level=logging.DEBUG)
+logger = daiquiri.getLogger(__name__)
+
 from model.alphagozero_resnet_model import AlphaGoZeroResNet
 from model.alphagozero_resnet_elu_model import AlphaGoZeroResNetELU
 from model.alphagozero_resnet_full_model import AlphaGoZeroResNetFULL
@@ -31,7 +37,6 @@ class Network:
         self.img_col = flags.n_img_col
         self.img_channels = flags.n_img_channels
         self.nb_classes = flags.n_classes
-        self.force_save_model = flags.force_save_model
         self.optimizer_name = hps.optimizer
 
         '''
@@ -51,10 +56,10 @@ class Network:
         models = {'elu': lambda: AlphaGoZeroResNetELU(hps, self.imgs, self.labels, self.results,'train'),
                   'full': lambda: AlphaGoZeroResNetFULL(hps, self.imgs, self.labels, self.results,'train'),
                   'original': lambda: AlphaGoZeroResNet(hps, self.imgs, self.labels, self.results,'train')}
-        print('Building Model...')
+        logger.debug('Building Model...')
         self.model = models[flags.model]()
         self.model.build_graph()
-        print(f'Building Model Complete...\nTotal parameters: {self.model.total_parameters()}')
+        logger.debug(f'Building Model Complete...Total parameters: {self.model.total_parameters()}')
 
         self.summary = self.model.summaries
 
@@ -68,20 +73,29 @@ class Network:
             # hacky way to creat a file
             open("result.txt", "a").close()
 
-        self.train_writer = tf.summary.FileWriter("./train_log", self.sess.graph)
+        #self.train_writer = tf.summary.FileWriter("./train_log", self.sess.graph)
         self.saver = tf.train.Saver(tf.trainable_variables()+[var for var in tf.global_variables() if 'bn' in var.name],max_to_keep=10)
 
         if flags.load_model_path is not None:
-            print('Loading Model...')
+            logger.debug('Loading Model...')
             try:
                 ckpt = tf.train.get_checkpoint_state(flags.load_model_path)
                 self.saver.restore(self.sess, ckpt.model_checkpoint_path)
-                print('Loading Model Succeeded...')
+                logger.debug('Loading Model Succeeded...')
             except:
-                print('Loading Model Failed')
+                logger.debug('Loading Model Failed')
                 pass
         self.sess.run(tf.global_variables_initializer())
-        print('Done initializing variables')
+        logger.debug('Done initializing variables')
+
+
+    '''
+    params:
+         usage: destructor
+    '''
+    def close(self):
+        self.sess.close()
+        logger.info(f'Shutdown neural network')
 
     '''
     params:
@@ -104,12 +118,12 @@ class Network:
          @ use_sparse: use sparse softmax to compute cross entropy
     '''
     def train(self, training_data, direction=1.0, use_sparse=True, lrn_rate=1e-4):
-        print('Training model...')
+        logger.debug('Training model...')
         self.num_iter = training_data.data_size // self.batch_num
 
         # Set default learning rate for scheduling
         for j in range(self.num_epoch):
-            print(f'Epoch {j+1}')
+            logger.debug(f'Epoch {j+1}')
 
             for i in range(self.num_iter):
                 batch = training_data.get_batch(self.batch_num)
@@ -133,14 +147,14 @@ class Network:
                                    self.model.result_acc , self.summary, self.model.lrn_rate,\
                                    self.model.temp,self.model.norm], feed_dict=feed_dict)
                     global_step = self.sess.run(self.model.global_step)
-                    self.train_writer.add_summary(summary,global_step)
+                    #self.train_writer.add_summary(summary,global_step)
                     self.sess.run(self.model.increase_global_step)
 
                     if i % 50 == 0:
                         with open("result.txt","a") as f:
                             f.write('Training...\n')
-                            print(f'Step {i} | Training loss {l:.2f} | Temperature {temp:.2f} | Magnitude of global norm {global_norm:.2f} | Total step {global_step} | Play move accuracy {ac:.4f} | Game outcome accuracy {result_ac:.2f}',file=f)
-                            print(f'Learning rate {"Adam" if self.optimizer_name=="adam" else lr}',file=f)
+                            logger.debug(f'Step {i} | Training loss {l:.2f} | Temperature {temp:.2f} | Magnitude of global norm {global_norm:.2f} | Total step {global_step} | Play move accuracy {ac:.4f} | Game outcome accuracy {result_ac:.2f}',file=f)
+                            logger.debug(f'Learning rate {"Adam" if self.optimizer_name=="adam" else lr}',file=f)
                         '''
                             if ac > 0.7: # overfitting, abort, check evaluation
                             return
@@ -148,7 +162,7 @@ class Network:
                 except KeyboardInterrupt:
                     sys.exit()
                 except tf.errors.InvalidArgumentError:
-                    print(f'Step {i+1} contains NaN gradients. Discard.')
+                    logger.debug(f'Step {i+1} contains NaN gradients. Discard.')
                     continue
 
     '''
@@ -157,9 +171,9 @@ class Network:
        @ proportion: how much proportion to evaluate
        usage: evaluate
     '''
-    def test(self,test_data, proportion=0.1):
+    def test(self,test_data, proportion=0.1,force_save_model=False):
 
-        print('Running evaluation...')
+        logger.debug('Running evaluation...')
         num_minibatches = test_data.data_size // self.batch_num
 
         test_loss, test_acc, test_result_acc , n_batch = 0, 0, 0,0
@@ -188,11 +202,11 @@ class Network:
 
         with open("result.txt","a") as f:
             f.write('Running evaluation...\n')
-            print(f'Test loss: {tot_test_loss:.2f}',file=f)
-            print(f'Play move test accuracy: {tot_test_acc:.4f}',file=f)
-            print(f'Win ratio test accuracy: {test_result_acc:.2f}',file=f)
+            logger.debug(f'Test loss: {tot_test_loss:.2f}',file=f)
+            logger.debug(f'Play move test accuracy: {tot_test_acc:.4f}',file=f)
+            logger.debug(f'Win ratio test accuracy: {test_result_acc:.2f}',file=f)
 
-        if tot_test_acc > 0.2 or self.force_save_model:
+        if tot_test_acc > 0.2 or force_save_model:
             # save when test acc is bigger than 20% or  force save model
             self.saver.save(self.sess,f'./savedmodels/model-{tot_test_acc:.4f}.ckpt',\
                             global_step=self.sess.run(self.model.global_step))

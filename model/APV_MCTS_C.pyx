@@ -29,7 +29,7 @@ QueueItem = namedtuple("QueueItem", "feature future")
 
 class NetworkAPI(object):
 
-    def __init__(self, net):
+    def __init__(self, net, num_playouts=1600):
         self.net = net
         self.now_expanding = set()
         # queue size should be >= the number of semmphores
@@ -45,6 +45,7 @@ class NetworkAPI(object):
         self.queue = Queue(64)
         self.loop = asyncio.get_event_loop()
         self.running_simulation_num = 0
+        self.playouts = num_playouts
 
     async def prediction_worker(self):
         """For better performance, queueing prediction requests and predict together in this worker.
@@ -73,10 +74,10 @@ class NetworkAPI(object):
 
     #@profile
     def run_many(self,bulk_features):
-        return self.net.run_many(bulk_features)
+        #return self.net.run_many(bulk_features)
         """simulate I/O & evaluate"""
         #sleep(np.random.random()*5e-2)
-        #return np.random.random((len(bulk_features),362)), np.random.random((len(bulk_features),1))
+        return np.random.random((len(bulk_features),362)), np.random.random((len(bulk_features),1))
 
 class MCTSPlayerMixin(object):
 
@@ -159,7 +160,7 @@ class MCTSPlayerMixin(object):
         return prob
 
     #@profile
-    def suggest_move_prob(self, position, iters=1600):
+    def suggest_move_prob(self, position):
         """Async tree search controller"""
         start = time.time()
 
@@ -169,7 +170,7 @@ class MCTSPlayerMixin(object):
             self.expand(move_probs[0])
 
         coroutine_list = []
-        for _ in range(iters):
+        for _ in range(self.api.playouts):
             coroutine_list.append(self.tree_search())
         coroutine_list.append(self.api.prediction_worker())
         self.api.loop.run_until_complete(asyncio.gather(*coroutine_list))
@@ -246,6 +247,7 @@ class MCTSPlayerMixin(object):
             value = await child.start_tree_search()
 
             child.virtual_loss_undo()
+
             child.backup_value_single(value*-1)
 
             # subtract virtual loss imposed at the beginning
