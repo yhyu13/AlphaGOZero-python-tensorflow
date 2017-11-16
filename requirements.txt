@@ -7,4 +7,3 @@ uvloop
 profilehooks
 protobuf==3.1.0.post1
 six==1.10.0
-gtp

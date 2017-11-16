@@ -129,7 +129,47 @@ python main.py --mode=train --force_save —-n_resid_units=20
 ## Play Against An A.I. (currently only random A.I. is available)
 
 ```
-python main.py --mode=gtp —-policy=random --model_path='./savedmodels/model--0.0.ckpt'
+python main.py --mode=gtp —-policy=random
+
+2017-11-16 02:19:45,274 [20046] DEBUG    Network: Building Model Complete...Total parameters: 1581959
+2017-11-16 02:19:45,606 [20046] DEBUG    Network: Loading Model...
+2017-11-16 02:19:45,615 [20046] DEBUG    Network: Loading Model Failed
+2017-11-16 02:19:46,702 [20046] DEBUG    Network: Done initializing variables
+GTP engine ready
+clear_board
+=
+
+
+showboard
+   A B C D E F G H J K L M N O P Q R S T
+19 . . . . . . . . . . . . . . . . . . . 19
+18 . . . . . . . . . . . . . . . . . . . 18
+17 . . . . . . . . . . . . . . . . . . . 17
+16 . . . . . . . . . . . . . . . . . . . 16
+15 . . . . . . . . . . . . . . . . . . . 15
+14 . . . . . . . . . . . . . . . . . . . 14
+13 . . . . . . . . . . . . . . . . . . . 13
+12 . . . . . . . . . . . . . . . . . . . 12
+11 . . . . . . . . . . . . . . . . . . . 11
+10 . . . . . . . . . . . . . . . . . . . 10
+ 9 . . . . . . . . . . . . . . . . . . .  9
+ 8 . . . . . . . . . . . . . . . . . . .  8
+ 7 . . . . . . . . . . . . . . . . . . .  7
+ 6 . . . . . . . . . . . . . . . . . . .  6
+ 5 . . . . . . . . . . . . . . . . . . .  5
+ 4 . . . . . . . . . . . . . . . . . . .  4
+ 3 . . . . . . . . . . . . . . . . . . .  3
+ 2 . . . . . . . . . . . . . . . . . . .  2
+ 1 . . . . . . . . . . . . . . . . . . .  1
+   A B C D E F G H J K L M N O P Q R S T
+Move: 0. Captures X: 0 O: 0
+
+None
+=
+
+play Black B1
+= (1, (2, 1))
+
 ```
 
 ## Basic Self-play
