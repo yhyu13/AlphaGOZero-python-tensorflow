@@ -119,7 +119,8 @@ The support for Sabaki is **available**. Go to [Sabaki-releases](https://github.
 4. Click Ok. All set!
 5. By the same token, add GNU Go and Leela under ```engine``` folder to Sabaki as well!
 
-[](/figure/Sabaki.png)
+![](/figure/Sabaki.png)
+
 ## Basic Self-play
 
 Under repo’s root  dir
