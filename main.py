@@ -1,3 +1,12 @@
+#!/Users/yuhang/anaconda3/envs/py3dl/bin/python
+"""
+After installing all requirement,
+Type 'which python' in your terminal.
+And paste the path to your python env
+in the bash bang line above.
+Then 'chmod u+x main.py', so that main.py would become an excuteable.
+"""
+
 import argparse
 import argh
 from time import time
@@ -35,7 +44,7 @@ parser.add_argument('--model_path',dest='load_model_path',default='./savedmodels
 parser.add_argument('--model_type',dest='model',default='full',\
                     help='choose residual block architecture {original,elu,full}')
 parser.add_argument('--optimizer',dest='opt',default='mom')
-parser.add_argument('--policy',dest='policy',default='mctspolicy',help='choose gtp bot player')
+parser.add_argument('--gtp_policy',dest='gpt_policy',default='random',help='choose gtp bot player')
 parser.add_argument('--mode',dest='MODE', default='train',help='either gtp or train')
 FLAGS = parser.parse_args()
 
@@ -93,7 +102,7 @@ def schedule_lrn_rate(train_step):
 # Credit: Brain Lee
 def gtp(flags=FLAGS,hps=HPS):
     from utils.gtp_wrapper import make_gtp_instance
-    engine = make_gtp_instance(strategy=flags.policy,flags=flags,hps=hps)
+    engine = make_gtp_instance(flags=flags,hps=hps)
     if engine is None:
         sys.stderr.write("Unknown strategy")
         sys.exit()

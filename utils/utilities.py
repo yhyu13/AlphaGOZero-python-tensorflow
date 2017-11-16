@@ -10,7 +10,7 @@ import random
 import re
 import time
 
-import gtp
+import utils.gtp as gtp
 import utils.go as go
 
 KGS_COLUMNS = 'ABCDEFGHJKLMNOPQRST'

@@ -20,6 +20,7 @@ logger = daiquiri.getLogger(__name__)
 
 import utils.go as go
 from utils.features import extract_features,bulk_extract_features
+from utils.strategies import select_weighted_random,select_most_likely
 
 # All terminology here (Q, U, N, p_UCT) uses the same notation as in the
 # AlphaGo paper.
@@ -158,6 +159,15 @@ class MCTSPlayerMixin(object):
         prob = np.asarray([child.N for child in self.children.values()]) / self.N
         prob /= np.sum(prob) # ensure 1.
         return prob
+
+    def suggest_move(self, position):
+        move_prob = self.suggest_move_prob(position)
+        on_board_move_prob = np.reshape(move_prob[:-1],(go.N,go.N))
+        if self.position.n < 30:
+            move = select_weighted_random(position, on_board_move_prob)
+        else:
+            move = select_most_likely(position, on_board_move_prob)
+        return move
 
     #@profile
     def suggest_move_prob(self, position):

@@ -1,11 +1,11 @@
-import gtp
+import utils.gtp as gtp
 
 import utils.go as go
 import random
 import utils.utilities as utils
 from Network import Network
 from utils.strategies import RandomPlayerMixin, GreedyPolicyPlayerMixin, RandomPolicyPlayerMixin
-from model.AVP_MCTS import MCTSPlayerMixin
+from model.APV_MCTS import MCTSPlayerMixin
 
 def translate_gtp_colors(gtp_color):
     if gtp_color == gtp.BLACK:
@@ -43,7 +43,7 @@ class GtpInterface(object):
         self.accomodate_out_of_turn(color)
         try:
             self.position = self.position.play_move(coords, color=translate_gtp_colors(color))
-        except go.IllegalMove:
+        except:
             return False
         return True
 
@@ -72,13 +72,20 @@ class GtpInterface(object):
     def suggest_move(self, position):
         raise NotImplementedError
 
+    def show_board(self):
+        if self.position is not None:
+            print(self.position)
+        else:
+            print('Please clear_board to reinitialize the game.')
+
 class RandomPlayer(RandomPlayerMixin, GtpInterface): pass
 class RandomPolicyPlayer(RandomPolicyPlayerMixin, GtpInterface): pass
 class GreedyPolicyPlayer(GreedyPolicyPlayerMixin, GtpInterface): pass
 class MCTSPlayer(MCTSPlayerMixin, GtpInterface): pass
 
-def make_gtp_instance(strategy_name,flags,hps):
+def make_gtp_instance(flags,hps):
     n = Network(flags,hps)
+    strategy_name = flags.gpt_policy
     if strategy_name == 'random':
         instance = RandomPlayer()
     elif strategy_name == 'greedypolicy':

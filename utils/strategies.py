@@ -4,7 +4,7 @@ import random
 import sys
 import time
 from time import sleep
-import gtp
+import utils.gtp as gtp
 import numpy as np
 
 import logging
@@ -48,21 +48,27 @@ def select_random(position):
     return None
 
 def select_most_likely(position, move_probabilities):
+    """Select the most resonable move according to sorted probability"""
     for move in sorted_moves(move_probabilities):
         if is_move_reasonable(position, move):
             return move
     return None
 
 def select_weighted_random(position, move_probabilities):
+    """select move according to their relative probability"""
     selection = random.random()
     cdf = move_probabilities.cumsum()
     selected_move = utils.unflatten_coords(
         cdf.searchsorted(selection, side="right"))
     #logger.debug(f'The selected move is:{selected_move}')
-    if is_move_reasonable(position, selected_move):
-        return selected_move
+    # check memory leak
+    if 19 not in selected_move:
+        if is_move_reasonable(position, selected_move):
+            return selected_move
+        else:
+            # inexpensive fallback in case an illegal move is chosen.
+            return select_most_likely(position, move_probabilities)
     else:
-        # inexpensive fallback in case an illegal move is chosen.
         return select_most_likely(position, move_probabilities)
 
 def simulate_game_random(position):
@@ -124,10 +130,10 @@ def simulate_rival_games_mcts(policy1, policy2, positions):
 
     policy1 is black; policy2 is white."""
     network_api1 = NetworkAPI(policy1,num_playouts=playouts)
-    mc_root = MCTSPlayerMixin(network_api,None,None,0)
+    mc_root1 = MCTSPlayerMixin(network_api,None,None,0)
 
     network_api = NetworkAPI(policy,num_playouts=playouts)
-    mc_root = MCTSPlayerMixin(network_api,None,None,0)
+    mc_root2 = MCTSPlayerMixin(network_api,None,None,0)
 
     # Assumes that all positions are on the same move number. May not be true
     # if, say, we are exploring multiple MCTS branches in parallel
@@ -135,16 +141,16 @@ def simulate_rival_games_mcts(policy1, policy2, positions):
         black_to_play = [pos for pos in positions if pos.to_play == go.BLACK]
         white_to_play = [pos for pos in positions if pos.to_play == go.WHITE]
 
-        for policy, to_play in ((policy1, black_to_play),
-                                (policy2, white_to_play)):
-            all_move_probs,_ = policy.run_many(bulk_extract_features(to_play))
-            on_board_move_probs = (np.reshape(move_probs[:-1],(go.N,go.N)) for move_probs in all_move_probs)
+        for mc_root, to_play in ((mc_root1, black_to_play),
+                                (mc_root2, white_to_play)):
+            if len(to_play) == 0:
+                continue
             for i, pos in enumerate(to_play):
-                if pos.n < 30:
-                    move = select_weighted_random(pos, on_board_move_probs.next())
-                else:
-                    move = select_most_likely(pos, on_board_move_probs.next())
-                pos.play_move(move, mutate=True, move_prob=all_move_probs[i])
+                move = mc_root.suggest_move(pos)
+                pos.play_move(move, mutate=True, move_prob=policy.move_prob())
+                # shift to child node
+                mc_root = mc_root.children[move]
+                mc_root.parent = None
 
     # TODO: implement proper end game
     for pos in positions:
@@ -175,18 +181,13 @@ def simulate_game_mcts(policy, position, playouts=1600,resignThreshold=-0.8,no_r
 
     while game_end_condition():
 
-        move_prob = mc_root.suggest_move_prob(position)
-        on_board_move_prob = np.reshape(move_prob[:-1],(go.N,go.N))
-        if position.n < 30:
-            move = select_weighted_random(position, on_board_move_prob)
-        else:
-            move = select_most_likely(position, on_board_move_prob)
-        position.play_move(move, mutate=True, move_prob=move_prob)
+        move = mc_root.suggest_move(position)
+        position.play_move(move, mutate=True, move_prob=mc_root.move_prob())
         # shift to child node
-        #MCTSPlayerMixin.set_root_node(current_root.children[move])
         mc_root = mc_root.children[move]
         mc_root.parent = None
 
+        # check resign
         if resign_condition():
             agent_resigned = True
             who_should_lose = 'W' if position.to_play==1 else 'B'
@@ -195,10 +196,12 @@ def simulate_game_mcts(policy, position, playouts=1600,resignThreshold=-0.8,no_r
             else:
                 return position, agent_resigned, false_positive
 
+    # check false positive if resign
     if agent_resigned:
         if who_should_lose in position.result():
             false_positive = True
 
+    # return game result and stats
     return position, agent_resigned, false_positive
 
 def get_winrate(final_positions):
