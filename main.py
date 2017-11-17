@@ -40,12 +40,13 @@ parser.add_argument('--lr', type=float, default=0.01)
 parser.add_argument('--n_resid_units', type=int, default=6)
 parser.add_argument('--n_gpu', type=int, default=1)
 parser.add_argument('--dataset', dest='processed_dir',default='./processed_data')
-parser.add_argument('--model_path',dest='load_model_path',default='./savedmodels')
+parser.add_argument('--model_path',dest='load_model_path',default='./savedmodels')#'./savedmodels'
 parser.add_argument('--model_type',dest='model',default='full',\
                     help='choose residual block architecture {original,elu,full}')
 parser.add_argument('--optimizer',dest='opt',default='adam')
 parser.add_argument('--gtp_policy',dest='gpt_policy',default='mctspolicy',help='choose gtp bot player')#random,mctspolicy
-parser.add_argument('--num_playouts',type=int,dest='num_playouts',default=200,help='The number of MC search per move, the more the better.')
+parser.add_argument('--num_playouts',type=int,dest='num_playouts',default=1600,help='The number of MC search per move, the more the better.')
+parser.add_argument('--selfplay_games_per_epoch',type=int,dest='selfplay_games_per_epoch',default=25000)
 parser.add_argument('--mode',dest='MODE', default='train',help='among selfplay, gtp and train')
 FLAGS = parser.parse_args()
 
@@ -133,7 +134,7 @@ def selfplay(flags=FLAGS,hps=HPS):
     """set the batch size to -1==None"""
     flags.n_batch = -1
     net = Network(flags,hps)
-    Worker = SelfPlayWorker(net)
+    Worker = SelfPlayWorker(net,flags)
 
     def train(epoch:int):
         lr = schedule_lrn_rate(epoch)
@@ -160,7 +161,7 @@ def selfplay(flags=FLAGS,hps=HPS):
         #evaluate_testset()
 
         """Evaluate against best model"""
-        evaluate_generations()
+        #evaluate_generations()
 
         logger.info(f'Global epoch {g_epoch} finish.')
     logger.info('Now, I am the Master! 现在，请叫我棋霸！')

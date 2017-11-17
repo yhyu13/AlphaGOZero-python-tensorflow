@@ -148,8 +148,7 @@ def simulate_rival_games_mcts(policy1, policy2, positions):
                 move = mc_root.suggest_move(pos)
                 pos.play_move(move, mutate=True, move_prob=policy.move_prob())
                 # shift to child node
-                mc_root = mc_root.children[move]
-                mc_root.parent = None
+                mc_root.shift_node(move,pos)
 
     # TODO: implement proper end game
     for pos in positions:
@@ -183,9 +182,8 @@ def simulate_game_mcts(policy, position, playouts=1600,resignThreshold=-0.8,no_r
         move = mc_root.suggest_move(position)
         position.play_move(move, mutate=True, move_prob=mc_root.move_prob())
         # shift to child node
-        mc_root = mc_root.children[move]
+        mc_root.shift_node(move,position)
         logger.debug(f'Move at step {position.n} is {move}')
-        mc_root.parent = None
 
         # check resign
         if resign_condition():

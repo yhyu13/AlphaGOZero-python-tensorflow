@@ -103,8 +103,11 @@ class Network:
          usage: queue prediction, self-play
     '''
     def run_many(self,imgs):
+        imgs = np.asarray(imgs).astype(np.float32)
         imgs[:][...,16] = (imgs[:][...,16]-0.5)*2
-        feed_dict = {self.imgs:imgs,self.model.training: False}
+        # set high temperature to counter strong move bias?
+        # set model batch_norm
+        feed_dict = {self.imgs:imgs,self.model.training: False ,self.model.temp: 1.}
         move_probabilities,value = self.sess.run([self.model.prediction,self.model.value],feed_dict=feed_dict)
 
         # with multi-gpu, porbs and values are separated in each outputs
@@ -195,6 +198,7 @@ class Network:
             test_acc += ac
             test_result_acc += result_acc
             n_batch += 1
+            logger.debug(f'Test accuaracy: {test_acc}')
 
         tot_test_loss = test_loss / (n_batch-1e-2)
         tot_test_acc = test_acc / (n_batch-1e-2)

@@ -20,15 +20,15 @@ def timer(message):
 
 class SelfPlayWorker(object):
 
-    def __init__(self,net):
+    def __init__(self,net,flags):
         self.net = net
         self.N_games_per_train = 1#10
-        self.N_games = 1#25000
-        self.playouts = 200#1600
+        self.N_games = flags.selfplay_games_per_epoch#25000
+        self.playouts = flags.num_playouts#1600
         self.position = go.Position(to_play=go.BLACK)
         self.final_position_collections = []
         self.dicard_game_threshold = 30 # number of moves that is considered to resign too early
-        self.resign_threshold = -0.75
+        self.resign_threshold = -0.8
         self.resign_delta = 0.05
         self.total_resigned_games = 0
         self.total_false_resigned_games = 0

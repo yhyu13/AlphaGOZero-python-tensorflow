@@ -65,6 +65,10 @@ class NetworkAPI(object):
             bulk_features = np.asarray([item.feature for item in item_list])
             policy_ary, value_ary = self.run_many(bulk_features)
             for p, v, item in zip(policy_ary, value_ary, item_list):
+                '''
+                greedy_move = divmod(np.argmax(p),go.N)
+                logger.debug(f'Greedy move: {greedy_move}')
+                '''
                 item.future.set_result((p, v))
 
     async def push_queue(self, features):
@@ -121,7 +125,7 @@ class MCTSPlayerMixin(object):
         self.W += 3
 
     def is_expanded(self):
-        return self.position is not None
+        return self.children.get(None) is not None
 
     #@profile
     def compute_position(self):
@@ -161,20 +165,17 @@ class MCTSPlayerMixin(object):
         prob /= np.sum(prob) # ensure 1.
         return prob
 
+    def shift_node(self,move,pos=None):
+        child = self.children[move]
+        self.parent,self.move,self.prior,self.position,\
+        self.children,self.U,self.N,self.W = self, child.move,\
+        child.prior,child.position if pos is None else pos,\
+        child.children,child.U,\
+        child.N,child.W
+
     def suggest_move(self, position):
 
         move_prob = self.suggest_move_prob(position)
-
-        '''
-        logger.debug(bulk_extract_features([position]).shape)
-        move_prob,value = self.api.run_many(bulk_extract_features([position]))
-        move_prob = move_prob[0]
-        value = value[0]
-        greedy_move = divmod(np.argmax(move_prob),go.N)
-        prob = move_prob[np.argmax(move_prob)]
-        logger.debug(f'Greedy move is: {greedy_move} with prob {prob} at game step {position.n}')
-        win_rate = (value)/2+0.5
-        '''
 
         on_board_move_prob = np.reshape(move_prob[:-1],(go.N,go.N))
         if position.n < 30:
@@ -183,8 +184,9 @@ class MCTSPlayerMixin(object):
             move = select_most_likely(position, on_board_move_prob)
 
         player = 'B' if position.to_play==1 else 'W'
-        win_rate = self.children[move].Q
-        logger.info(f'Win rate for player {player} is {win_rate:2f}')
+        win_rate = self.children[move].Q/2+0.5
+        win_rate = 'New Visit' if win_rate == 0 else win_rate
+        logger.info(f'Win rate for player {player} is {win_rate}')
 
         return move
 
@@ -197,12 +199,12 @@ class MCTSPlayerMixin(object):
             logger.debug(f'Expadning Root Node...')
 
             move_probs,_ = self.api.run_many(bulk_extract_features([position]))
-
+            '''
             move_prob = move_probs[0]
             greedy_move = divmod(np.argmax(move_prob),go.N)
             prob = move_prob[np.argmax(move_prob)]
             logger.debug(f'Greedy move is: {greedy_move} with prob {prob} at game step {position.n}')
-
+            '''
             self.position = position
             self.expand(move_probs[0])
 
@@ -231,7 +233,9 @@ class MCTSPlayerMixin(object):
             now_expanding.add(self)
 
             # compute leaf node position on the fly
-            pos = self.compute_position()
+            pos = self.position
+            if pos is None:
+                pos = self.compute_position()
 
             if pos is None:
                 #print("illegal move!", file=sys.stderr)
