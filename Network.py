@@ -74,8 +74,11 @@ class Network:
             open("result.txt", "a").close()
 
         #self.train_writer = tf.summary.FileWriter("./train_log", self.sess.graph)
-        self.saver = tf.train.Saver(tf.trainable_variables()+[var for var in tf.global_variables() if 'bn' in var.name],max_to_keep=10)
-
+        self.saver = tf.train.Saver(var_list=tf.trainable_variables()+[var for var in tf.global_variables() if 'bn' in var.name],max_to_keep=10)
+        
+        self.sess.run(tf.global_variables_initializer())
+        logger.debug('Done initializing variables')
+        
         if flags.load_model_path is not None:
             logger.debug('Loading Model...')
             try:
@@ -85,9 +88,8 @@ class Network:
             except:
                 logger.debug('Loading Model Failed')
                 pass
-        self.sess.run(tf.global_variables_initializer())
-        logger.debug('Done initializing variables')
-
+        
+        
 
     '''
     params:
@@ -198,7 +200,7 @@ class Network:
             test_acc += ac
             test_result_acc += result_acc
             n_batch += 1
-            logger.debug(f'Test accuaracy: {test_acc}')
+            logger.debug(f'Test accuaracy: {test_acc/n_batch}')
 
         tot_test_loss = test_loss / (n_batch-1e-2)
         tot_test_acc = test_acc / (n_batch-1e-2)

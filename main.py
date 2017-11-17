@@ -31,7 +31,7 @@ if _PATH_ not in sys.path:
 parser = argparse.ArgumentParser(description='Define parameters.')
 parser.add_argument('--n_epoch', type=int, default=1)
 parser.add_argument('--global_epoch', type=int, default=50)
-parser.add_argument('--n_batch', type=int, default=32)
+parser.add_argument('--n_batch', type=int, default=128)
 parser.add_argument('--n_img_row', type=int, default=19)
 parser.add_argument('--n_img_col', type=int, default=19)
 parser.add_argument('--n_img_channels', type=int, default=17)
@@ -46,7 +46,7 @@ parser.add_argument('--model_type',dest='model',default='full',\
 parser.add_argument('--optimizer',dest='opt',default='adam')
 parser.add_argument('--gtp_policy',dest='gpt_policy',default='mctspolicy',help='choose gtp bot player')#random,mctspolicy
 parser.add_argument('--num_playouts',type=int,dest='num_playouts',default=1600,help='The number of MC search per move, the more the better.')
-parser.add_argument('--selfplay_games_per_epoch',type=int,dest='selfplay_games_per_epoch',default=25000)
+parser.add_argument('--selfplay_games_per_epoch',type=int,dest='selfplay_games_per_epoch',default=2000)
 parser.add_argument('--mode',dest='MODE', default='train',help='among selfplay, gtp and train')
 FLAGS = parser.parse_args()
 
@@ -128,8 +128,8 @@ def selfplay(flags=FLAGS,hps=HPS):
     from model.SelfPlayWorker import SelfPlayWorker
     from Network import Network
 
-    #test_dataset = DataSet.read(os.path.join(flags.processed_dir, "test.chunk.gz"))
-    test_dataset = None
+    test_dataset = DataSet.read(os.path.join(flags.processed_dir, "test.chunk.gz"))
+    #test_dataset = None
 
     """set the batch size to -1==None"""
     flags.n_batch = -1
@@ -158,19 +158,19 @@ def selfplay(flags=FLAGS,hps=HPS):
         train(g_epoch)
 
         """Evaluate on test dataset"""
-        #evaluate_testset()
+        evaluate_testset()
 
         """Evaluate against best model"""
         #evaluate_generations()
 
         logger.info(f'Global epoch {g_epoch} finish.')
-    logger.info('Now, I am the Master! 现在，请叫我棋霸！')
 
 
 
 def train(flags=FLAGS,hps=HPS):
     from utils.load_data_sets import DataSet
     from Network import Network
+    import tensorflow as tf
 
     TRAINING_CHUNK_RE = re.compile(r"train\d+\.chunk.gz")
 
@@ -188,11 +188,12 @@ def train(flags=FLAGS,hps=HPS):
 
     global_step = 0
     lr = flags.lr
+
     with open("result.txt","a") as f:
         for g_epoch in range(flags.global_epoch):
 
             lr = schedule_lrn_rate(g_epoch)
-
+            '''
             for train_dataset in training_datasets():
                 global_step += 1
                 # prepare training set
@@ -200,16 +201,16 @@ def train(flags=FLAGS,hps=HPS):
                 train_dataset.shuffle()
                 with timer("training"):
                     # train
-                    net.train(train_dataset,lrn_rate=lr)
-                if global_step % 1 == 0:
-                    # eval
-                    with timer("test set evaluation"):
-                        net.test(test_dataset,proportion=.1,force_save_model=False)
+                    net.train(train_dataset,lrn_rate=lr)   
+            '''
+            if global_step % 1 == 0:
+                # eval
+                with timer("test set evaluation"):
+                    net.test(test_dataset,proportion=0.1,force_save_model=False)
 
                 logger.info(f'Global step {global_step} finshed.', file=f)
             logger.info(f'Global epoch {g_epoch} finshed.', file=f)
-        logger.info('Now, I am the Master! 现在，请叫我棋霸！', file=f)
-
+    
 
 
 if __name__ == '__main__':

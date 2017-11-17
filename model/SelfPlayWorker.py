@@ -107,4 +107,4 @@ class SelfPlayWorker(object):
 
     def evaluate_testset(self,test_dataset):
         with timer("test set evaluation"):
-            self.net.test(test_dataset,proportion=.1,force_save_model=True)
+            self.net.test(test_dataset,proportion=.1,force_save_model=False)

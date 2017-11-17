@@ -42,8 +42,8 @@ class NetworkAPI(object):
         # algorithm that tries to approximate a value by averaging over run_many
         # random processes, the quality of the search tree is hard to define.
         # It's a trade off among time, accuracy, and the frequency of NN updates.
-        self.sem = asyncio.Semaphore(8)
-        self.queue = Queue(8)
+        self.sem = asyncio.Semaphore(16)
+        self.queue = Queue(16)
         self.loop = asyncio.get_event_loop()
         self.running_simulation_num = 0
         self.playouts = num_playouts
