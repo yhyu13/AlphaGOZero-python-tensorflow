@@ -101,6 +101,10 @@ def schedule_lrn_rate(train_step):
         lr = 1e-5
     return lr
 
+'''
+params:
+    @ usage: Go text protocol to play in Sabaki
+'''
 # Credit: Brain Lee
 def gtp(flags=FLAGS,hps=HPS):
     from utils.gtp_wrapper import make_gtp_instance
@@ -123,6 +127,10 @@ def gtp(flags=FLAGS,hps=HPS):
             sys.stdout.write(engine_reply)
             sys.stdout.flush()
 
+'''
+params:
+    @ usage: self play with search pipeline
+'''
 def selfplay(flags=FLAGS,hps=HPS):
     from utils.load_data_sets import DataSet
     from model.SelfPlayWorker import SelfPlayWorker
@@ -140,6 +148,7 @@ def selfplay(flags=FLAGS,hps=HPS):
         lr = schedule_lrn_rate(epoch)
         Worker.run(lr=lr)
 
+    # TODO: consider tensorflow copy_to_graph
     def get_best_model():
         return net
 
@@ -166,11 +175,13 @@ def selfplay(flags=FLAGS,hps=HPS):
         logger.info(f'Global epoch {g_epoch} finish.')
 
 
-
+'''
+params:
+    @ usage: train a supervised learning network
+'''
 def train(flags=FLAGS,hps=HPS):
     from utils.load_data_sets import DataSet
     from Network import Network
-    import tensorflow as tf
 
     TRAINING_CHUNK_RE = re.compile(r"train\d+\.chunk.gz")
 
@@ -193,7 +204,7 @@ def train(flags=FLAGS,hps=HPS):
         for g_epoch in range(flags.global_epoch):
 
             lr = schedule_lrn_rate(g_epoch)
-            '''
+
             for train_dataset in training_datasets():
                 global_step += 1
                 # prepare training set
@@ -201,25 +212,43 @@ def train(flags=FLAGS,hps=HPS):
                 train_dataset.shuffle()
                 with timer("training"):
                     # train
-                    net.train(train_dataset,lrn_rate=lr)   
-            '''
-            if global_step % 1 == 0:
-                # eval
-                with timer("test set evaluation"):
-                    net.test(test_dataset,proportion=0.1,force_save_model=False)
+                    net.train(train_dataset,lrn_rate=lr)
+
+                if global_step % 1 == 0:
+                    # eval
+                    with timer("test set evaluation"):
+                        net.test(test_dataset,proportion=0.1,force_save_model=False)
 
                 logger.info(f'Global step {global_step} finshed.', file=f)
             logger.info(f'Global epoch {g_epoch} finshed.', file=f)
-    
+
+'''
+params:
+    @ usage: test a trained network on test dataset
+'''
+def test(flags=FLAGS,hps=HPS):
+    from utils.load_data_sets import DataSet
+    from Network import Network
+    import tensorflow as tf
+
+    net = Network(flags,hps)
+
+    # print(net.sess.run({var.name:var for var in tf.global_variables() if 'bn' in var.name}))
+
+    test_dataset = DataSet.read(os.path.join(flags.processed_dir, "test.chunk.gz"))
+
+    with timer("test set evaluation"):
+        net.test(test_dataset,proportion=0.1,force_save_model=False)
 
 
 if __name__ == '__main__':
 
     fn = {'train': lambda: train(),
           'gtp': lambda: gtp(),
-          'selfplay': lambda: selfplay()}
+          'selfplay': lambda: selfplay(),
+          'test': lambda: test()}
 
     if fn.get(FLAGS.MODE,0) != 0:
         fn[FLAGS.MODE]()
     else:
-        logger.info('Please choose a mode among "train", "selfplay", and "gtp".')
+        logger.info('Please choose a mode among "train", "selfplay", "gtp", and "test".')
