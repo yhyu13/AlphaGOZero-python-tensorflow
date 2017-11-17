@@ -28,48 +28,7 @@ _PATH_ = os.path.dirname(os.path.dirname(__file__))
 if _PATH_ not in sys.path:
     sys.path.append(_PATH_)
 
-parser = argparse.ArgumentParser(description='Define parameters.')
-parser.add_argument('--n_epoch', type=int, default=1)
-parser.add_argument('--global_epoch', type=int, default=50)
-parser.add_argument('--n_batch', type=int, default=128)
-parser.add_argument('--n_img_row', type=int, default=19)
-parser.add_argument('--n_img_col', type=int, default=19)
-parser.add_argument('--n_img_channels', type=int, default=17)
-parser.add_argument('--n_classes', type=int, default=19**2+1)
-parser.add_argument('--lr', type=float, default=0.01)
-parser.add_argument('--n_resid_units', type=int, default=6)
-parser.add_argument('--n_gpu', type=int, default=1)
-parser.add_argument('--dataset', dest='processed_dir',default='./processed_data')
-parser.add_argument('--model_path',dest='load_model_path',default='./savedmodels')#'./savedmodels'
-parser.add_argument('--model_type',dest='model',default='full',\
-                    help='choose residual block architecture {original,elu,full}')
-parser.add_argument('--optimizer',dest='opt',default='adam')
-parser.add_argument('--gtp_policy',dest='gpt_policy',default='mctspolicy',help='choose gtp bot player')#random,mctspolicy
-parser.add_argument('--num_playouts',type=int,dest='num_playouts',default=1600,help='The number of MC search per move, the more the better.')
-parser.add_argument('--selfplay_games_per_epoch',type=int,dest='selfplay_games_per_epoch',default=2000)
-parser.add_argument('--mode',dest='MODE', default='train',help='among selfplay, gtp and train')
-FLAGS = parser.parse_args()
-
-
-HParams = namedtuple('HParams',
-                 'batch_size, num_classes, min_lrn_rate, lrn_rate, '
-                 'num_residual_units, use_bottleneck, weight_decay_rate, '
-                 'relu_leakiness, optimizer, temperature, global_norm, num_gpu, '
-                 'name')
-
-HPS = HParams(batch_size=FLAGS.n_batch,
-               num_classes=FLAGS.n_classes,
-               min_lrn_rate=0.0001,
-               lrn_rate=FLAGS.lr,
-               num_residual_units=FLAGS.n_resid_units,
-               use_bottleneck=False,
-               weight_decay_rate=0.0001,
-               relu_leakiness=0,
-               optimizer=FLAGS.opt,
-               temperature=1.0,
-               global_norm=100,
-               num_gpu=FLAGS.n_gpu,
-               name='01')
+from config import FLAGS, HPS
 
 @contextmanager
 def timer(message):
@@ -203,24 +162,23 @@ def train(flags=FLAGS,hps=HPS):
     with open("result.txt","a") as f:
         for g_epoch in range(flags.global_epoch):
 
+            """Train"""
             lr = schedule_lrn_rate(g_epoch)
-
             for train_dataset in training_datasets():
                 global_step += 1
                 # prepare training set
-                logger.info(f"Using {file}", file=f)
+                logger.info(f"Using {file}")
                 train_dataset.shuffle()
                 with timer("training"):
-                    # train
                     net.train(train_dataset,lrn_rate=lr)
 
+                """Evaluate"""
                 if global_step % 1 == 0:
-                    # eval
                     with timer("test set evaluation"):
                         net.test(test_dataset,proportion=0.1,force_save_model=False)
 
-                logger.info(f'Global step {global_step} finshed.', file=f)
-            logger.info(f'Global epoch {g_epoch} finshed.', file=f)
+                logger.info(f'Global step {global_step} finshed.')
+            logger.info(f'Global epoch {g_epoch} finshed.')
 
 '''
 params:

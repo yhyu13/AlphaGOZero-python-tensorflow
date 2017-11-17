@@ -80,9 +80,11 @@ class NetworkAPI(object):
     #@profile
     def run_many(self,bulk_features):
         return self.net.run_many(bulk_features)
-        """simulate I/O & evaluate"""
-        #sleep(np.random.random()*5e-2)
-        #return np.random.random((len(bulk_features),362)), np.random.random((len(bulk_features),1))
+        """simulate data I/O & evaluate to test lower bound speed"""
+        '''
+        prob = np.random.random((len(bulk_features),362))
+        return prob/np.sum(prob), np.random.random((len(bulk_features),1))
+        '''
 
 class MCTSPlayerMixin(object):
 
@@ -165,13 +167,19 @@ class MCTSPlayerMixin(object):
         prob /= np.sum(prob) # ensure 1.
         return prob
 
-    def shift_node(self,move,pos=None):
+    def shift_node(self,move,pos_to_shift=None):
+
+        if not self.is_expanded():
+            # if current root is not expanded, expand to that child node with prior prob 1.
+            self.children[move] = MCTSPlayerMixin(self.api,self,move,1.)
+
         child = self.children[move]
-        self.parent,self.move,self.prior,self.position,\
-        self.children,self.U,self.N,self.W = self, child.move,\
-        child.prior,child.position if pos is None else pos,\
-        child.children,child.U,\
-        child.N,child.W
+        self.parent,self.move,\
+        self.prior,self.position,\
+        self.children,self.U,self.N,self.W = \
+        self, child.move,\
+        child.prior,child.position if pos_to_shift is None else pos_to_shift,\
+        child.children,child.U,child.N,child.W
 
     def suggest_move(self, position):
 
@@ -185,8 +193,7 @@ class MCTSPlayerMixin(object):
 
         player = 'B' if position.to_play==1 else 'W'
         win_rate = self.children[move].Q/2+0.5
-        win_rate = 'New Visit' if win_rate == 0 else win_rate
-        logger.info(f'Win rate for player {player} is {win_rate}')
+        logger.info(f'Win rate for player {player} is {win_rate:2f}')
 
         return move
 

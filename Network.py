@@ -74,11 +74,13 @@ class Network:
             open("result.txt", "a").close()
 
         #self.train_writer = tf.summary.FileWriter("./train_log", self.sess.graph)
-        self.saver = tf.train.Saver(var_list=tf.trainable_variables()+[var for var in tf.global_variables() if 'bn' in var.name],max_to_keep=10)
-        
+        var_to_save = tf.trainable_variables()+[var for var in tf.global_variables() if ('bn' in var.name) and ('Adam' not in var.name) and ('Momentum' not in var.name)]
+        # var_to_save = [v for v in tf.global_variables() if ('Adam' not in v.name) and ('Momentum' not in v.name)]
+        self.saver = tf.train.Saver(var_list=var_to_save,max_to_keep=10)
+
         self.sess.run(tf.global_variables_initializer())
         logger.debug('Done initializing variables')
-        
+
         if flags.load_model_path is not None:
             logger.debug('Loading Model...')
             try:
@@ -88,8 +90,8 @@ class Network:
             except:
                 logger.debug('Loading Model Failed')
                 pass
-        
-        
+
+
 
     '''
     params:

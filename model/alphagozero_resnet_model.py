@@ -241,10 +241,11 @@ class AlphaGoZeroResNet(ResNet):
             squared_diff = tf.squared_difference(z_batch,value)
             ce = tf.reduce_mean(xent, name='cross_entropy')
             mse = tf.reduce_mean(squared_diff,name='mean_square_error')
-            cost = ce + 0.01*mse + self._decay()
+            cost = ce + mse + self._decay()
             tf.summary.scalar(f'cost_tower_{tower_idx}', cost)
             tf.summary.scalar(f'ce_tower_{tower_idx}', ce)
-            tf.summary.scalar(f'mse_tower_{tower_idx}', mse)
+            # scale MSE to [0,1]
+            tf.summary.scalar(f'mse_tower_{tower_idx}', mse/4)
 
         with tf.variable_scope('move_acc'):
             correct_prediction = tf.equal(
@@ -314,7 +315,7 @@ class AlphaGoZeroResNet(ResNet):
 
         # defensive step 3 check NaN
         # See: https://stackoverflow.com/questions/40701712/how-to-check-nan-in-gradients-in-tensorflow-when-updating
-        grad_check = [tf.check_numerics(g,message='Nan Found!') for g in clipped_grads]
+        grad_check = [tf.check_numerics(g,message='NaN Found!') for g in clipped_grads]
         with tf.control_dependencies(grad_check):
             apply_op = self.optimizer.apply_gradients(
                 zip(clipped_grads, [v for _,v in grads_vars]),
