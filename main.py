@@ -37,15 +37,16 @@ parser.add_argument('--n_img_col', type=int, default=19)
 parser.add_argument('--n_img_channels', type=int, default=17)
 parser.add_argument('--n_classes', type=int, default=19**2+1)
 parser.add_argument('--lr', type=float, default=0.01)
-parser.add_argument('--n_resid_units', type=int, default=1)
+parser.add_argument('--n_resid_units', type=int, default=6)
 parser.add_argument('--n_gpu', type=int, default=1)
 parser.add_argument('--dataset', dest='processed_dir',default='./processed_data')
 parser.add_argument('--model_path',dest='load_model_path',default='./savedmodels')
 parser.add_argument('--model_type',dest='model',default='full',\
                     help='choose residual block architecture {original,elu,full}')
-parser.add_argument('--optimizer',dest='opt',default='mom')
-parser.add_argument('--gtp_policy',dest='gpt_policy',default='random',help='choose gtp bot player')
-parser.add_argument('--mode',dest='MODE', default='train',help='either gtp or train')
+parser.add_argument('--optimizer',dest='opt',default='adam')
+parser.add_argument('--gtp_policy',dest='gpt_policy',default='mctspolicy',help='choose gtp bot player')#random,mctspolicy
+parser.add_argument('--num_playouts',type=int,dest='num_playouts',default=200,help='The number of MC search per move, the more the better.')
+parser.add_argument('--mode',dest='MODE', default='train',help='among selfplay, gtp and train')
 FLAGS = parser.parse_args()
 
 
@@ -129,7 +130,7 @@ def selfplay(flags=FLAGS,hps=HPS):
     #test_dataset = DataSet.read(os.path.join(flags.processed_dir, "test.chunk.gz"))
     test_dataset = None
 
-    """set the batch size to -1"""
+    """set the batch size to -1==None"""
     flags.n_batch = -1
     net = Network(flags,hps)
     Worker = SelfPlayWorker(net)
@@ -148,11 +149,17 @@ def selfplay(flags=FLAGS,hps=HPS):
     def evaluate_testset():
         Worker.evaluate_testset(test_dataset)
 
+    """Self Play Pipeline starts here"""
     for g_epoch in range(flags.global_epoch):
         logger.info(f'Global epoch {g_epoch} start.')
 
+        """Train"""
         train(g_epoch)
 
+        """Evaluate on test dataset"""
+        #evaluate_testset()
+
+        """Evaluate against best model"""
         evaluate_generations()
 
         logger.info(f'Global epoch {g_epoch} finish.')
@@ -174,9 +181,8 @@ def train(flags=FLAGS,hps=HPS):
         for fname in os.listdir(flags.processed_dir)
         if TRAINING_CHUNK_RE.match(fname)]
 
-    random.shuffle(train_chunk_files)
-
     def training_datasets():
+        random.shuffle(train_chunk_files)
         return (DataSet.read(file) for file in train_chunk_files)
 
     global_step = 0
@@ -186,12 +192,10 @@ def train(flags=FLAGS,hps=HPS):
 
             lr = schedule_lrn_rate(g_epoch)
 
-            #for train_dataset in training_datasets():
-            for file in train_chunk_files:
+            for train_dataset in training_datasets():
                 global_step += 1
                 # prepare training set
                 logger.info(f"Using {file}", file=f)
-                train_dataset = DataSet.read(file)
                 train_dataset.shuffle()
                 with timer("training"):
                     # train

@@ -68,7 +68,7 @@ def select_weighted_random(position, move_probabilities):
         else:
             # inexpensive fallback in case an illegal move is chosen.
             return select_most_likely(position, move_probabilities)
-    else:
+    else: # 19 is in selected_move, to avoid error switch to safe move selection method
         return select_most_likely(position, move_probabilities)
 
 def simulate_game_random(position):
@@ -121,7 +121,6 @@ def simulate_many_games(policy1, policy2, positions):
 
 """Using .pyx Cython or using .py CPython"""
 import pyximport; pyximport.install()
-#from model.APV_MCTS_C import *
 from model.APV_MCTS_C import *
 
 def simulate_rival_games_mcts(policy1, policy2, positions):
@@ -185,6 +184,7 @@ def simulate_game_mcts(policy, position, playouts=1600,resignThreshold=-0.8,no_r
         position.play_move(move, mutate=True, move_prob=mc_root.move_prob())
         # shift to child node
         mc_root = mc_root.children[move]
+        logger.debug(f'Move at step {position.n} is {move}')
         mc_root.parent = None
 
         # check resign

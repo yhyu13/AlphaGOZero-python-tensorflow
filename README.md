@@ -1,4 +1,4 @@
-# AlphaGOZero
+# AlphaGOZero (python tensorflow replica)
 This is a trial implementation of DeepMind's Oct19th publication: [Mastering the Game of Go without Human Knowledge](https://www.nature.com/articles/nature24270.epdf?author_access_token=VJXbVjaSHxFoctQQ4p2k4tRgN0jAjWel9jnR3ZoTv0PVW4gB86EEpGqTRDtpIz-2rmo8-KG06gqVobU5NSCFeHILHcVFUeMsbvwS-lxjqQGg98faovwjxeTUgZAUMnRQ).
 
 ---
@@ -121,6 +121,8 @@ The support for Sabaki is **available**. Go to [Sabaki-releases](https://github.
 
 ![](/figure/Sabaki.png)
 
+**My model still has strange bug when evaluating the root node. As you can see in console above. It outputs the same result again and again.**
+
 ## Basic Self-play
 
 Under repo’s root  dir
@@ -128,6 +130,18 @@ Under repo’s root  dir
 ```
 python main.py --mode=selfplay
 ```
+
+## Nov 15th Supervised Learning result
+
+The Supervised Learning is done on a 6 layer deep neural net which has the same architecture. It is trained on 2016-2017 KGD4-dan dataset, about 250,000 games for 5 epochs and is evaluated on 100,000 positions. It achieve 40% professional move prediction accuracy on the evaluation dataset consistently. Strangely, the game result prediction error (MSE) stays around 1 consistently, in contrast to what DeepMind's graph where the error never goes beyond 1.
+
+![](/figure/Nov15acc.png)
+![](/figure/Nov15ce.png)
+![](/figure/Nov15mse.png)
+
+### DeepMind's training result:
+
+![](/figure/rl_vs_sl.png)
 
 ---
 
@@ -148,7 +162,7 @@ python main.py --mode=selfplay
   7. A rectifier non-linearity
 
 **Policy Head**
-* 1.A convolution of 2 filters of kernel size 1 x 1 with stride 1
+* 1. A convolution of 2 filters of kernel size 1 x 1 with stride 1
   2. Batch normalisation
   3. A rectifier non-linearity
   4. A fully connected linear layer that outputs a vector of size 192^2 + 1 = 362 corresponding to logit probabilities for all intersections and the pass move

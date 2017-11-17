@@ -24,7 +24,7 @@ class SelfPlayWorker(object):
         self.net = net
         self.N_games_per_train = 1#10
         self.N_games = 1#25000
-        self.playouts = 20#1600
+        self.playouts = 200#1600
         self.position = go.Position(to_play=go.BLACK)
         self.final_position_collections = []
         self.dicard_game_threshold = 30 # number of moves that is considered to resign too early

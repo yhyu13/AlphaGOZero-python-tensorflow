@@ -42,8 +42,8 @@ class NetworkAPI(object):
         # algorithm that tries to approximate a value by averaging over run_many
         # random processes, the quality of the search tree is hard to define.
         # It's a trade off among time, accuracy, and the frequency of NN updates.
-        self.sem = asyncio.Semaphore(64)
-        self.queue = Queue(64)
+        self.sem = asyncio.Semaphore(8)
+        self.queue = Queue(8)
         self.loop = asyncio.get_event_loop()
         self.running_simulation_num = 0
         self.playouts = num_playouts
@@ -75,10 +75,10 @@ class NetworkAPI(object):
 
     #@profile
     def run_many(self,bulk_features):
-        #return self.net.run_many(bulk_features)
+        return self.net.run_many(bulk_features)
         """simulate I/O & evaluate"""
         #sleep(np.random.random()*5e-2)
-        return np.random.random((len(bulk_features),362)), np.random.random((len(bulk_features),1))
+        #return np.random.random((len(bulk_features),362)), np.random.random((len(bulk_features),1))
 
 class MCTSPlayerMixin(object):
 
@@ -99,6 +99,7 @@ class MCTSPlayerMixin(object):
         self.api,self.parent,self.move,self.prior,self.position,\
         self.children,self.U,self.N,self.W \
         = network_api,parent,move,prior,None,{},0,0,0
+        super().__init__()
 
     def __repr__(self):
         return f"<MCTSNode move=self.move prior=self.prior score=self.action_score is_expanded=self.is_expanded()>"
@@ -161,12 +162,30 @@ class MCTSPlayerMixin(object):
         return prob
 
     def suggest_move(self, position):
+
         move_prob = self.suggest_move_prob(position)
+
+        '''
+        logger.debug(bulk_extract_features([position]).shape)
+        move_prob,value = self.api.run_many(bulk_extract_features([position]))
+        move_prob = move_prob[0]
+        value = value[0]
+        greedy_move = divmod(np.argmax(move_prob),go.N)
+        prob = move_prob[np.argmax(move_prob)]
+        logger.debug(f'Greedy move is: {greedy_move} with prob {prob} at game step {position.n}')
+        win_rate = (value)/2+0.5
+        '''
+
         on_board_move_prob = np.reshape(move_prob[:-1],(go.N,go.N))
-        if self.position.n < 30:
+        if position.n < 30:
             move = select_weighted_random(position, on_board_move_prob)
         else:
             move = select_most_likely(position, on_board_move_prob)
+
+        player = 'B' if position.to_play==1 else 'W'
+        win_rate = self.children[move].Q
+        logger.info(f'Win rate for player {player} is {win_rate:2f}')
+
         return move
 
     #@profile
@@ -175,7 +194,15 @@ class MCTSPlayerMixin(object):
         start = time.time()
 
         if self.parent is None:
+            logger.debug(f'Expadning Root Node...')
+
             move_probs,_ = self.api.run_many(bulk_extract_features([position]))
+
+            move_prob = move_probs[0]
+            greedy_move = divmod(np.argmax(move_prob),go.N)
+            prob = move_prob[np.argmax(move_prob)]
+            logger.debug(f'Greedy move is: {greedy_move} with prob {prob} at game step {position.n}')
+
             self.position = position
             self.expand(move_probs[0])
 

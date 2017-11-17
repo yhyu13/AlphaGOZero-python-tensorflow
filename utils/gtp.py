@@ -254,6 +254,7 @@ class Engine(object):
         if c:
             move = self._game.get_move(c)
             self._game.make_move(c, move)
+            # modified by Hang Yu
             return gtp_vertex(move)
         else:
             raise ValueError("unknown player: {}".format(arguments))
