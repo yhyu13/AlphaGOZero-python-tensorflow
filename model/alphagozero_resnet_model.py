@@ -150,7 +150,6 @@ class AlphaGoZeroResNet(ResNet):
                         loss,move_acc,result_acc,temp = self._tower_loss(scope,image_batch,label_batch,z_batch,tower_idx=i)
                         # reuse variable happens here
                         tf.get_variable_scope().reuse_variables()
-                        loss *= self.reinforce_dir
                         grad = self.optimizer.compute_gradients(loss)
                         tower_grads[i] = grad
                         self.cost += loss
@@ -241,7 +240,7 @@ class AlphaGoZeroResNet(ResNet):
             squared_diff = tf.squared_difference(z_batch,value)
             ce = tf.reduce_mean(xent, name='cross_entropy')
             mse = tf.reduce_mean(squared_diff,name='mean_square_error')
-            cost = ce + mse + self._decay()
+            cost = ce*self.reinforce_dir + mse + self._decay()
             tf.summary.scalar(f'cost_tower_{tower_idx}', cost)
             tf.summary.scalar(f'ce_tower_{tower_idx}', ce)
             # scale MSE to [0,1]
