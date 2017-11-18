@@ -344,6 +344,9 @@ class Position():
         pos.ko = None
         # append move result to recent board
         pos.recent_board.append(pos.board)
+        if len(pos.recent_board) > 8:
+            pos.recent_board.pop(0)
+            assert len(pos.recent_board) == 8
         # append move prob to recent move prob
         pos.recent_move_prob.append(move_prob)
         return pos
@@ -394,6 +397,9 @@ class Position():
         pos.recent += (PlayerMove(color, c),)
         # append move result to recent board
         pos.recent_board.append(pos.board)
+        if len(pos.recent_board) > 8:
+            pos.recent_board.pop(0)
+            assert len(pos.recent_board) == 8
         # append move prob to recent move prob
         pos.recent_move_prob.append(move_prob)
         pos.to_play *= -1

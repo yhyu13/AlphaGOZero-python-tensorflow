@@ -127,7 +127,7 @@ class MCTSPlayerMixin(object):
         self.W += 3
 
     def is_expanded(self):
-        return self.children.get(None) is not None
+        return len(self.children) != 0
 
     #@profile
     def compute_position(self):
@@ -167,7 +167,7 @@ class MCTSPlayerMixin(object):
         prob /= np.sum(prob) # ensure 1.
         return prob
 
-    def shift_node(self,move,pos_to_shift=None):
+    def shift_node(self,move,pos_to_shift=None,make_root=True):
 
         if not self.is_expanded():
             # if current root is not expanded, expand to that child node with prior prob 1.
@@ -177,23 +177,24 @@ class MCTSPlayerMixin(object):
         self.parent,self.move,\
         self.prior,self.position,\
         self.children,self.U,self.N,self.W = \
-        self, child.move,\
+        None if make_root else self, child.move,\
         child.prior,child.position if pos_to_shift is None else pos_to_shift,\
-        child.children,child.U,child.N,child.W
+        {} if make_root else child.children,child.U,child.N,child.W
 
-    def suggest_move(self, position):
+    def suggest_move(self, position, inference=False):
 
-        """Use MCTS guided by NN"""
-        #move_prob = self.suggest_move_prob(position)
-
-        """Use direct NN predition (pretty weak)"""
-        move_probs,value = self.api.run_many(bulk_extract_features([position]))
-        move_prob = move_probs[0]
-        idx = np.argmax(move_prob)
-        greedy_move = divmod(idx,go.N)
-        prob = move_prob[idx]
-        logger.debug(f'Greedy move is: {greedy_move} with prob {prob:.3f}')
-
+        if inference:
+            """Use direct NN predition (pretty weak)"""
+            move_probs,value = self.api.run_many(bulk_extract_features([position]))
+            move_prob = move_probs[0]
+            idx = np.argmax(move_prob)
+            greedy_move = divmod(idx,go.N)
+            prob = move_prob[idx]
+            logger.debug(f'Greedy move is: {greedy_move} with prob {prob:.3f}')
+        else:
+            """Use MCTS guided by NN"""
+            move_prob = self.suggest_move_prob(position)        
+        
         on_board_move_prob = np.reshape(move_prob[:-1],(go.N,go.N))
         if position.n < 30:
             move = select_weighted_random(position, on_board_move_prob)
@@ -201,10 +202,14 @@ class MCTSPlayerMixin(object):
             move = select_most_likely(position, on_board_move_prob)
 
         player = 'B' if position.to_play==1 else 'W'
-        """Use MCTS guided by NN average win ratio"""
-        #win_rate = self.children[move].Q/2+0.5
-        """Use direct NN value prediction (almost always 50/50)"""
-        win_rate = value[0,0]/2+0.5
+        
+        if inference:
+            """Use direct NN value prediction (almost always 50/50)"""
+            win_rate = value[0,0]/2+0.5
+        else:
+            """Use MCTS guided by NN average win ratio"""
+            win_rate = self.children[move].Q/2+0.5
+                
         logger.info(f'Win rate for player {player} is {win_rate:.4f}')
 
         return move

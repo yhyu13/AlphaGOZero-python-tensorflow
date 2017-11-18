@@ -91,7 +91,8 @@ def would_capture_feature(position):
 def player_opponent_recent_eight_move(position):
     state_features = np.zeros([go.N, go.N, 16], dtype=np.uint8)
     player_colour = position.to_play
-    for i, board in enumerate(reversed(np.repeat(position.recent_board[-8:],repeats=2,axis=0))):
+    assert len(position.recent_board) <= 8
+    for i, board in enumerate(reversed(np.repeat(position.recent_board,repeats=2,axis=0))):
         if board is not None:
             board *= player_colour
             state_features[board>0, i] = 1
