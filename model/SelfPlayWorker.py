@@ -28,7 +28,7 @@ class SelfPlayWorker(object):
         self.position = go.Position(to_play=go.BLACK)
         self.final_position_collections = []
         self.dicard_game_threshold = 30 # number of moves that is considered to resign too early
-        self.resign_threshold = -0.8
+        self.resign_threshold = -0.25
         self.resign_delta = 0.05
         self.total_resigned_games = 0
         self.total_false_resigned_games = 0
@@ -80,6 +80,9 @@ class SelfPlayWorker(object):
                 playouts=self.playouts,resignThreshold=self.resign_threshold,no_resign=self.no_resign_this_game)
 
                 logger.debug(f'Game #{i+1} Final Position:\n{final_position}')
+                
+            # reset game board
+            self.reset_position()
 
             # Discard game that resign too early
             if final_position.n <= self.dicard_game_threshold:
@@ -100,8 +103,7 @@ class SelfPlayWorker(object):
                 self.final_position_collections = []
                 moves_counter = 0
 
-            # reset game board
-            self.reset_position()
+            
 
     def evaluate_model(self,best_model):
         self.reset_position()
