@@ -26,6 +26,7 @@ from utils.strategies import select_weighted_random,select_most_likely
 # AlphaGo paper.
 # Exploration constant
 c_PUCT = 5
+fixed_depth = 30
 QueueItem = namedtuple("QueueItem", "feature future")
 
 class NetworkAPI(object):
@@ -46,7 +47,7 @@ class NetworkAPI(object):
         self.queue = Queue(16)
         self.loop = asyncio.get_event_loop()
         self.running_simulation_num = 0
-        self.playouts = num_playouts
+        self.playouts = num_playouts # the more playouts the better
 
     async def prediction_worker(self):
         """For better performance, queueing prediction requests and predict together in this worker.
@@ -101,7 +102,7 @@ class MCTSPlayerMixin(object):
         @ children: the children nodes of this node
         @ U,N,W: Upper confidence,total encouters,cumulative value
     '''
-    def __init__(self, network_api, parent, move, prior):
+    def __init__(self, network_api, parent, move:tuple, prior:float)->None:
         self.api,self.parent,self.move,self.prior,self.position,\
         self.children,self.U,self.N,self.W \
         = network_api,parent,move,prior,None,{},0,0,0
@@ -111,32 +112,39 @@ class MCTSPlayerMixin(object):
         return f"<MCTSNode move=self.move prior=self.prior score=self.action_score is_expanded=self.is_expanded()>"
 
     @property
-    def Q(self):
+    def Q(self)->float:
         return self.W/self.N if self.N !=0 else 0
 
     @property
-    def action_score(self):
+    def action_score(self)->float:
         return self.Q + self.U
-
-    def virtual_loss_do(self):
+    
+    @property   
+    def node_height(self)->int:
+        if self.parent is None:
+            return 0
+        else:
+            return self.parent.node_height+1
+            
+    def virtual_loss_do(self)->None:
         self.N += 3
         self.W -= 3
 
-    def virtual_loss_undo(self):
+    def virtual_loss_undo(self)->None:
         self.N -= 3
         self.W += 3
 
-    def is_expanded(self):
+    def is_expanded(self)->bool:
         return len(self.children) != 0
 
     #@profile
-    def compute_position(self):
+    def compute_position(self)->go.Position:
         """Evolve the game board, and return current position"""
         self.position = self.parent.position.play_move(self.move)
         return self.position
 
     #@profile
-    def expand(self, move_probabilities, noise=True):
+    def expand(self, move_probabilities:np.ndarray, noise=False)->None:
         """Expand leaf node"""
         if noise:
             """add dirichlet noise on the fly"""
@@ -147,7 +155,7 @@ class MCTSPlayerMixin(object):
         # Pass should always be an option! Say, for example, seki.
         self.children[None] = MCTSPlayerMixin(self.api,self,None,move_probabilities[-1])
 
-    def backup_value_single(self,value):
+    def backup_value_single(self,value:float)->None:
         """Backup value of a single tree node"""
         self.N += 1
         if self.parent is None:
@@ -162,13 +170,21 @@ class MCTSPlayerMixin(object):
             c_PUCT * np.sqrt(self.parent.N) * self.prior / self.N,
         )
 
-    def move_prob(self):
+    def move_prob(self)->np.ndarray:
         prob = np.asarray([child.N for child in self.children.values()]) / self.N
         prob /= np.sum(prob) # ensure 1.
         return prob
 
-    def shift_node(self,move,pos_to_shift=None,make_root=True):
-
+    '''
+    params:
+        @ move: the play excute by the player of current round
+        @ pos_to_shift: the game diagram of next round
+        @ make_root: make the child node a root node
+        @ discard_child: effectively start a fresh tree search at each root node
+        usage: shift current node to the next round child node
+    '''
+    def shift_node(self,move:tuple,pos_to_shift=None,make_root=True,discard_child=True)->None:
+        
         if not self.is_expanded():
             # if current root is not expanded, expand to that child node with prior prob 1.
             self.children[move] = MCTSPlayerMixin(self.api,self,move,1.)
@@ -179,9 +195,9 @@ class MCTSPlayerMixin(object):
         self.children,self.U,self.N,self.W = \
         None if make_root else self, child.move,\
         child.prior,child.position if pos_to_shift is None else pos_to_shift,\
-        {} if make_root else child.children,child.U,child.N,child.W
+        {} if discard_child else child.children,child.U,child.N,child.W
 
-    def suggest_move(self, position, inference=False):
+    def suggest_move(self, position:go.Position, inference=False)->tuple:
 
         if inference:
             """Use direct NN predition (pretty weak)"""
@@ -215,11 +231,11 @@ class MCTSPlayerMixin(object):
         return move
 
     #@profile
-    def suggest_move_prob(self, position):
+    def suggest_move_prob(self, position:go.Position)->np.ndarray:
         """Async tree search controller"""
         start = time.time()
 
-        if self.parent is None:
+        if not self.is_expanded() and self.parent is None:
             logger.debug(f'Expadning Root Node...')
 
             move_probs,_ = self.api.run_many(bulk_extract_features([position]))
@@ -235,7 +251,7 @@ class MCTSPlayerMixin(object):
         logger.debug(f"Searched for {(time.time() - start):.5f} seconds")
         return self.move_prob()
 
-    async def start_tree_search(self):
+    async def start_tree_search(self)->float:
         """Monte Carlo Tree search starts here!"""
 
         now_expanding = self.api.now_expanding
@@ -243,8 +259,9 @@ class MCTSPlayerMixin(object):
 
         while self in now_expanding:
             await asyncio.sleep(1e-4)
-
-        if not self.is_expanded():
+        
+        """fixed depth"""
+        if not self.is_expanded() or self.node_height >= fixed_depth:
             """when is leaf node try evaluate and expand"""
 
             # add leaf node to expanding list
@@ -318,7 +335,7 @@ class MCTSPlayerMixin(object):
             # must invert
             return value*-1
 
-    async def tree_search(self):
+    async def tree_search(self)->float:
         """Independent tree search, stands for one simulation"""
 
         self.api.running_simulation_num += 1
