@@ -121,15 +121,105 @@ The support for Sabaki is **available**. Go to [Sabaki-releases](https://github.
 
 ![](/figure/Sabaki.png)
 
+>**The mini AlphaGo Zero (6 layer) trained under KGS dataset fall short against GUN Go by using the policy network only (without MCTS)**
+
 **My model still has strange bug when evaluating the root node. As you can see in console above. It outputs the same result again and again.**
 
-## Basic Self-play
+## Fully functional Self Play Pipeline
 
 Under repo’s root  dir
 
 ```
 python main.py --mode=selfplay
+
+
+2017-11-17 22:18:57,857 [35771] DEBUG    Network: Building Model...
+INFO:tensorflow:image after unit (?, 19, 19, 256)
+2017-11-17 22:18:58,258 [35771] INFO     tensorflow: image after unit (?, 19, 19, 256)
+INFO:tensorflow:image after unit (?, 19, 19, 256)
+2017-11-17 22:18:58,465 [35771] INFO     tensorflow: image after unit (?, 19, 19, 256)
+INFO:tensorflow:image after unit (?, 19, 19, 256)
+2017-11-17 22:18:58,668 [35771] INFO     tensorflow: image after unit (?, 19, 19, 256)
+INFO:tensorflow:image after unit (?, 19, 19, 256)
+2017-11-17 22:18:58,879 [35771] INFO     tensorflow: image after unit (?, 19, 19, 256)
+INFO:tensorflow:image after unit (?, 19, 19, 256)
+2017-11-17 22:18:59,082 [35771] INFO     tensorflow: image after unit (?, 19, 19, 256)
+INFO:tensorflow:image after unit (?, 19, 19, 256)
+2017-11-17 22:18:59,315 [35771] INFO     tensorflow: image after unit (?, 19, 19, 256)
+2017-11-17 22:19:05,152 [35771] DEBUG    Network: Building Model Complete...Total parameters: 7505819
+2017-11-17 22:19:09,631 [35771] DEBUG    Network: Done initializing variables
+2017-11-17 22:19:09,631 [35771] DEBUG    Network: Loading Model...
+INFO:tensorflow:Restoring parameters from ./savedmodels/model-0.4114.ckpt-347136
+2017-11-17 22:19:09,639 [35771] INFO     tensorflow: Restoring parameters from ./savedmodels/model-0.4114.ckpt-347136
+2017-11-17 22:19:09,962 [35771] DEBUG    Network: Loading Model Succeeded...
+...
+...
+...
+2017-11-17 22:18:56,122 [35771] DEBUG    model.APV_MCTS_C: Greedy move is: (2, 3) with prob 0.039
+2017-11-17 22:18:56,123 [35771] INFO     model.APV_MCTS_C: Win rate for player W is 0.5000
+2017-11-17 22:18:56,123 [35771] DEBUG    model.APV_MCTS_C: Move at step 436 is (12, 14)
+2017-11-17 22:18:56,305 [35771] DEBUG    model.APV_MCTS_C: Greedy move is: (18, 5) with prob 0.064
+2017-11-17 22:18:56,307 [35771] INFO     model.APV_MCTS_C: Win rate for player B is 0.5000
+2017-11-17 22:18:56,307 [35771] DEBUG    model.APV_MCTS_C: Move at step 437 is None
+2017-11-17 22:18:56,495 [35771] DEBUG    model.APV_MCTS_C: Greedy move is: (2, 3) with prob 0.047
+2017-11-17 22:18:56,497 [35771] INFO     model.APV_MCTS_C: Win rate for player W is 0.5000
+2017-11-17 22:18:56,498 [35771] DEBUG    model.APV_MCTS_C: Move at step 438 is None
+2017-11-17 22:18:56,499 [35771] DEBUG    model.SelfPlayWorker: Game #1 Final Position:
+   A B C D E F G H J K L M N O P Q R S T
+19 O O X . X O O O . O O O . O X X . X . 19
+18 O X X X X X O O O O O O O O O X X . X 18
+17 O O X . X X X O X O X O X O X X . X O 17
+16 . O O X X X O O X X X O X O X . X O O 16
+15 O O X X O X O O X O X X X O X X O O O 15
+14 O O O O O O O X X O O X O O O X O O . 14
+13 O X O O O O O O X O O X X X O O . O O 13
+12 X X X X O O O X O O O O O X X O O O X 12
+11 . X X O O . O X X O . O . O X X O X X 11
+10 X X X O O O X X X X O O O O O X X X . 10
+9 X X . X O X X X . X O . O O X X X . X  9
+8 X . X X O O X . X . X O . O O O O X .  8
+7 X X . X X O O X X X X O O O O O X . X  7
+6 X X X X . X X . X X X X O O . O X X X  6
+5 X X X . X . X X X X X X O O O O O O O  5
+4 . X X X X X X X X . X X X O . O X X X  4
+3 X . X X X X . X X X . X X X O O X X X  3
+2 . X X X . X X X X X X . X X X O X X .  2
+1 X . X X X . X X X . X X . X O O X . X  1
+  A B C D E F G H J K L M N O P Q R S T
+Move: 438. Captures X: 86 O: 36
+
+2017-11-17 22:18:56,500 [35771] INFO     model.SelfPlayWorker: Self-Play Simulation Game #1: 80.351 seconds
+2017-11-17 22:18:56,501 [35771] DEBUG    Network: Running evaluation...
+2017-11-17 22:18:57,849 [35771] DEBUG    Network: Test loss: -0.00
+2017-11-17 22:18:57,849 [35771] DEBUG    Network: Play move test accuracy: -0.0000
+2017-11-17 22:18:57,849 [35771] DEBUG    Network: Win ratio test accuracy: -0.00
+2017-11-17 22:18:57,852 [35771] INFO     model.SelfPlayWorker: test set evaluation: 1.352 seconds
+2017-11-17 22:18:57,857 [35771] DEBUG    Network: Building Model...
+INFO:tensorflow:image after unit (?, 19, 19, 256)
+2017-11-17 22:18:58,258 [35771] INFO     tensorflow: image after unit (?, 19, 19, 256)
+INFO:tensorflow:image after unit (?, 19, 19, 256)
+2017-11-17 22:18:58,465 [35771] INFO     tensorflow: image after unit (?, 19, 19, 256)
+INFO:tensorflow:image after unit (?, 19, 19, 256)
+2017-11-17 22:18:58,668 [35771] INFO     tensorflow: image after unit (?, 19, 19, 256)
+INFO:tensorflow:image after unit (?, 19, 19, 256)
+2017-11-17 22:18:58,879 [35771] INFO     tensorflow: image after unit (?, 19, 19, 256)
+INFO:tensorflow:image after unit (?, 19, 19, 256)
+2017-11-17 22:18:59,082 [35771] INFO     tensorflow: image after unit (?, 19, 19, 256)
+INFO:tensorflow:image after unit (?, 19, 19, 256)
+2017-11-17 22:18:59,315 [35771] INFO     tensorflow: image after unit (?, 19, 19, 256)
+2017-11-17 22:19:05,152 [35771] DEBUG    Network: Building Model Complete...Total parameters: 7505819
+2017-11-17 22:19:09,631 [35771] DEBUG    Network: Done initializing variables
+2017-11-17 22:19:09,631 [35771] DEBUG    Network: Loading Model...
+INFO:tensorflow:Restoring parameters from ./savedmodels/model-0.4114.ckpt-347136
+2017-11-17 22:19:09,639 [35771] INFO     tensorflow: Restoring parameters from ./savedmodels/model-0.4114.ckpt-347136
+2017-11-17 22:19:09,962 [35771] DEBUG    Network: Loading Model Succeeded...
+2017-11-17 22:20:06,836 [35771] DEBUG    model.APV_MCTS_C: Model evaluation game results : ['W+48.5']
+2017-11-17 22:20:06,836 [35771] INFO     model.SelfPlayWorker: Previous Generation win by 0.0000% the game! 姜还是老得辣!
+2017-11-17 22:20:06,836 [35771] INFO     Network: NETWORK SHUTDOWN!!!
+2017-11-17 22:20:06,837 [35771] INFO     __main__: Global epoch 0 finish.
 ```
+
+> **Notice the self play against best model would allocate memory to build another network. More thoughtful version could be initialize multiple models in a single tensorflow graph.**
 
 ## Nov 15th Supervised Learning result
 
@@ -177,6 +267,17 @@ The Supervised Learning is done on a 6 layer deep neural net which has the same 
   7. A tanh non-linearity outputting a scalar in the range [ 1, 1]
 
 ---
+
+# TODO:
+
+- [x] AlphaGo Zero Architecture
+- [x] Supervised Training
+- [x] Self Play pipeline
+- [x] Go Text Protocol
+- [x] Sabaki Engine enabled
+- [ ] *Tabula rasa*
+- [ ] Keras implementation
+- [ ] Distributed learning
 
 # Credit:
 

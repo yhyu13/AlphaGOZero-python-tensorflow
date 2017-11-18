@@ -22,9 +22,9 @@ class SelfPlayWorker(object):
 
     def __init__(self,net,flags):
         self.net = net
-        self.N_games_per_train = 1#10
-        self.N_games = flags.selfplay_games_per_epoch#25000
-        self.playouts = flags.num_playouts#1600
+        self.N_moves_per_train = 2048
+        self.N_games = flags.selfplay_games_per_epoch
+        self.playouts = flags.num_playouts
         self.position = go.Position(to_play=go.BLACK)
         self.final_position_collections = []
         self.dicard_game_threshold = 30 # number of moves that is considered to resign too early
@@ -34,7 +34,7 @@ class SelfPlayWorker(object):
         self.total_false_resigned_games = 0
         self.false_positive_resign_ratio = 0.05
         self.no_resign_this_game = False
-        self.num_games_to_evaluate = 10#400
+        self.num_games_to_evaluate = flags.selfplay_games_against_best_model
 
     def reset_position(self):
         self.position = go.Position(to_play=go.BLACK)
@@ -63,7 +63,14 @@ class SelfPlayWorker(object):
                 self.resign_threshold  = min(-0.05,self.resign_threshold+self.resign_delta)
                 logger.debug(f'Increase Resign Threshold to: {self.resign_threshold}')
 
+    '''
+    params:
+        @ lr: learning rate, controled by outer loop
+        usage: run self play with search
+    '''
     def run(self, lr=0.01):
+
+        moves_counter = 0
 
         for i in range(self.N_games):
             """self play with MCTS search"""
@@ -81,15 +88,17 @@ class SelfPlayWorker(object):
 
             # add final_position to history
             self.final_position_collections.append(final_position)
+            moves_counter += final_position.n
 
-            # check resignment statistics
+            # check resign statistics
             self.check_resign_stat(agent_resigned,false_positive)
 
-            if (i+1) % self.N_games_per_train == 0:
+            if  moves_counter >= self.N_moves_per_train:
                 winners_training_samples, losers_training_samples = extract_moves(self.final_position_collections)
                 self.net.train(winners_training_samples, direction=1.,lrn_rate=lr)
                 self.net.train(losers_training_samples, direction=-1.,lrn_rate=lr)
                 self.final_position_collections = []
+                moves_counter = 0
 
             # reset game board
             self.reset_position()
@@ -99,12 +108,15 @@ class SelfPlayWorker(object):
         final_positions = simulate_many_games(self.net,best_model,[self.position]*self.num_games_to_evaluate)
         win_ratio = get_winrate(final_positions)
         if win_ratio < 0.55:
-            logger.info(f'Previous Generation win by {win_ratio}% the game! 姜还是老得辣!')
+            logger.info(f'Previous Generation win by {win_ratio:.4f}% the game! 姜还是老得辣!')
+            self.net.close()
             self.net = best_model
         else:
-            logger.info(f'Current Generation win by {win_ratio}% the game! 青出于蓝而胜于蓝!')
+            logger.info(f'Current Generation win by {win_ratio:.4f}% the game! 青出于蓝而胜于蓝!')
+            best_model.close()
+            #self.net.save_model(name=round(win_ratio,4))
         self.reset_position()
 
     def evaluate_testset(self,test_dataset):
         with timer("test set evaluation"):
-            self.net.test(test_dataset,proportion=.1,force_save_model=False)
+            self.net.test(test_dataset,proportion=.1,no_save=True)

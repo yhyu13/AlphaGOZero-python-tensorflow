@@ -109,7 +109,7 @@ def selfplay(flags=FLAGS,hps=HPS):
 
     # TODO: consider tensorflow copy_to_graph
     def get_best_model():
-        return net
+        return Network(flags,hps)
 
     def evaluate_generations():
         best_model = get_best_model()
@@ -129,7 +129,7 @@ def selfplay(flags=FLAGS,hps=HPS):
         evaluate_testset()
 
         """Evaluate against best model"""
-        #evaluate_generations()
+        evaluate_generations()
 
         logger.info(f'Global epoch {g_epoch} finish.')
 
@@ -200,6 +200,16 @@ def test(flags=FLAGS,hps=HPS):
 
 
 if __name__ == '__main__':
+
+    if not os.path.exists('./train_log'):
+        os.makedirs('./train_log')
+
+    if not os.path.exists('./savedmodels'):
+        os.makedirs('./savedmodels')
+
+    if not os.path.exists('./result.txt'):
+        # hacky way to creat a file
+        open("result.txt", "a").close()
 
     fn = {'train': lambda: train(),
           'gtp': lambda: gtp(),

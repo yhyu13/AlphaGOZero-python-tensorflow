@@ -7,7 +7,7 @@ parser = argparse.ArgumentParser(description='Define parameters.')
 """Network hyperparameters"""
 parser.add_argument('--n_epoch', type=int, default=1)
 parser.add_argument('--global_epoch', type=int, default=50)
-parser.add_argument('--n_batch', type=int, default=128)
+parser.add_argument('--n_batch', type=int, default=16)
 parser.add_argument('--n_img_row', type=int, default=19)
 parser.add_argument('--n_img_col', type=int, default=19)
 parser.add_argument('--n_img_channels', type=int, default=17)
@@ -27,6 +27,7 @@ parser.add_argument('--gtp_policy',dest='gpt_policy',default='mctspolicy',help='
 """Self Play Pipeline"""
 parser.add_argument('--num_playouts',type=int,dest='num_playouts',default=1600,help='The number of MC search per move, the more the better.')
 parser.add_argument('--selfplay_games_per_epoch',type=int,dest='selfplay_games_per_epoch',default=25000)
+parser.add_argument('--selfplay_games_against_best_model',type=int,dest='selfplay_games_against_best_model',default=400)
 
 """Which main function to excute"""
 parser.add_argument('--mode',dest='MODE', default='train',help='among selfplay, gtp and train')
