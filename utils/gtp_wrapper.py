@@ -50,8 +50,8 @@ class GtpInterface(object):
         coords = utils.parse_pygtp_coords(vertex)
         self.accomodate_out_of_turn(color)
         try:
-            self.position.play_move(coords,mutate=True, color=translate_gtp_colors(color))
-            self.shift_node(move=coords,pos=self.position)
+            self.position.play_move(coords,mutate=True, color=translate_gtp_colors(color))         
+            self.shift_node(move=coords,pos_to_shift=self.position)
         except:
             return False
         return True
