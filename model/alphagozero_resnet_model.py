@@ -1,5 +1,10 @@
 from model.resnet_model import *
-from tensorflow.contrib.slim import prefetch_queue
+
+import logging
+import daiquiri
+
+daiquiri.setup(level=logging.DEBUG)
+logger = daiquiri.getLogger(__name__)
 
 class AlphaGoZeroResNet(ResNet):
 
@@ -189,13 +194,13 @@ class AlphaGoZeroResNet(ResNet):
         filters = [256, 256]
 
         with tf.variable_scope('res_block_0'):
-            # _residual block to repliate AlphaGoZero architecture
+            # _residual block in AlphaGoZero architecture
             x = res_func(x, filters[0], filters[1],
                          self._stride_arr(strides[0]))
 
         for i in range(1, self.hps.num_residual_units):
             with tf.variable_scope('res_block_%d' % i):
-                # _residual block to repliate AlphaGoZero architecture
+                # _residual block in AlphaGoZero architecture
                 x = res_func(x, filters[1], filters[1], self._stride_arr(1))
 
         with tf.variable_scope('policy_head'):
@@ -278,8 +283,9 @@ class AlphaGoZeroResNet(ResNet):
             # Note that each grad_and_vars looks like the following:
             #   ((grad0_gpu0, var0_gpu0), ... , (grad0_gpuN, var0_gpuN))
             grads = []
-            for g, _ in grad_and_vars:
+            for g, var in grad_and_vars:
               # Add 0 dimension to the gradients to represent the tower.
+              # logger.debug(f'Network variables: {var.name}')
               expanded_g = tf.expand_dims(g, 0)
 
               # Append on a 'tower' dimension which we will average over below.

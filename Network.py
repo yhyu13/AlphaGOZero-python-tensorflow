@@ -34,11 +34,8 @@ class Network:
         config.gpu_options.allow_growth = True
         config.allow_soft_placement = True
         """Assign a Session that excute the network"""
-        if flags.MODE == 'train':
-            self.sess = [tf.Session(config=config,graph=g)]
-        else:
-            config.gpu_options.per_process_gpu_memory_fraction = 0.33    
-            self.sess = [tf.Session(config=config,graph=g)]*3
+        config.gpu_options.per_process_gpu_memory_fraction = 0.33
+        self.sess = tf.Session(config=config,graph=g)
 
         # Basic info
         self.batch_num = flags.n_batch
@@ -48,6 +45,7 @@ class Network:
         self.img_channels = flags.n_img_channels
         self.nb_classes = flags.n_classes
         self.optimizer_name = hps.optimizer
+        self.load_model_path = flags.load_model_path
 
         '''
            img: ?x19x19x17
@@ -79,37 +77,37 @@ class Network:
             #self.test_writer = tf.summary.FileWriter("./test_log")
             self.saver = tf.train.Saver(var_list=var_to_save,max_to_keep=10)
 
-            self.initialize(self.sess)
-            self.restore_model(self.sess)
+            self.initialize()
+            self.restore_model()
 
     '''
     params:
          usage: destructor
     '''
-    def close(self,sess:tf.Session):
-        sess.close()
+    def close(self):
+        self.sess.close()
         logger.info(f'NETWORK SHUTDOWN!!!')
-    
+
     '''
     params:
         @ sess: the session to use
         usage: load model
     '''
-    def initialize(self,sess:tf.Session):
-        sess.run(tf.global_variables_initializer())
+    def initialize(self):
+        self.sess.run(tf.global_variables_initializer())
         logger.debug('Done initializing variables')
-        
+
     '''
     params:
         @ sess: the session to use
         usage: load model
     '''
-    def restore_model(self,sess:tf.Session):
-        if flags.load_model_path is not None:
+    def restore_model(self):
+        if self.load_model_path is not None:
             logger.debug('Loading Model...')
             try:
                 ckpt = tf.train.get_checkpoint_state(flags.load_model_path)
-                self.saver.restore(sess, ckpt.model_checkpoint_path)
+                self.saver.restore(self.sess, ckpt.model_checkpoint_path)
                 logger.debug('Loading Model Succeeded...')
             except:
                 logger.debug('Loading Model Failed')
@@ -120,8 +118,8 @@ class Network:
         @ sess: the session to use
         usage: save model
     '''
-    def save_model(self,sess:tf.Session,name:float):
-        self.saver.save(sess,f'./savedmodels/model-{name}.ckpt',\
+    def save_model(self,name:float):
+        self.saver.save(self.sess,f'./savedmodels/model-{name}.ckpt',\
                         global_step=sess.run(self.model.global_step))
 
     '''

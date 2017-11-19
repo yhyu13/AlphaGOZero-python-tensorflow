@@ -8,7 +8,7 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
     # override _residual block to be full pre-activation residual block
     # https://arxiv.org/pdf/1603.05027.pdf
     def _residual(self, x, in_filter, out_filter, stride,
-                  activate_before_residual=False):
+                  value_head=False):
 
         """
            @ f is now an identity function that makes ensures nonvaninshing gradient
@@ -34,18 +34,20 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
 
         with tf.variable_scope('sub_add'):
             # A skip connection that adds the input to the block
-            if in_filter != out_filter:
+            if in_filter < out_filter:
                 orig_x = tf.nn.avg_pool(orig_x, stride, stride, 'VALID')
                 orig_x = tf.pad(
                     orig_x, [[0, 0], [0, 0], [0, 0],
                              [(out_filter - in_filter) // 2,
                               (out_filter - in_filter) // 2]])
+            if value_head:
+                orig_x = tf.reduce_mean(orig_x,[3])
             x += orig_x
 
         #tf.logging.info('image after unit %s', x.get_shape())
         return x
 
-    '''
+
     # overrride policy and value head to be fully convolutional network
     def _tower_loss(self,scope,image_batch,label_batch,z_batch,tower_idx):
 
@@ -61,27 +63,22 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
 
         strides = [1, 1, 1]
         res_func = self._residual
-        filters = [256, 256]
+        filters = [256, 256, 362]
 
         with tf.variable_scope('res_block_0'):
-            # _residual block to repliate AlphaGoZero architecture
+            # _residual block in AlphaGoZero architecture
             x = res_func(x, filters[0], filters[1],
                          self._stride_arr(strides[0]))
 
         for i in range(1, self.hps.num_residual_units):
             with tf.variable_scope('res_block_%d' % i):
-                # _residual block to repliate AlphaGoZero architecture
+                # _residual block in AlphaGoZero architecture
                 x = res_func(x, filters[1], filters[1], self._stride_arr(1))
 
         with tf.variable_scope('policy_head'):
 
-            # Batch normalisation
-            logits = self._batch_norm('policy_bn', x)
-            # A rectifier non-linearity
-            logits = self._relu(logits, self.hps.relu_leakiness)
-
-            # A convolution of 362 filter of kernel size 1x1 with stride 1
-            logits = self._conv('policy_conv', x, 1, 256, self.hps.num_classes , self._stride_arr(1))
+            # _residual block to construct fully convolutional nextwork
+            logits = res_func(x, filters[1], filters[2], self._stride_arr(1))
 
             # defensive 1 step to temp annealling
             temp = tf.maximum(tf.train.exponential_decay(self.hps.temperature,self.global_step,1e4,0.8),1.)
@@ -94,13 +91,8 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
 
         with tf.variable_scope('value_head'):
 
-            # Batch normalisation
-            value = self._batch_norm('value_bn', x)
-            # A rectifier non-linearity
-            value = self._relu(value, self.hps.relu_leakiness)
-
-            # a convolutional net goes from 256 filters to 1 filter
-            value = self._conv('value_conv', value, 1, 256, 1, self._stride_arr(1))
+            # _residual block to construct fully convolutional nextwork
+            value = res_func(x, filters[1], 1, self._stride_arr(1))
 
             # a global average pool to a single scalar
             value = self._global_avg_pool(value)
@@ -117,7 +109,7 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
             squared_diff = tf.squared_difference(z_batch,value)
             ce = tf.reduce_mean(xent, name='cross_entropy')
             mse = tf.reduce_mean(squared_diff,name='mean_square_error')
-            cost = ce*self.reinforce_dir + mse + self._decay()
+            cost = self.reinforce_dir*ce + mse + self._decay()
             tf.summary.scalar(f'cost_tower_{tower_idx}', cost)
             tf.summary.scalar(f'ce_tower_{tower_idx}', ce)
             # scale MSE to [0,1]
@@ -138,4 +130,3 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
             tf.summary.scalar(f'result_accuracy_tower_{tower_idx}', result_acc)
 
         return cost, acc, result_acc, temp
-        '''
