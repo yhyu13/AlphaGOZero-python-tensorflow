@@ -172,11 +172,6 @@ class LibertyTracker():
         for group_id in friendly_neighboring_group_ids:
             new_group = self._merge_groups(group_id, new_group.id)
 
-        # suicide is illegal
-        if len(new_group.liberties) == 0:
-            logger.info("Move at {} would commit suicide!\n".format(c))
-            return None
-
         for group_id in opponent_neighboring_group_ids:
             neighbor_group = self.groups[group_id]
             if len(neighbor_group.liberties) == 1:
@@ -186,6 +181,10 @@ class LibertyTracker():
                 self._update_liberties(group_id, remove={c})
 
         self._handle_captures(captured_stones)
+
+        # suicide is illegal
+        if len(new_group.liberties) == 0:
+            logger.info(f"Move at {c} would commit suicide!")
 
         return captured_stones
 
@@ -317,12 +316,19 @@ class Position():
         'Checks that a move is on an empty space, not on ko, and not suicide'
         if move is None:
             return True
-        if self.board[move] != EMPTY:
-            return False
+        try:
+            if self.board[move] != EMPTY:
+                return False
+        except IndexError:
+            logger.debug(f'Index of out bound: {move}')
+
         if move == self.ko:
             return False
-        if self.is_move_suicidal(move):
-            return False
+        try:
+            if self.is_move_suicidal(move):
+                return False
+        except KeyError:
+            logger.debug(f'Key Error: {move}')
 
         return True
 
@@ -334,6 +340,9 @@ class Position():
         pos.ko = None
         # append move result to recent board
         pos.recent_board.append(pos.board)
+        if len(pos.recent_board) > 8:
+            pos.recent_board.pop(0)
+            assert len(pos.recent_board) == 8
         # append move prob to recent move prob
         pos.recent_move_prob.append(move_prob)
         return pos
@@ -366,12 +375,10 @@ class Position():
         potential_ko = is_koish(self.board, c)
         place_stones(pos.board, color, [c])
         captured_stones = pos.lib_tracker.add_stone(color, c)
-        if captured_stones is None:
-            # suicide is illegal
-            """if a illegal move occur, then return None"""
-            return None
         place_stones(pos.board, EMPTY, captured_stones)
+
         opp_color = color * -1
+        
         if len(captured_stones) == 1 and potential_ko == opp_color:
             new_ko = list(captured_stones)[0]
         else:
@@ -386,6 +393,9 @@ class Position():
         pos.recent += (PlayerMove(color, c),)
         # append move result to recent board
         pos.recent_board.append(pos.board)
+        if len(pos.recent_board) > 8:
+            pos.recent_board.pop(0)
+            assert len(pos.recent_board) == 8
         # append move prob to recent move prob
         pos.recent_move_prob.append(move_prob)
         pos.to_play *= -1

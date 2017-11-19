@@ -131,7 +131,7 @@ class AlphaGoZeroResNet(ResNet):
             elif self.hps.optimizer == 'mom':
                 self.optimizer = tf.train.MomentumOptimizer(self.lrn_rate, 0.9)
             elif self.hps.optimizer == 'adam':
-                self.optimizer = tf.train.AdamOptimizer(1e-4)
+                self.optimizer = tf.train.AdamOptimizer(self.lrn_rate)
 
             image_batches = tf.split(self.images,self.hps.num_gpu,axis=0)
             label_batches = tf.split(self.labels,self.hps.num_gpu,axis=0)
@@ -151,7 +151,6 @@ class AlphaGoZeroResNet(ResNet):
                         loss,move_acc,result_acc,temp = self._tower_loss(scope,image_batch,label_batch,z_batch,tower_idx=i)
                         # reuse variable happens here
                         tf.get_variable_scope().reuse_variables()
-                        loss *= self.reinforce_dir
                         grad = self.optimizer.compute_gradients(loss)
                         tower_grads[i] = grad
                         self.cost += loss
@@ -242,10 +241,11 @@ class AlphaGoZeroResNet(ResNet):
             squared_diff = tf.squared_difference(z_batch,value)
             ce = tf.reduce_mean(xent, name='cross_entropy')
             mse = tf.reduce_mean(squared_diff,name='mean_square_error')
-            cost = ce + 0.01*mse + self._decay()
+            cost = ce*self.reinforce_dir + mse + self._decay()
             tf.summary.scalar(f'cost_tower_{tower_idx}', cost)
             tf.summary.scalar(f'ce_tower_{tower_idx}', ce)
-            tf.summary.scalar(f'mse_tower_{tower_idx}', mse)
+            # scale MSE to [0,1]
+            tf.summary.scalar(f'mse_tower_{tower_idx}', mse/4)
 
         with tf.variable_scope('move_acc'):
             correct_prediction = tf.equal(
@@ -315,7 +315,7 @@ class AlphaGoZeroResNet(ResNet):
 
         # defensive step 3 check NaN
         # See: https://stackoverflow.com/questions/40701712/how-to-check-nan-in-gradients-in-tensorflow-when-updating
-        grad_check = [tf.check_numerics(g,message='Nan Found!') for g in clipped_grads]
+        grad_check = [tf.check_numerics(g,message='NaN Found!') for g in clipped_grads]
         with tf.control_dependencies(grad_check):
             self.train_op = self.optimizer.apply_gradients(
                 zip(clipped_grads, [v for _,v in grads_vars]),

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 train(){
-    python main.py --mode=train --force_save
+    python main.py --mode=train
 }
 
 until train; do

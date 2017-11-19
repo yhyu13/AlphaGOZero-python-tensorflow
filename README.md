@@ -1,12 +1,13 @@
-# AlphaGOZero
+# AlphaGOZero (python tensorflow implementation)
 This is a trial implementation of DeepMind's Oct19th publication: [Mastering the Game of Go without Human Knowledge](https://www.nature.com/articles/nature24270.epdf?author_access_token=VJXbVjaSHxFoctQQ4p2k4tRgN0jAjWel9jnR3ZoTv0PVW4gB86EEpGqTRDtpIz-2rmo8-KG06gqVobU5NSCFeHILHcVFUeMsbvwS-lxjqQGg98faovwjxeTUgZAUMnRQ).
+
+>**This repository has single purpose of education only**
 
 ---
 # From Paper
 
 Pure RL has outperformed supervised learning+RL agent
 
-From Paper:
 ![](/figure/rl_vs_sl.png)
 
 ---
@@ -51,13 +52,14 @@ python main.py --mode=train
 python main.py --mode=gtp —-policy=randompolicy --model_path='./savedmodels/model--0.0.ckpt'
 ```
 
-## Basic Self-play
-
-Under repo’s root  dir
-
-```
-python main.py --mode=selfplay
-```
+- [x] AlphaGo Zero Architecture
+- [x] Supervised Training
+- [x] Self Play pipeline
+- [x] Go Text Protocol
+- [x] Sabaki Engine enabled
+- [ ] *Tabula rasa*
+- [ ] Keras implementation
+- [ ] Distributed learning
 
 # Supervised Learning result (11/8/2017)
 

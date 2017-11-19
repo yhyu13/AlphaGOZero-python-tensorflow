@@ -11,7 +11,7 @@ from utils.sgf_wrapper import replay_sgf
 import utils.utilities as utils
 
 # Number of data points to store in a chunk on disk
-CHUNK_SIZE = 2**16
+CHUNK_SIZE = 4096
 CHUNK_HEADER_FORMAT = "iii?"
 CHUNK_HEADER_SIZE = struct.calcsize(CHUNK_HEADER_FORMAT)
 
@@ -93,18 +93,24 @@ class DataSet(object):
 
         return DataSet(extracted_features, encoded_moves, wrt_result, is_test=is_test)
 
-    def write(self, filename):
+    def write(self, filename, first_time=True):
         try:
             header_bytes = struct.pack(CHUNK_HEADER_FORMAT, self.data_size, self.board_size, self.input_planes, self.is_test)
             position_bytes = np.packbits(self.pos_features).tostring()
             next_move_bytes = np.packbits(self.next_moves).tostring()
             result_bytes = np.packbits(self.results).tostring()
 
-            with gzip.open(filename, "wb", compresslevel=6) as f:
-                f.write(header_bytes)
-                f.write(position_bytes)
-                f.write(next_move_bytes)
-                f.write(result_bytes)
+            if first_time:
+                with gzip.open(filename, "wb", compresslevel=6) as f:
+                    f.write(header_bytes)
+                    f.write(position_bytes)
+                    f.write(next_move_bytes)
+                    f.write(result_bytes)
+            else: # contune to write files with 'append binary'
+                with gzip.open(filename, "ab", compresslevel=6) as f:
+                    f.write(position_bytes)
+                    f.write(next_move_bytes)
+                    f.write(result_bytes)
         except:
             print(filename, 'Discard.')
             return
