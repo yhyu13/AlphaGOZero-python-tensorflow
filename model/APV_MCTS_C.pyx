@@ -197,7 +197,7 @@ class MCTSPlayerMixin(object):
         child.prior,child.position if pos_to_shift is None else pos_to_shift,\
         {} if discard_child else child.children,child.U,child.N,child.W
 
-    def suggest_move(self, position:go.Position, inference=False)->tuple:
+    def suggest_move(self, position:go.Position, inference=True)->tuple:
 
         if inference:
             """Use direct NN predition (pretty weak)"""
