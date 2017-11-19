@@ -7,7 +7,7 @@ from Network import Network
 from utils.strategies import RandomPlayerMixin, GreedyPolicyPlayerMixin, RandomPolicyPlayerMixin
 """Using .pyx Cython or using .py CPython"""
 import pyximport; pyximport.install()
-from model.APV_MCTS_C import *
+from model.APV_MCTS import *
 
 import logging
 import daiquiri
@@ -50,8 +50,7 @@ class GtpInterface(object):
         coords = utils.parse_pygtp_coords(vertex)
         self.accomodate_out_of_turn(color)
         try:
-            self.position.play_move(coords,mutate=True, color=translate_gtp_colors(color))         
-            self.shift_node(move=coords,pos_to_shift=self.position)
+            self.position.play_move(coords,mutate=True, color=translate_gtp_colors(color))
         except:
             return False
         return True
@@ -102,8 +101,7 @@ def make_gtp_instance(flags,hps):
     elif strategy_name == 'randompolicy':
         instance = RandomPolicyPlayer(n)
     elif strategy_name == 'mctspolicy':
-        network_api = NetworkAPI(n,num_playouts=flags.num_playouts)
-        instance = MCTSPlayer(network_api=network_api,parent=None,move=None,prior=0)
+        instance = MCTSPlayer(net=n,num_playouts=1600)
     else:
         return None
     gtp_engine = gtp.Engine(instance)

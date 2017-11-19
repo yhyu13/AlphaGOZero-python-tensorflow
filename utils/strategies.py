@@ -128,11 +128,9 @@ def simulate_rival_games_mcts(policy1, policy2, positions):
     run the policy network for multiple games simultaneously.
 
     policy1 is black; policy2 is white."""
-    network_api1 = NetworkAPI(policy1,num_playouts=playouts)
-    mc_root1 = MCTSPlayerMixin(network_api,None,None,0)
+    mc_root1 = MCTSPlayerMixin(policy1,num_playouts=1600)
 
-    network_api = NetworkAPI(policy,num_playouts=playouts)
-    mc_root2 = MCTSPlayerMixin(network_api,None,None,0)
+    mc_root2 = MCTSPlayerMixin(policy2,num_playouts=1600)
 
     # Assumes that all positions are on the same move number. May not be true
     # if, say, we are exploring multiple MCTS branches in parallel
@@ -147,8 +145,6 @@ def simulate_rival_games_mcts(policy1, policy2, positions):
             for i, pos in enumerate(to_play):
                 move = mc_root.suggest_move(pos)
                 pos.play_move(move, mutate=True, move_prob=policy.move_prob())
-                # shift to child node
-                mc_root.shift_node(move,pos)
 
     # TODO: implement proper end game
     for pos in positions:
@@ -160,8 +156,7 @@ def simulate_game_mcts(policy, position, playouts=1600,resignThreshold=-0.8,no_r
 
     """Simulates a game starting from a position, using a policy network"""
 
-    network_api = NetworkAPI(policy,num_playouts=playouts)
-    mc_root = MCTSPlayerMixin(network_api,None,None,0)
+    mc_root = MCTSPlayerMixin(policy,playouts)
 
     """Keep dancing until the music stops"""
     agent_resigned = False
@@ -180,10 +175,9 @@ def simulate_game_mcts(policy, position, playouts=1600,resignThreshold=-0.8,no_r
     while game_end_condition():
 
         move = mc_root.suggest_move(position)
-        position.play_move(move, mutate=True, move_prob=mc_root.move_prob())
-        # shift to child node
-        mc_root.shift_node(move,position)
+        position.play_move(move, mutate=True, move_prob=mc_root.move_prob(key=None,position=position))
         logger.debug(f'Move at step {position.n} is {move}')
+        return
 
         # check resign
         if resign_condition():
