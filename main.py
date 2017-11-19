@@ -207,6 +207,9 @@ if __name__ == '__main__':
     if not os.path.exists('./train_log'):
         os.makedirs('./train_log')
 
+    if not os.path.exists('./test_log'):
+        os.makedirs('./test_log')
+
     if not os.path.exists('./savedmodels'):
         os.makedirs('./savedmodels')
 

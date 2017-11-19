@@ -67,11 +67,12 @@ class Network:
 
             self.model = models[flags.model]()
             self.model.build_graph()
-            var_to_save = tf.trainable_variables()+[var for var in tf.global_variables() if ('bn' in var.name) and ('Adam' not in var.name) and ('Momentum' not in var.name)]
-            logger.debug(f'Building Model Complete...Total parameters: {self.model.total_parameters()}')
+            var_to_save = tf.trainable_variables()+[var for var in tf.global_variables() if ('bn' in var.name) and ('Adam' not in var.name) and ('Momentum' not in var.name) or ('global_step' in var.name)]
+            logger.debug(f'Building Model Complete...Total parameters: {self.model.total_parameters(var_list=var_to_save)}')
 
             self.summary = self.model.summaries
             #self.train_writer = tf.summary.FileWriter("./train_log", self.sess.graph)
+            #self.test_writer = tf.summary.FileWriter("./test_log")
             self.saver = tf.train.Saver(var_list=var_to_save,max_to_keep=10)
 
             self.sess.run(tf.global_variables_initializer())
@@ -99,7 +100,7 @@ class Network:
     params:
         usage: save model
     '''
-    def save_model(self,name):
+    def save_model(self,name:float):
         self.saver.save(self.sess,f'./savedmodels/model-{name}.ckpt',\
                         global_step=self.sess.run(self.model.global_step))
 
@@ -126,7 +127,7 @@ class Network:
          @ direction: reinforcement direction
          @ use_sparse: use sparse softmax to compute cross entropy
     '''
-    def train(self, training_data, direction=1.0, use_sparse=True, lrn_rate=1e-4):
+    def train(self, training_data, direction=1.0, use_sparse=True, lrn_rate=1e-2):
         logger.debug('Training model...')
         self.num_iter = training_data.data_size // self.batch_num
 
@@ -196,12 +197,13 @@ class Network:
                               self.results:batch[2],
                               self.model.training: False}
 
-            loss, ac, result_acc = self.sess.run([self.model.cost, self.model.acc,self.model.result_acc], feed_dict=feed_dict_eval)
+            summary,loss, ac, result_acc = self.sess.run([self.summary,self.model.cost, self.model.acc,self.model.result_acc], feed_dict=feed_dict_eval)
             test_loss += loss
             test_acc += ac
             test_result_acc += result_acc
             n_batch += 1
-            logger.debug(f'Test accuaracy: {test_acc/n_batch:.4f}')
+            #self.test_writer.add_summary(summary)
+            #logger.debug(f'Test accuaracy: {test_acc/n_batch:.4f}')
 
         tot_test_loss = test_loss / (n_batch-1e-2)
         tot_test_acc = test_acc / (n_batch-1e-2)

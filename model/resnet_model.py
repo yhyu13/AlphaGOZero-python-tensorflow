@@ -316,5 +316,8 @@ class ResNet(object):
         assert x.get_shape().ndims == 4
         return tf.reduce_mean(x, [1, 2])
 
-    def total_parameters(self):
-        return np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()+[var for var in tf.global_variables() if 'bn' in var.name]]).astype(np.int32)
+    def total_parameters(self,var_list=None):
+        if var_list is None:
+            return np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()+[var for var in tf.global_variables() if 'bn' in var.name]]).astype(np.int32)
+        else:
+            return np.sum([np.prod(v.get_shape().as_list()) for v in var_list]).astype(np.int32)

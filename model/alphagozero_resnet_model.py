@@ -130,7 +130,7 @@ class AlphaGoZeroResNet(ResNet):
             elif self.hps.optimizer == 'mom':
                 self.optimizer = tf.train.MomentumOptimizer(self.lrn_rate, 0.9)
             elif self.hps.optimizer == 'adam':
-                self.optimizer = tf.train.AdamOptimizer(1e-4)
+                self.optimizer = tf.train.AdamOptimizer(self.lrn_rate)
 
             image_batches = tf.split(self.images,self.hps.num_gpu,axis=0)
             label_batches = tf.split(self.labels,self.hps.num_gpu,axis=0)
