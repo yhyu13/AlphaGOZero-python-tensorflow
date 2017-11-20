@@ -11,6 +11,7 @@ import sys
 import time
 import numpy as np
 from numpy.random import dirichlet
+from scipy.stats import skewnorm
 from collections import namedtuple,defaultdict
 import logging
 import daiquiri
@@ -52,8 +53,8 @@ class MCTSPlayerMixin(object):
         # algorithm that tries to approximate a value by averaging over run_many
         # random processes, the quality of the search tree is hard to define.
         # It's a trade off among time, accuracy, and the frequency of NN updates.
-        self.sem = asyncio.Semaphore(8)
-        self.queue = Queue(8)
+        self.sem = asyncio.Semaphore(32)
+        self.queue = Queue(32)
         self.loop = asyncio.get_event_loop()
         self.running_simulation_num = 0
         self.playouts = num_playouts # the more playouts the better
@@ -76,7 +77,7 @@ class MCTSPlayerMixin(object):
        @ push_queue
     """
 
-    #@profile
+    @profile
     def suggest_move(self, position:go.Position, inference=False)->tuple:
         """Compute move prob"""
         if inference:
@@ -93,6 +94,7 @@ class MCTSPlayerMixin(object):
 
         """Select move"""
         on_board_move_prob = np.reshape(move_prob[:-1],(go.N,go.N))
+        #logger.debug(on_board_move_prob)
         if position.n < 30:
             move = select_weighted_random(position, on_board_move_prob)
         else:
@@ -280,6 +282,7 @@ class MCTSPlayerMixin(object):
         #logger.debug(key)
         return key in self.expanded
 
+    @profile
     def expand_node(self, key:namedtuple, move_probabilities:np.ndarray)->None:
         """Expand leaf node"""
         self.hash_table[key][self.lookup['P']] = move_probabilities
@@ -315,24 +318,27 @@ class MCTSPlayerMixin(object):
 
     #@profile
     def run_many(self,bulk_features):
-        #return self.net.run_many(bulk_features)
+        return self.net.run_many(bulk_features)
         """simulate data I/O & evaluate to test lower bound speed"""
-        prob = np.random.random((len(bulk_features),362))
-        return prob/np.sum(prob), np.random.random((len(bulk_features),1))
+        # Test random sample: should see expansion among all moves
+        #prob = np.random.normal(loc=,size=(len(bulk_features),362))
+        # Test skewed sample: should see high prob for (0,0)
+        #prob = np.asarray([[1]+[0]*361]*len(bulk_features))
+        #return prob/np.sum(prob,axis=0), np.random.random((len(bulk_features),1))
 
     def select_move_by_action_score(self, key:namedtuple,noise=True)->int:
 
         params = self.hash_table[key]
 
         P = params[self.lookup['P']]
-        Q = params[self.lookup['Q']]
-        U = params[self.lookup['U']]
+        N = params[self.lookup['N']]
+        Q = params[self.lookup['W']] / (N+1e-8)
+        U = c_PUCT * P * np.sqrt(np.sum(N)) / (1+N)
 
         if noise:
-            action_score = Q + U * (0.75*P + 0.25 * dirichlet([0.03]*(go.N**2+1))) / (P+1e-8)
+            action_score = Q + U * (0.75*P + 0.25 * dirichlet([.03]*(go.N**2+1))) / (P+1e-8)
         else:
             action_score = Q + U
 
-        # noinspection PyTypeChecker
-        action_t = int(np.argmax(action_score))
+        action_t = int(np.argmax(action_score[:-1]))
         return action_t
