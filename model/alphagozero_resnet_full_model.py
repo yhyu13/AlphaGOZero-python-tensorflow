@@ -7,8 +7,7 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
 
     # override _residual block to be full pre-activation residual block
     # https://arxiv.org/pdf/1603.05027.pdf
-    def _residual(self, x, in_filter, out_filter, stride,
-                  value_head=False):
+    def _residual(self, x, in_filter, out_filter, stride):
 
         """
            @ f is now an identity function that makes ensures nonvaninshing gradient
@@ -40,8 +39,6 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
                     orig_x, [[0, 0], [0, 0], [0, 0],
                              [(out_filter - in_filter) // 2,
                               (out_filter - in_filter) // 2]])
-            if value_head:
-                orig_x = tf.reduce_mean(orig_x,[3])
             x += orig_x
 
         #tf.logging.info('image after unit %s', x.get_shape())
@@ -51,7 +48,7 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
     # overrride policy and value head to be fully convolutional network
     def _tower_loss(self,scope,image_batch,label_batch,z_batch,tower_idx):
 
-        filters = [128, 128, 362]
+        filters = [128, 128, 256, 362]
 
         """Build the residual tower within the model."""
         with tf.variable_scope('init'):
@@ -87,7 +84,21 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
         with tf.variable_scope('policy_head'):
 
             # _residual block to construct fully convolutional nextwork
-            logits = res_func(x, filters[1], filters[2], self._stride_arr(1))
+            with tf.variable_scope('sub1'):
+                # Batch normalisation
+                logits = self._batch_norm('bn1', x)
+                # A rectifier non-linearity
+                logits = self._relu(logits, self.hps.relu_leakiness)
+                # A convolution of 256 filters of kernel size 3x3 with stride 1
+                logits = self._conv('conv1', logits, 1, filters[1], filters[2], [1, 1, 1, 1])
+
+            with tf.variable_scope('sub2'):
+                # Batch normalisation
+                logits = self._batch_norm('bn2', logits)
+                # A rectifier non-linearity
+                logits = self._relu(logits, self.hps.relu_leakiness)
+                # A convolution of 256 filters of kernel size 3x3 with stride 1
+                logits = self._conv('conv2', logits, 1, filters[2], filters[3], [1, 1, 1, 1])
 
             # defensive 1 step to temp annealling
             temp = tf.maximum(tf.train.exponential_decay(self.hps.temperature,self.global_step,1e4,0.8),1.)
@@ -101,7 +112,22 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
         with tf.variable_scope('value_head'):
 
             # _residual block to construct fully convolutional nextwork
-            value = res_func(x, filters[1], 1, self._stride_arr(1))
+            with tf.variable_scope('sub1'):
+                # Batch normalisation
+                value = self._batch_norm('bn1', x)
+                # A rectifier non-linearity
+                value = self._relu(value, self.hps.relu_leakiness)
+                # A convolution of 256 filters of kernel size 3x3 with stride 1
+                value = self._conv('conv1', value, 1, filters[1], filters[2], [1, 1, 1, 1])
+
+            with tf.variable_scope('sub2'):
+                # Batch normalisation
+                value = self._batch_norm('bn2', value)
+                # A rectifier non-linearity
+                value = self._relu(value, self.hps.relu_leakiness)
+                # A convolution of 256 filters of kernel size 3x3 with stride 1
+                value = self._conv('conv2', value, 1, filters[2], 1, [1, 1, 1, 1])
+
 
             # a global average pool to a single scalar
             value = self._global_avg_pool(value)
