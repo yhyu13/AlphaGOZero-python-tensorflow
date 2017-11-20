@@ -73,8 +73,8 @@ class Network:
             logger.debug(f'Building Model Complete...Total parameters: {self.model.total_parameters(var_list=var_to_save)}')
 
             self.summary = self.model.summaries
-            #self.train_writer = tf.summary.FileWriter("./train_log", self.sess.graph)
-            #self.test_writer = tf.summary.FileWriter("./test_log")
+            self.train_writer = tf.summary.FileWriter("./train_log", self.sess.graph)
+            self.test_writer = tf.summary.FileWriter("./test_log", self.sess.graph)
             self.saver = tf.train.Saver(var_list=var_to_save,max_to_keep=10)
 
             self.initialize()
@@ -181,7 +181,7 @@ class Network:
                     continue
                 else:
                     global_step = self.sess.run(self.model.global_step)
-                    #self.train_writer.add_summary(summary,global_step)
+                    self.train_writer.add_summary(summary,global_step)
                     self.sess.run(self.model.increase_global_step)
 
                 if i % 50 == 0:
@@ -220,7 +220,7 @@ class Network:
             test_acc += ac
             test_result_acc += result_acc
             n_batch += 1
-            #self.test_writer.add_summary(summary)
+            self.test_writer.add_summary(summary)
             #logger.debug(f'Test accuaracy: {test_acc/n_batch:.4f}')
 
         tot_test_loss = test_loss / (n_batch-1e-2)
@@ -235,6 +235,6 @@ class Network:
 
         """no_save should only be activated during self play evaluation"""
         if not no_save:
-            if (tot_test_acc > 0.4 or force_save_model):
+            if (tot_test_acc > 0.2 or force_save_model):
                 # save when test acc is bigger than 20% or  force save model
                 self.save_model(name=round(tot_test_acc,4))

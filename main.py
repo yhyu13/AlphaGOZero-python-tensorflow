@@ -47,12 +47,12 @@ params:
 '''
 def schedule_lrn_rate(train_step):
     """train_step equals total number of min_batch updates"""
-    f = 10 # rl schedule factor
+    f = 5 # rl schedule factor
     lr = 1e-2
     if train_step < 1*f:
         lr = 1e-2 #1e-1 blows up, sometimes 1e-2 blows up too.
     elif train_step < 2*f:
-        lr = 1e-2
+        lr = 5e-3
     elif train_step < 3*f:
         lr = 1e-3
     elif train_step < int(3.5*f):
@@ -170,7 +170,7 @@ def train(flags=FLAGS,hps=HPS):
             for train_dataset in training_datasets():
                 global_step += 1
                 # prepare training set
-                logger.info(f"Using {file}")
+                logger.info(f"Global step {global_step} start")
                 train_dataset.shuffle()
                 with timer("training"):
                     net.train(train_dataset,lrn_rate=lr)

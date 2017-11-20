@@ -2,7 +2,7 @@
 
 train(){
     source activate py3dl
-    python main.py --mode=selfplay
+    python main.py --mode=train
 }
 
 until train; do
