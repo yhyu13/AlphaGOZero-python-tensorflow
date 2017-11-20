@@ -225,7 +225,7 @@ INFO:tensorflow:Restoring parameters from ./savedmodels/model-0.4114.ckpt-347136
 
 ## Nov 15th Supervised Learning result
 
-The Supervised Learning is done on a 6 layer deep neural net which has the same architecture. It is trained on 2016-2017 KGD4-dan dataset, about 250,000 games for 5 epochs and is evaluated on 100,000 positions. It achieve 40% professional move prediction accuracy on the evaluation dataset consistently. Strangely, the game result prediction error (MSE) stays around 1 consistently, in contrast to what DeepMind's graph where the error never goes beyond 1.
+The Supervised Learning is done on a 6 layer deep neural net which has the same architecture. It is trained on 2016-2017 KGD4-dan dataset, about 250,000 games for 5 epochs and is evaluated on 100,000 positions. It achieve 40% professional move prediction accuracy on the evaluation dataset consistently. The game result prediction error (MSE) stays around 1 consistently because I didn't scale it with a ratio of 1/4 as did by DeepMind
 
 ![](/figure/Nov15acc.png)
 ![](/figure/Nov15ce.png)

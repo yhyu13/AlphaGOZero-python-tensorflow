@@ -51,19 +51,28 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
     # overrride policy and value head to be fully convolutional network
     def _tower_loss(self,scope,image_batch,label_batch,z_batch,tower_idx):
 
+        filters = [128, 128, 362]
+
         """Build the residual tower within the model."""
         with tf.variable_scope('init'):
-                x = image_batch
+                x = orig_x = image_batch
                 # A convolution of 256 filters of kernel size 3x3 with stride 1
-                x = self._conv('init_conv', x, 3, 17, 256, self._stride_arr(1))
+                x = self._conv('init_conv', x, 3, 17, filters[0], self._stride_arr(1))
                 # Batch normalisation
                 x = self._batch_norm('initial_bn', x)
                 # A rectifier non-linearity
                 x = self._relu(x, self.hps.relu_leakiness)
 
+                """Skip connect the image input to deeper layers"""
+                orig_x = tf.nn.avg_pool(orig_x, self._stride_arr(1), self._stride_arr(1), 'VALID')
+                orig_x = tf.pad(
+                    orig_x, [[0, 0], [0, 0], [0, 0],
+                             [(filters[0] - 17) // 2,
+                              (filters[0] - 17) // 2+1]])
+                x += orig_x
+
         strides = [1, 1, 1]
         res_func = self._residual
-        filters = [256, 256, 362]
 
         with tf.variable_scope('res_block_0'):
             # _residual block in AlphaGoZero architecture
