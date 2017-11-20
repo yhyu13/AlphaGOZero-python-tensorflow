@@ -1,3 +1,4 @@
+# -*- coding: future_fstrings -*-
 from model.resnet_model import *
 
 import logging
@@ -11,7 +12,7 @@ class AlphaGoZeroResNet(ResNet):
     def __init__(self, hps, images, labels, zs, mode):
         self.zs = zs
         self.training = tf.placeholder(tf.bool)
-        super().__init__(hps, images, labels, mode)
+        super(AlphaGoZeroResNet,self).__init__(hps, images, labels, mode)
 
     # override _batch_norm
     def _batch_norm(self, name, x):
@@ -322,10 +323,6 @@ class AlphaGoZeroResNet(ResNet):
         # See: https://stackoverflow.com/questions/40701712/how-to-check-nan-in-gradients-in-tensorflow-when-updating
         grad_check = [tf.check_numerics(g,message='NaN Found!') for g in clipped_grads]
         with tf.control_dependencies(grad_check):
-            apply_op = self.optimizer.apply_gradients(
+            self.train_op = self.optimizer.apply_gradients(
                 zip(clipped_grads, [v for _,v in grads_vars]),
                 global_step=self.global_step, name='train_step')
-
-            train_ops = [apply_op] + self._extra_train_ops
-            # Group all updates to into a single train op.
-            self.train_op = tf.group(*train_ops)

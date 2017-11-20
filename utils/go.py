@@ -1,3 +1,4 @@
+# -*- coding: future_fstrings -*-
 '''
 A board is a NxN numpy array.
 A Coordinate is a tuple index into the board.
@@ -9,11 +10,6 @@ A PlayerMove is a (Color, Move) tuple
 from collections import namedtuple
 import copy
 import itertools
-import logging
-import daiquiri
-
-daiquiri.setup(level=logging.INFO)
-logger = daiquiri.getLogger(__name__)
 
 
 import numpy as np

@@ -1,15 +1,4 @@
-#!/home/hangyu5/anaconda2/envs/py3dl/bin/python
-'''
-#!/Users/yuhang/anaconda3/envs/py3dl/bin/python
-'''
-"""
-After installing all requirement,
-Type 'which python' in your terminal.
-And paste the path to your python env
-in the bash bang line above.
-Then 'chmod u+x main.py', so that main.py would become an excuteable.
-"""
-
+# -*- coding: future_fstrings -*-
 import argparse
 import argh
 from time import time
@@ -155,7 +144,11 @@ def train(flags=FLAGS,hps=HPS):
         for fname in os.listdir(flags.processed_dir)
         if TRAINING_CHUNK_RE.match(fname)]
 
+<<<<<<< HEAD
+    def train_datasets():
+=======
     def training_datasets():
+>>>>>>> master
         random.shuffle(train_chunk_files)
         return (DataSet.read(file) for file in train_chunk_files)
 

@@ -1,3 +1,4 @@
+# -*- coding: future_fstrings -*-
 from _asyncio import Future
 import asyncio
 from asyncio.queues import Queue
@@ -65,7 +66,7 @@ class MCTSPlayerMixin(object):
 
         # see super in gtp warpper as 'GtpInterface'
         super().__init__()
-
+        
     """MCTS main functions
 
        The Asynchronous Policy Value Monte Carlo Tree Search:
@@ -102,12 +103,14 @@ class MCTSPlayerMixin(object):
 
         """Get win ratio"""
         player = 'B' if position.to_play==1 else 'W'
+
         if inference:
             """Use direct NN value prediction (almost always 50/50)"""
             win_rate = value[0,0]/2+0.5
         else:
             key = self.counter_key(position)
             """Use MCTS guided by NN average win ratio"""
+            
             win_rate = self.hash_table[key][self.lookup['Q']][flatten_coords(move)]/2+0.5
         logger.info(f'Win rate for player {player} is {win_rate:.4f}')
 

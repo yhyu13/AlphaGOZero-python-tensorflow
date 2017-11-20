@@ -1,3 +1,4 @@
+# -*- coding: future_fstrings -*-
 import tensorflow as tf
 import numpy as np
 import os
@@ -170,8 +171,8 @@ class Network:
                              self.model.lrn_rate: lrn_rate} # scheduled learning rate
 
                 try:
-                    _, l, ac, result_ac,summary, lr,temp, global_norm = \
-                    self.sess.run([self.model.train_op, self.model.cost,self.model.acc,\
+                    _,_, l, ac, result_ac,summary, lr,temp, global_norm = \
+                    self.sess.run([self.model._extra_train_ops,self.model.train_op, self.model.cost,self.model.acc,\
                                    self.model.result_acc , self.summary, self.model.lrn_rate,\
                                    self.model.temp,self.model.norm], feed_dict=feed_dict)
                 except KeyboardInterrupt:
@@ -200,7 +201,7 @@ class Network:
 
         logger.debug('Running evaluation...')
         num_minibatches = test_data.data_size // self.batch_num
-
+        test_data.shuffle()
         test_loss, test_acc, test_result_acc , n_batch = 0, 0, 0,0
         test_data.shuffle()
         for i in range(int(num_minibatches * proportion)):

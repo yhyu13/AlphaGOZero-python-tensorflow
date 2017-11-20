@@ -1,7 +1,6 @@
 #!/bin/bash
 
 train(){
-    source activate py3dl
     python main.py --mode=train
 }
 
