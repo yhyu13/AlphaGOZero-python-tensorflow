@@ -1,4 +1,3 @@
-# -*- coding: future_fstrings -*-
 import tensorflow as tf
 import numpy as np
 import os
@@ -74,8 +73,8 @@ class Network:
             logger.debug(f'Building Model Complete...Total parameters: {self.model.total_parameters(var_list=var_to_save)}')
 
             self.summary = self.model.summaries
-            self.train_writer = tf.summary.FileWriter("./train_log", self.sess.graph)
-            self.test_writer = tf.summary.FileWriter("./test_log", self.sess.graph)
+            self.train_writer = tf.summary.FileWriter("./train_log")
+            self.test_writer = tf.summary.FileWriter("./test_log")
             self.saver = tf.train.Saver(var_list=var_to_save,max_to_keep=10)
 
             self.initialize()
@@ -95,7 +94,8 @@ class Network:
         usage: load model
     '''
     def initialize(self):
-        self.sess.run(tf.global_variables_initializer())
+        global_variables_initializer = [var.initializer for var in tf.global_variables()]
+        self.sess.run(global_variables_initializer)#tf.global_variables_initializer())
         logger.debug('Done initializing variables')
 
     '''
@@ -172,7 +172,7 @@ class Network:
 
                 try:
                     _,_, l, ac, result_ac,summary, lr,temp, global_norm = \
-                    self.sess.run([self.model._extra_train_ops,self.model.train_op, self.model.cost,self.model.acc,\
+                    self.sess.run([self.model.train_op, self.model.cost,self.model.acc,\
                                    self.model.result_acc , self.summary, self.model.lrn_rate,\
                                    self.model.temp,self.model.norm], feed_dict=feed_dict)
                 except KeyboardInterrupt:
@@ -236,6 +236,6 @@ class Network:
 
         """no_save should only be activated during self play evaluation"""
         if not no_save:
-            if (tot_test_acc > 0.2 or force_save_model):
+            if (tot_test_acc > 0.4 or force_save_model):
                 # save when test acc is bigger than 20% or  force save model
                 self.save_model(name=round(tot_test_acc,4))

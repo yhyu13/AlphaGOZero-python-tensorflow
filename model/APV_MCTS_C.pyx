@@ -1,4 +1,3 @@
-# -*- coding: future_fstrings -*-
 from _asyncio import Future
 import asyncio
 from asyncio.queues import Queue
@@ -54,8 +53,8 @@ class MCTSPlayerMixin(object):
         # algorithm that tries to approximate a value by averaging over run_many
         # random processes, the quality of the search tree is hard to define.
         # It's a trade off among time, accuracy, and the frequency of NN updates.
-        self.sem = asyncio.Semaphore(32)
-        self.queue = Queue(32)
+        self.sem = asyncio.Semaphore(16)
+        self.queue = Queue(16)
         self.loop = asyncio.get_event_loop()
         self.running_simulation_num = 0
         self.playouts = num_playouts # the more playouts the better
@@ -66,7 +65,7 @@ class MCTSPlayerMixin(object):
 
         # see super in gtp warpper as 'GtpInterface'
         super().__init__()
-        
+
     """MCTS main functions
 
        The Asynchronous Policy Value Monte Carlo Tree Search:
@@ -110,7 +109,7 @@ class MCTSPlayerMixin(object):
         else:
             key = self.counter_key(position)
             """Use MCTS guided by NN average win ratio"""
-            
+
             win_rate = self.hash_table[key][self.lookup['Q']][flatten_coords(move)]/2+0.5
         logger.info(f'Win rate for player {player} is {win_rate:.4f}')
 
@@ -236,7 +235,7 @@ class MCTSPlayerMixin(object):
                 await asyncio.sleep(1e-3)
                 continue
             item_list = [q.get_nowait() for _ in range(q.qsize())]  # type: list[QueueItem]
-            #logger.debug(f"predicting {len(item_list)} items")
+            logger.debug(f"predicting {len(item_list)} items")
             bulk_features = np.asarray([item.feature for item in item_list])
             policy_ary, value_ary = self.run_many(bulk_features)
             for p, v, item in zip(policy_ary, value_ary, item_list):
@@ -324,7 +323,7 @@ class MCTSPlayerMixin(object):
         return self.net.run_many(bulk_features)
         """simulate data I/O & evaluate to test lower bound speed"""
         # Test random sample: should see expansion among all moves
-        #prob = np.random.normal(loc=,size=(len(bulk_features),362))
+        #prob = np.random.random(size=(len(bulk_features),362))
         # Test skewed sample: should see high prob for (0,0)
         #prob = np.asarray([[1]+[0]*361]*len(bulk_features))
         #return prob/np.sum(prob,axis=0), np.random.random((len(bulk_features),1))

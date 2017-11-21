@@ -3,7 +3,7 @@ from model.alphagozero_resnet_model import *
 class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
 
     def __init__(self, *args, **kwargs):
-        super(AlphaGoZeroResNetFULL,self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     # override _residual block to be full pre-activation residual block
     # https://arxiv.org/pdf/1603.05027.pdf
@@ -48,7 +48,7 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
     # overrride policy and value head to be fully convolutional network
     def _tower_loss(self,scope,image_batch,label_batch,z_batch,tower_idx):
 
-        filters = [128, 128, 256, 362]
+        filters = [256, 256, 256, 362]
 
         """Build the residual tower within the model."""
         with tf.variable_scope('init'):
@@ -64,8 +64,8 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
                 orig_x = tf.nn.avg_pool(orig_x, self._stride_arr(1), self._stride_arr(1), 'VALID')
                 orig_x = tf.pad(
                     orig_x, [[0, 0], [0, 0], [0, 0],
-                             [(filters[0] - 17) // 2,
-                              (filters[0] - 17) // 2+1]])
+                             [0,
+                              (filters[0] - 17)]])
                 x += orig_x
 
         strides = [1, 1, 1]
@@ -90,7 +90,7 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
                 # A rectifier non-linearity
                 logits = self._relu(logits, self.hps.relu_leakiness)
                 # A convolution of 256 filters of kernel size 3x3 with stride 1
-                logits = self._conv('conv1', logits, 1, filters[1], filters[2], [1, 1, 1, 1])
+                logits = self._conv('conv1', logits, 3, filters[1], filters[2], [1, 1, 1, 1])
 
             with tf.variable_scope('sub2'):
                 # Batch normalisation
@@ -118,7 +118,7 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
                 # A rectifier non-linearity
                 value = self._relu(value, self.hps.relu_leakiness)
                 # A convolution of 256 filters of kernel size 3x3 with stride 1
-                value = self._conv('conv1', value, 1, filters[1], filters[2], [1, 1, 1, 1])
+                value = self._conv('conv1', value, 3, filters[1], filters[2], [1, 1, 1, 1])
 
             with tf.variable_scope('sub2'):
                 # Batch normalisation
@@ -144,7 +144,7 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
             squared_diff = tf.squared_difference(z_batch,value)
             ce = tf.reduce_mean(xent, name='cross_entropy')
             mse = tf.reduce_mean(squared_diff,name='mean_square_error')
-            cost = self.reinforce_dir*ce + mse + self._decay()
+            cost = self.reinforce_dir*ce + 0.01*mse + self._decay()
             tf.summary.scalar(f'cost_tower_{tower_idx}', cost)
             tf.summary.scalar(f'ce_tower_{tower_idx}', ce)
             # scale MSE to [0,1]

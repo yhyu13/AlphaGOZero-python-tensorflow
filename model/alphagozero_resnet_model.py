@@ -1,4 +1,3 @@
-# -*- coding: future_fstrings -*-
 from model.resnet_model import *
 
 import logging
@@ -44,10 +43,10 @@ class AlphaGoZeroResNet(ResNet):
             self._extra_train_ops.append(
                 moving_averages.assign_moving_average(
                     moving_variance, variance, 0.99))
-            '''
+
             tf.summary.histogram(moving_mean.op.name, moving_mean)
             tf.summary.histogram(moving_variance.op.name, moving_variance)
-            '''
+
             def train():
                 # elipson used to be 1e-5. Maybe 0.001 solves NaN problem in deeper net.
                 return tf.nn.batch_normalization(x, mean, variance, beta, gamma, 0.001)
@@ -127,7 +126,8 @@ class AlphaGoZeroResNet(ResNet):
             self.global_step = tf.Variable(0, trainable=False, name='global_step')
             self.increase_global_step = self.global_step.assign_add(1)
 
-            self.lrn_rate = tf.Variable(self.hps.lrn_rate, dtype=tf.float32, trainable=False)
+            self.lrn_rate = tf.maximum(tf.train.exponential_decay(self.hps.lrn_rate,self.global_step,1e3,0.66),1.)
+            # self.lrn_rate = tf.Variable(self.hps.lrn_rate, dtype=tf.float32, trainable=False)
             tf.summary.scalar('learning_rate', self.lrn_rate)
             self.reinforce_dir = tf.Variable(1., dtype=tf.float32, trainable=False)
 
@@ -323,6 +323,10 @@ class AlphaGoZeroResNet(ResNet):
         # See: https://stackoverflow.com/questions/40701712/how-to-check-nan-in-gradients-in-tensorflow-when-updating
         grad_check = [tf.check_numerics(g,message='NaN Found!') for g in clipped_grads]
         with tf.control_dependencies(grad_check):
-            self.train_op = self.optimizer.apply_gradients(
+            apply_op = self.optimizer.apply_gradients(
                 zip(clipped_grads, [v for _,v in grads_vars]),
                 global_step=self.global_step, name='train_step')
+
+            train_ops = [apply_op] + self._extra_train_ops
+            # Group all updates to into a single train op.
+            self.train_op = tf.group(*train_ops)

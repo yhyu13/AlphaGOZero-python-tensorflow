@@ -1,4 +1,3 @@
-# -*- coding: future_fstrings -*-
 import argparse
 import argh
 from time import time
@@ -144,11 +143,7 @@ def train(flags=FLAGS,hps=HPS):
         for fname in os.listdir(flags.processed_dir)
         if TRAINING_CHUNK_RE.match(fname)]
 
-<<<<<<< HEAD
-    def train_datasets():
-=======
     def training_datasets():
->>>>>>> master
         random.shuffle(train_chunk_files)
         return (DataSet.read(file) for file in train_chunk_files)
 
@@ -171,7 +166,7 @@ def train(flags=FLAGS,hps=HPS):
                 """Evaluate"""
                 if global_step % 1 == 0:
                     with timer("test set evaluation"):
-                        net.test(test_dataset,proportion=0.1,force_save_model=False)
+                        net.test(test_dataset,proportion=0.25,force_save_model=global_step % 10 == 0)
 
                 logger.info(f'Global step {global_step} finshed.')
             logger.info(f'Global epoch {g_epoch} finshed.')
@@ -192,7 +187,7 @@ def test(flags=FLAGS,hps=HPS):
     test_dataset = DataSet.read(os.path.join(flags.processed_dir, "test.chunk.gz"))
 
     with timer("test set evaluation"):
-        net.test(test_dataset,proportion=0.1,force_save_model=False)
+        net.test(test_dataset,proportion=0.25,force_save_model=False)
 
 
 if __name__ == '__main__':

@@ -1,4 +1,3 @@
-# -*- coding: future_fstrings -*-
 import copy
 import math
 import random
@@ -178,7 +177,8 @@ def simulate_game_mcts(policy, position, playouts=1600,resignThreshold=-0.8,no_r
         move = mc_root.suggest_move(position)
         position.play_move(move, mutate=True, move_prob=mc_root.move_prob(key=None,position=position))
         logger.debug(f'Move at step {position.n} is {move}')
-        return
+        # uncomment to run profile
+        raise
 
         # check resign
         if resign_condition():

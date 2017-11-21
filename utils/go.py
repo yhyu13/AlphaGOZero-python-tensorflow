@@ -1,4 +1,3 @@
-# -*- coding: future_fstrings -*-
 '''
 A board is a NxN numpy array.
 A Coordinate is a tuple index into the board.
@@ -378,7 +377,7 @@ class Position():
         place_stones(pos.board, EMPTY, captured_stones)
 
         opp_color = color * -1
-        
+
         if len(captured_stones) == 1 and potential_ko == opp_color:
             new_ko = list(captured_stones)[0]
         else:
