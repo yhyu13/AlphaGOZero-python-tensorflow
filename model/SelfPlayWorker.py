@@ -20,21 +20,27 @@ def timer(message):
 
 class SelfPlayWorker(object):
 
-    def __init__(self,net,flags):
+    def __init__(self,net,rl_flags):
         self.net = net
-        self.N_moves_per_train = 2048
-        self.N_games = flags.selfplay_games_per_epoch
-        self.playouts = flags.num_playouts
+
+        self.N_moves_per_train = rl_flags.N_moves_per_train
+        self.N_games = rl_flags.selfplay_games_per_epoch
+        self.playouts = rl_flags.num_playouts
+
         self.position = go.Position(to_play=go.BLACK)
         self.final_position_collections = []
-        self.dicard_game_threshold = 30 # number of moves that is considered to resign too early
-        self.resign_threshold = -0.25
-        self.resign_delta = 0.05
+
+        self.dicard_game_threshold = rl_flags.dicard_game_threshold # number of moves that is considered to resign too early
+        self.game_cut_off_depth = rl_flags.game_cut_off_depth
+
+        self.resign_threshold = rl_flags.resign_threshold #-0.25
+        self.resign_delta = rl_flags.resign_delta #0.05
         self.total_resigned_games = 0
         self.total_false_resigned_games = 0
-        self.false_positive_resign_ratio = 0.05
+        self.false_positive_resign_ratio = rl_flags.false_positive_resign_ratio #0.05
         self.no_resign_this_game = False
-        self.num_games_to_evaluate = flags.selfplay_games_against_best_model
+
+        self.num_games_to_evaluate = rl_flags.selfplay_games_against_best_model
 
     def reset_position(self):
         self.position = go.Position(to_play=go.BLACK)
@@ -80,7 +86,7 @@ class SelfPlayWorker(object):
                 playouts=self.playouts,resignThreshold=self.resign_threshold,no_resign=self.no_resign_this_game)
 
                 logger.debug(f'Game #{i+1} Final Position:\n{final_position}')
-                
+
             # reset game board
             self.reset_position()
 
@@ -102,8 +108,6 @@ class SelfPlayWorker(object):
                 self.net.train(losers_training_samples, direction=-1.,lrn_rate=lr)
                 self.final_position_collections = []
                 moves_counter = 0
-
-            
 
     def evaluate_model(self,best_model):
         self.reset_position()

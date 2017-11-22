@@ -1,12 +1,17 @@
 from model.resnet_model import *
-from tensorflow.contrib.slim import prefetch_queue
+
+import logging
+import daiquiri
+
+daiquiri.setup(level=logging.DEBUG)
+logger = daiquiri.getLogger(__name__)
 
 class AlphaGoZeroResNet(ResNet):
 
     def __init__(self, hps, images, labels, zs, mode):
         self.zs = zs
         self.training = tf.placeholder(tf.bool)
-        super().__init__(hps, images, labels, mode)
+        super(AlphaGoZeroResNet,self).__init__(hps, images, labels, mode)
 
     # override _batch_norm
     def _batch_norm(self, name, x):
@@ -38,10 +43,10 @@ class AlphaGoZeroResNet(ResNet):
             self._extra_train_ops.append(
                 moving_averages.assign_moving_average(
                     moving_variance, variance, 0.99))
-            '''
+
             tf.summary.histogram(moving_mean.op.name, moving_mean)
             tf.summary.histogram(moving_variance.op.name, moving_variance)
-            '''
+
             def train():
                 # elipson used to be 1e-5. Maybe 0.001 solves NaN problem in deeper net.
                 return tf.nn.batch_normalization(x, mean, variance, beta, gamma, 0.001)
@@ -121,7 +126,8 @@ class AlphaGoZeroResNet(ResNet):
             self.global_step = tf.Variable(0, trainable=False, name='global_step')
             self.increase_global_step = self.global_step.assign_add(1)
 
-            self.lrn_rate = tf.Variable(self.hps.lrn_rate, dtype=tf.float32, trainable=False)
+            self.lrn_rate = tf.maximum(tf.train.exponential_decay(self.hps.lrn_rate,self.global_step,1e3,0.66),1.)
+            # self.lrn_rate = tf.Variable(self.hps.lrn_rate, dtype=tf.float32, trainable=False)
             tf.summary.scalar('learning_rate', self.lrn_rate)
             self.reinforce_dir = tf.Variable(1., dtype=tf.float32, trainable=False)
 
@@ -189,13 +195,13 @@ class AlphaGoZeroResNet(ResNet):
         filters = [256, 256]
 
         with tf.variable_scope('res_block_0'):
-            # _residual block to repliate AlphaGoZero architecture
+            # _residual block in AlphaGoZero architecture
             x = res_func(x, filters[0], filters[1],
                          self._stride_arr(strides[0]))
 
         for i in range(1, self.hps.num_residual_units):
             with tf.variable_scope('res_block_%d' % i):
-                # _residual block to repliate AlphaGoZero architecture
+                # _residual block in AlphaGoZero architecture
                 x = res_func(x, filters[1], filters[1], self._stride_arr(1))
 
         with tf.variable_scope('policy_head'):
@@ -278,8 +284,9 @@ class AlphaGoZeroResNet(ResNet):
             # Note that each grad_and_vars looks like the following:
             #   ((grad0_gpu0, var0_gpu0), ... , (grad0_gpuN, var0_gpuN))
             grads = []
-            for g, _ in grad_and_vars:
+            for g, var in grad_and_vars:
               # Add 0 dimension to the gradients to represent the tower.
+              # logger.debug(f'Network variables: {var.name}')
               expanded_g = tf.expand_dims(g, 0)
 
               # Append on a 'tower' dimension which we will average over below.

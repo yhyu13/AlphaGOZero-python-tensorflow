@@ -1,8 +1,8 @@
 argh
 numpy
+cython
+pygtp>=0.4
 sgf==0.5
-tensorflow-gpu>=1.4
-uvloop
 profilehooks
 protobuf==3.1.0.post1
 six==1.10.0

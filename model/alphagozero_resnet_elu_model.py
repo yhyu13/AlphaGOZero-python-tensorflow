@@ -16,7 +16,7 @@ class AlphaGoZeroResNetELU(AlphaGoZeroResNet):
 
         """split+conv+elu+conv+bach_norm+merge"""
         orig_x = x
-        
+
         with tf.variable_scope('sub1'):
             # A convolution of 256 filters of kernel size 3x3 with stride 1
             x = self._conv('conv1', x, 3, in_filter, out_filter, stride)

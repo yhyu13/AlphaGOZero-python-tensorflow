@@ -9,11 +9,6 @@ A PlayerMove is a (Color, Move) tuple
 from collections import namedtuple
 import copy
 import itertools
-import logging
-import daiquiri
-
-daiquiri.setup(level=logging.INFO)
-logger = daiquiri.getLogger(__name__)
 
 
 import numpy as np
@@ -382,7 +377,7 @@ class Position():
         place_stones(pos.board, EMPTY, captured_stones)
 
         opp_color = color * -1
-        
+
         if len(captured_stones) == 1 and potential_ko == opp_color:
             new_ko = list(captured_stones)[0]
         else:

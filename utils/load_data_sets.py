@@ -37,7 +37,7 @@ def get_positions_from_sgf(file):
                 yield position_w_context
 
 def split_test_training(positions_w_context, est_num_positions):
-    print("Estimated number of chunks: %s" % (est_num_positions // CHUNK_SIZE), file=sys.stderr)
+    print("Estimated number of chunks: %s" % (est_num_positions // CHUNK_SIZE))
     desired_test_size = 10**5
     if est_num_positions < 2 * desired_test_size:
         positions_w_context = list(positions_w_context)
@@ -145,7 +145,7 @@ class DataSet(object):
 
 def parse_data_sets(*data_sets):
     sgf_files = list(find_sgf_files(*data_sets))
-    print("%s sgfs found." % len(sgf_files), file=sys.stderr)
+    print("%s sgfs found." % len(sgf_files))
     est_num_positions = len(sgf_files) * 200 # about 200 moves per game
     positions_w_context = itertools.chain(*map(get_positions_from_sgf, sgf_files))
 

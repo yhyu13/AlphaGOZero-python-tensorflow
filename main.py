@@ -1,15 +1,4 @@
-#!/home/hangyu5/anaconda2/envs/py3dl/bin/python
-'''
 #!/Users/yuhang/anaconda3/envs/py3dl/bin/python
-'''
-"""
-After installing all requirement,
-Type 'which python' in your terminal.
-And paste the path to your python env
-in the bash bang line above.
-Then 'chmod u+x main.py', so that main.py would become an excuteable.
-"""
-
 import argparse
 import argh
 from time import time
@@ -47,17 +36,17 @@ params:
 '''
 def schedule_lrn_rate(train_step):
     """train_step equals total number of min_batch updates"""
-    f = 10 # rl schedule factor
-    lr = 1e-2
+    f = 1 # rl schedule factor
+    lr = 1e-3
     if train_step < 1*f:
-        lr = 1e-2 #1e-1 blows up, sometimes 1e-2 blows up too.
+        lr = 1e-3 #1e-1 blows up, sometimes 1e-2 blows up too.
     elif train_step < 2*f:
-        lr = 1e-2
+        lr = 1e-4
     elif train_step < 3*f:
-        lr = 1e-3
-    elif train_step < int(3.5*f):
         lr = 1e-4
     elif train_step < 4*f:
+        lr = 1e-4
+    elif train_step < 5*f:
         lr = 1e-5
     else:
         lr = 1e-5
@@ -170,7 +159,7 @@ def train(flags=FLAGS,hps=HPS):
             for train_dataset in training_datasets():
                 global_step += 1
                 # prepare training set
-                logger.info(f"Using {file}")
+                logger.info(f"Global step {global_step} start")
                 train_dataset.shuffle()
                 with timer("training"):
                     net.train(train_dataset,lrn_rate=lr)
@@ -178,7 +167,7 @@ def train(flags=FLAGS,hps=HPS):
                 """Evaluate"""
                 if global_step % 1 == 0:
                     with timer("test set evaluation"):
-                        net.test(test_dataset,proportion=0.1,force_save_model=False)
+                        net.test(test_dataset,proportion=0.25,force_save_model=global_step % 10 == 0)
 
                 logger.info(f'Global step {global_step} finshed.')
             logger.info(f'Global epoch {g_epoch} finshed.')
@@ -199,7 +188,7 @@ def test(flags=FLAGS,hps=HPS):
     test_dataset = DataSet.read(os.path.join(flags.processed_dir, "test.chunk.gz"))
 
     with timer("test set evaluation"):
-        net.test(test_dataset,proportion=0.1,force_save_model=False)
+        net.test(test_dataset,proportion=0.25,force_save_model=False)
 
 
 if __name__ == '__main__':

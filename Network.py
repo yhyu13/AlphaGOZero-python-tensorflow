@@ -30,10 +30,13 @@ class Network:
         """Creat a new graph for the network"""
         g = tf.Graph()
 
-        config = tf.ConfigProto()
+        config = tf.ConfigProto(
+                inter_op_parallelism_threads = 16,
+                intra_op_parallelism_threads = 16)
         config.gpu_options.allow_growth = True
         config.allow_soft_placement = True
-        """Assign a Session that carries the network"""
+        """Assign a Session that excute the network"""
+        #config.gpu_options.per_process_gpu_memory_fraction = 0.33
         self.sess = tf.Session(config=config,graph=g)
 
         # Basic info
@@ -44,6 +47,7 @@ class Network:
         self.img_channels = flags.n_img_channels
         self.nb_classes = flags.n_classes
         self.optimizer_name = hps.optimizer
+        self.load_model_path = flags.load_model_path
 
         '''
            img: ?x19x19x17
@@ -56,10 +60,9 @@ class Network:
             self.labels = tf.placeholder(tf.float32, shape=[flags.n_batch if flags.MODE == 'train' else None, self.nb_classes])
             self.results = tf.placeholder(tf.float32,shape=[flags.n_batch if flags.MODE == 'train' else None,1])
 
-            # potentially add previous alphaGo mdoels
-            # Right now, there are two models,
             # One bing the original AlphaGo Zero relu
             # Two being the elu deep residul net with AlphaGo Zero architecture
+            # Three being the full identity residual net with gloabl average pooling
             models = {'elu': lambda: AlphaGoZeroResNetELU(hps, self.imgs, self.labels, self.results,'train'),
                       'full': lambda: AlphaGoZeroResNetFULL(hps, self.imgs, self.labels, self.results,'train'),
                       'original': lambda: AlphaGoZeroResNet(hps, self.imgs, self.labels, self.results,'train')}
@@ -67,26 +70,17 @@ class Network:
 
             self.model = models[flags.model]()
             self.model.build_graph()
-            var_to_save = tf.trainable_variables()+[var for var in tf.global_variables() if ('bn' in var.name) and ('Adam' not in var.name) and ('Momentum' not in var.name) or ('global_step' in var.name)]
+            var_to_save = tf.trainable_variables()+[var for var in tf.global_variables() \
+            if ('bn' in var.name) and ('Adam' not in var.name) and ('Momentum' not in var.name) or ('global_step' in var.name)]
             logger.debug(f'Building Model Complete...Total parameters: {self.model.total_parameters(var_list=var_to_save)}')
 
             self.summary = self.model.summaries
-            #self.train_writer = tf.summary.FileWriter("./train_log", self.sess.graph)
-            #self.test_writer = tf.summary.FileWriter("./test_log")
+            self.train_writer = tf.summary.FileWriter("./train_log")
+            self.test_writer = tf.summary.FileWriter("./test_log")
             self.saver = tf.train.Saver(var_list=var_to_save,max_to_keep=10)
 
-            self.sess.run(tf.global_variables_initializer())
-            logger.debug('Done initializing variables')
-
-            if flags.load_model_path is not None:
-                logger.debug('Loading Model...')
-                try:
-                    ckpt = tf.train.get_checkpoint_state(flags.load_model_path)
-                    self.saver.restore(self.sess, ckpt.model_checkpoint_path)
-                    logger.debug('Loading Model Succeeded...')
-                except:
-                    logger.debug('Loading Model Failed')
-                    pass
+            self.initialize()
+            self.restore_model()
 
     '''
     params:
@@ -98,11 +92,38 @@ class Network:
 
     '''
     params:
+        @ sess: the session to use
+        usage: load model
+    '''
+    def initialize(self):
+        #global_variables_initializer = [var.initializer for var in tf.global_variables()]
+        self.sess.run(tf.global_variables_initializer())
+        logger.debug('Done initializing variables')
+
+    '''
+    params:
+        @ sess: the session to use
+        usage: load model
+    '''
+    def restore_model(self):
+        if self.load_model_path is not None:
+            logger.debug('Loading Model...')
+            try:
+                ckpt = tf.train.get_checkpoint_state(flags.load_model_path)
+                self.saver.restore(self.sess, ckpt.model_checkpoint_path)
+                logger.debug('Loading Model Succeeded...')
+            except:
+                logger.debug('Loading Model Failed')
+                pass
+
+    '''
+    params:
+        @ sess: the session to use
         usage: save model
     '''
     def save_model(self,name:float):
         self.saver.save(self.sess,f'./savedmodels/model-{name}.ckpt',\
-                        global_step=self.sess.run(self.model.global_step))
+                        global_step=sess.run(self.model.global_step))
 
     '''
     params:
@@ -152,7 +173,7 @@ class Network:
                              self.model.lrn_rate: lrn_rate} # scheduled learning rate
 
                 try:
-                    _, l, ac, result_ac,summary, lr,temp, global_norm = \
+                    _,_, l, ac, result_ac,summary, lr,temp, global_norm = \
                     self.sess.run([self.model.train_op, self.model.cost,self.model.acc,\
                                    self.model.result_acc , self.summary, self.model.lrn_rate,\
                                    self.model.temp,self.model.norm], feed_dict=feed_dict)
@@ -163,15 +184,15 @@ class Network:
                     continue
                 else:
                     global_step = self.sess.run(self.model.global_step)
-                    #self.train_writer.add_summary(summary,global_step)
+                    self.train_writer.add_summary(summary,global_step)
                     self.sess.run(self.model.increase_global_step)
-
+                '''
                 if i % 50 == 0:
                     with open("result.txt","a") as f:
                         f.write('Training...\n')
                         logger.debug(f'Step {i} | Training loss {l:.2f} | Temperature {temp:.2f} | Magnitude of global norm {global_norm:.2f} | Total step {global_step} | Play move accuracy {ac:.4f} | Game outcome accuracy {result_ac:.2f}',file=f)
                         logger.debug(f'Learning rate {"Adam" if self.optimizer_name=="adam" else lr}',file=f)
-
+                '''
     '''
     params:
        @ test_data: test.chunk.gz 10**5 positions
@@ -182,7 +203,7 @@ class Network:
 
         logger.debug('Running evaluation...')
         num_minibatches = test_data.data_size // self.batch_num
-
+        test_data.shuffle()
         test_loss, test_acc, test_result_acc , n_batch = 0, 0, 0,0
         test_data.shuffle()
         for i in range(int(num_minibatches * proportion)):
@@ -202,18 +223,20 @@ class Network:
             test_acc += ac
             test_result_acc += result_acc
             n_batch += 1
-            #self.test_writer.add_summary(summary)
+            self.test_writer.add_summary(summary)
             #logger.debug(f'Test accuaracy: {test_acc/n_batch:.4f}')
 
         tot_test_loss = test_loss / (n_batch-1e-2)
         tot_test_acc = test_acc / (n_batch-1e-2)
         test_result_acc = test_result_acc / (n_batch-1e-2)
 
+        '''
         with open("result.txt","a") as f:
             f.write('Running evaluation...\n')
             logger.debug(f'Test loss: {tot_test_loss:.2f}',file=f)
             logger.debug(f'Play move test accuracy: {tot_test_acc:.4f}',file=f)
             logger.debug(f'Win ratio test accuracy: {test_result_acc:.2f}',file=f)
+        '''
 
         """no_save should only be activated during self play evaluation"""
         if not no_save:
