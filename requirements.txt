@@ -1,6 +1,7 @@
 argh
 numpy
 cython
+daiquiri
 pygtp>=0.4
 sgf==0.5
 profilehooks
