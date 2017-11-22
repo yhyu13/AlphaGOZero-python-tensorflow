@@ -16,7 +16,8 @@ Pure RL has outperformed supervised learning+RL agent
 
 ## Install requirement
 
-python 2.7
+python 3.6
+tensorflow/tensorflow-gpu
 
 ```
 pip install -r requirement.txt
@@ -52,57 +53,27 @@ python main.py --mode=train
 python main.py --mode=gtp —-policy=randompolicy --model_path='./savedmodels/model--0.0.ckpt'
 ```
 
+## Play in Sabaki
+
+![](/figure/Sabaki.png)
+
+1. In console:
+```
+which python
+```
+add result to the headline of ```main.py``` with ```#!``` prefix.
+
+2. Add the path of ```main.py``` to Sabaki's manage Engine with argument ```--mode=gtp```
+
+# TODO:
 - [x] AlphaGo Zero Architecture
-- [x] Supervised Training
+- [ ] Supervised Training
 - [x] Self Play pipeline
 - [x] Go Text Protocol
 - [x] Sabaki Engine enabled
 - [ ] *Tabula rasa*
 - [ ] Keras implementation
 - [ ] Distributed learning
-
-# Supervised Learning result (11/8/2017)
-
-## Precondition
-
-Dataset:
-
-> * Train: 65536*11 samples
-> * Test: 100000 samples
-
-Model:
-
-> AlphaGOzero 20 block elu variation
-
-Server:
-
-> AWS P3 8xlarge
-
-## Training move prediction
-
-![Screen Shot 2017-11-08 at 10.14.49 AM.png](http://upload-images.jianshu.io/upload_images/1873837-f298f9760f8c9bb4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
-
-(*Steps refer to mini-batch updates, each mini-batch has 2048 samples*)
-
-## Training Total Loss (1*CE + 0.01*MSE)
-
-![Screen Shot 2017-11-08 at 10.14.31 AM.png](http://upload-images.jianshu.io/upload_images/1873837-3d98dae9280e22eb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
-
-(*Steps refer to mini-batch updates, each mini-batch has 2048 samples*)
-
-## Remark
-
-1. Training acc > 70%, but evaluation acc < 6%. Therefore, no model is saved.
-2. Need code review, presumably use batch norm incorrectly.
-3. Validate covergence of supervised learning, and the training accuracy proposed by DeepMind
-4. Total training time: 7h 12m 47s
-
-## TODO
-
-* Record CE and MSE separately. (Done)
-* Find error that causes ineffective evaluation on the test dataset. (Done)
-* Retrain, and qunatize saved models for fast inference.
-* Open trained model to the world.
 
 # Credit:
 
