@@ -1,3 +1,4 @@
+#!/Users/yuhang/anaconda3/envs/py3dl/bin/python
 import argparse
 import argh
 from time import time
@@ -35,17 +36,17 @@ params:
 '''
 def schedule_lrn_rate(train_step):
     """train_step equals total number of min_batch updates"""
-    f = 5 # rl schedule factor
+    f = 1 # rl schedule factor
     lr = 1e-3
     if train_step < 1*f:
         lr = 1e-3 #1e-1 blows up, sometimes 1e-2 blows up too.
     elif train_step < 2*f:
-        lr = 5e-4
+        lr = 1e-4
     elif train_step < 3*f:
         lr = 1e-4
-    elif train_step < int(3.5*f):
-        lr = 1e-4
     elif train_step < 4*f:
+        lr = 1e-4
+    elif train_step < 5*f:
         lr = 1e-5
     else:
         lr = 1e-5

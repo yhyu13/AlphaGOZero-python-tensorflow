@@ -30,11 +30,13 @@ class Network:
         """Creat a new graph for the network"""
         g = tf.Graph()
 
-        config = tf.ConfigProto()
+        config = tf.ConfigProto(
+                inter_op_parallelism_threads = 16,
+                intra_op_parallelism_threads = 16)
         config.gpu_options.allow_growth = True
         config.allow_soft_placement = True
         """Assign a Session that excute the network"""
-        config.gpu_options.per_process_gpu_memory_fraction = 0.33
+        #config.gpu_options.per_process_gpu_memory_fraction = 0.33
         self.sess = tf.Session(config=config,graph=g)
 
         # Basic info
@@ -58,10 +60,9 @@ class Network:
             self.labels = tf.placeholder(tf.float32, shape=[flags.n_batch if flags.MODE == 'train' else None, self.nb_classes])
             self.results = tf.placeholder(tf.float32,shape=[flags.n_batch if flags.MODE == 'train' else None,1])
 
-            # potentially add previous alphaGo mdoels
-            # Right now, there are two models,
             # One bing the original AlphaGo Zero relu
             # Two being the elu deep residul net with AlphaGo Zero architecture
+            # Three being the full identity residual net with gloabl average pooling
             models = {'elu': lambda: AlphaGoZeroResNetELU(hps, self.imgs, self.labels, self.results,'train'),
                       'full': lambda: AlphaGoZeroResNetFULL(hps, self.imgs, self.labels, self.results,'train'),
                       'original': lambda: AlphaGoZeroResNet(hps, self.imgs, self.labels, self.results,'train')}
@@ -69,7 +70,8 @@ class Network:
 
             self.model = models[flags.model]()
             self.model.build_graph()
-            var_to_save = tf.trainable_variables()+[var for var in tf.global_variables() if ('bn' in var.name) and ('Adam' not in var.name) and ('Momentum' not in var.name) or ('global_step' in var.name)]
+            var_to_save = tf.trainable_variables()+[var for var in tf.global_variables() \
+            if ('bn' in var.name) and ('Adam' not in var.name) and ('Momentum' not in var.name) or ('global_step' in var.name)]
             logger.debug(f'Building Model Complete...Total parameters: {self.model.total_parameters(var_list=var_to_save)}')
 
             self.summary = self.model.summaries
@@ -94,8 +96,8 @@ class Network:
         usage: load model
     '''
     def initialize(self):
-        global_variables_initializer = [var.initializer for var in tf.global_variables()]
-        self.sess.run(global_variables_initializer)#tf.global_variables_initializer())
+        #global_variables_initializer = [var.initializer for var in tf.global_variables()]
+        self.sess.run(tf.global_variables_initializer())
         logger.debug('Done initializing variables')
 
     '''
@@ -184,13 +186,13 @@ class Network:
                     global_step = self.sess.run(self.model.global_step)
                     self.train_writer.add_summary(summary,global_step)
                     self.sess.run(self.model.increase_global_step)
-
+                '''
                 if i % 50 == 0:
                     with open("result.txt","a") as f:
                         f.write('Training...\n')
                         logger.debug(f'Step {i} | Training loss {l:.2f} | Temperature {temp:.2f} | Magnitude of global norm {global_norm:.2f} | Total step {global_step} | Play move accuracy {ac:.4f} | Game outcome accuracy {result_ac:.2f}',file=f)
                         logger.debug(f'Learning rate {"Adam" if self.optimizer_name=="adam" else lr}',file=f)
-
+                '''
     '''
     params:
        @ test_data: test.chunk.gz 10**5 positions
@@ -228,11 +230,13 @@ class Network:
         tot_test_acc = test_acc / (n_batch-1e-2)
         test_result_acc = test_result_acc / (n_batch-1e-2)
 
+        '''
         with open("result.txt","a") as f:
             f.write('Running evaluation...\n')
             logger.debug(f'Test loss: {tot_test_loss:.2f}',file=f)
             logger.debug(f'Play move test accuracy: {tot_test_acc:.4f}',file=f)
             logger.debug(f'Win ratio test accuracy: {test_result_acc:.2f}',file=f)
+        '''
 
         """no_save should only be activated during self play evaluation"""
         if not no_save:

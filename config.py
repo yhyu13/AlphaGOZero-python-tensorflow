@@ -6,8 +6,8 @@ parser = argparse.ArgumentParser(description='Define parameters.')
 
 """Network hyperparameters"""
 parser.add_argument('--n_epoch', type=int, default=1)
-parser.add_argument('--global_epoch', type=int, default=50)
-parser.add_argument('--n_batch', type=int, default=16)
+parser.add_argument('--global_epoch', type=int, default=10)
+parser.add_argument('--n_batch', type=int, default=1)
 parser.add_argument('--n_img_row', type=int, default=19)
 parser.add_argument('--n_img_col', type=int, default=19)
 parser.add_argument('--n_img_channels', type=int, default=17)

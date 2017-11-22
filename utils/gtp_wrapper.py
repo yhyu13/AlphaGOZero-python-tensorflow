@@ -7,7 +7,7 @@ from Network import Network
 from utils.strategies import RandomPlayerMixin, GreedyPolicyPlayerMixin, RandomPolicyPlayerMixin
 """Using .pyx Cython or using .py CPython"""
 import pyximport; pyximport.install()
-from model.APV_MCTS import *
+from model.APV_MCTS_C import *
 
 import logging
 import daiquiri

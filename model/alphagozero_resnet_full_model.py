@@ -40,15 +40,13 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
                              [(out_filter - in_filter) // 2,
                               (out_filter - in_filter) // 2]])
             x += orig_x
-
-        #tf.logging.info('image after unit %s', x.get_shape())
         return x
 
 
     # overrride policy and value head to be fully convolutional network
     def _tower_loss(self,scope,image_batch,label_batch,z_batch,tower_idx):
 
-        filters = [256, 256, 256, 362]
+        filters = [256, 256, 256]
 
         """Build the residual tower within the model."""
         with tf.variable_scope('init'):
@@ -75,11 +73,13 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
             # _residual block in AlphaGoZero architecture
             x = res_func(x, filters[0], filters[1],
                          self._stride_arr(strides[0]))
+            tf.logging.info(f'Residual block 0 {x.get_shape()}')
 
         for i in range(1, self.hps.num_residual_units):
             with tf.variable_scope('res_block_%d' % i):
                 # _residual block in AlphaGoZero architecture
                 x = res_func(x, filters[1], filters[1], self._stride_arr(1))
+                tf.logging.info(f'Residual block {i} {x.get_shape()}')
 
         with tf.variable_scope('policy_head'):
 
@@ -98,16 +98,17 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
                 # A rectifier non-linearity
                 logits = self._relu(logits, self.hps.relu_leakiness)
                 # A convolution of 256 filters of kernel size 3x3 with stride 1
-                logits = self._conv('conv2', logits, 1, filters[2], filters[3], [1, 1, 1, 1])
+                logits = self._conv('conv2', logits, 1, filters[2], 362, [1, 1, 1, 1])
 
             # defensive 1 step to temp annealling
             temp = tf.maximum(tf.train.exponential_decay(self.hps.temperature,self.global_step,1e4,0.8),1.)
 
             # a global average pool to a hidden layer of 362 classes
-            logits = tf.divide(self._global_avg_pool(logits),temp)
+            logits = self._global_avg_pool(logits)
 
             prediction = tf.nn.softmax(logits)
             self.prediction.append(prediction)
+            tf.logging.info(f'Policy head {logits.get_shape()}')
 
         with tf.variable_scope('value_head'):
 
@@ -128,13 +129,12 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
                 # A convolution of 256 filters of kernel size 3x3 with stride 1
                 value = self._conv('conv2', value, 1, filters[2], 1, [1, 1, 1, 1])
 
-
             # a global average pool to a single scalar
             value = self._global_avg_pool(value)
-
             # A tanh non-linearity outputting a scalar in the range [1, 1]
             value = tf.tanh(value)
             self.value.append(value)
+            tf.logging.info(f'Value head {value.get_shape()}')
 
         with tf.variable_scope('costs'):
             self.use_sparse_sotfmax = tf.constant(1, tf.int32, name="condition")
@@ -149,6 +149,7 @@ class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
             tf.summary.scalar(f'ce_tower_{tower_idx}', ce)
             # scale MSE to [0,1]
             tf.summary.scalar(f'mse_tower_{tower_idx}', mse/4)
+            tf.logging.info(f'Creating cost...')
 
         with tf.variable_scope('move_acc'):
             correct_prediction = tf.equal(

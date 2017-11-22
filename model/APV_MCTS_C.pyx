@@ -77,8 +77,8 @@ class MCTSPlayerMixin(object):
        @ push_queue
     """
 
-    @profile
-    def suggest_move(self, position:go.Position, inference=False)->tuple:
+    #@profile
+    def suggest_move(self, position:go.Position, inference=True)->tuple:
         """Compute move prob"""
         if inference:
             """Use direct NN predition (pretty weak)"""

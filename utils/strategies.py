@@ -178,7 +178,7 @@ def simulate_game_mcts(policy, position, playouts=1600,resignThreshold=-0.8,no_r
         position.play_move(move, mutate=True, move_prob=mc_root.move_prob(key=None,position=position))
         logger.debug(f'Move at step {position.n} is {move}')
         # uncomment to run profile
-        raise
+        # raise
 
         # check resign
         if resign_condition():
