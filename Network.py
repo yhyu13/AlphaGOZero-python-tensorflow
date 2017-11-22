@@ -31,12 +31,12 @@ class Network:
         g = tf.Graph()
 
         config = tf.ConfigProto(
-                inter_op_parallelism_threads = 16,
-                intra_op_parallelism_threads = 16)
+                inter_op_parallelism_threads = 4,
+                intra_op_parallelism_threads = 4)
         config.gpu_options.allow_growth = True
         config.allow_soft_placement = True
         """Assign a Session that excute the network"""
-        #config.gpu_options.per_process_gpu_memory_fraction = 0.33
+        config.gpu_options.per_process_gpu_memory_fraction = 0.4
         self.sess = tf.Session(config=config,graph=g)
 
         # Basic info
@@ -78,9 +78,10 @@ class Network:
             self.train_writer = tf.summary.FileWriter("./train_log")
             self.test_writer = tf.summary.FileWriter("./test_log")
             self.saver = tf.train.Saver(var_list=var_to_save,max_to_keep=10)
+            logger.debug(f'Build Summary & Saver complete')
 
             self.initialize()
-            self.restore_model()
+            self.restore_model(flags.load_model_path)
 
     '''
     params:
@@ -96,7 +97,8 @@ class Network:
         usage: load model
     '''
     def initialize(self):
-        #global_variables_initializer = [var.initializer for var in tf.global_variables()]
+        #init = (var.initializer for var in tf.global_variables())
+        #self.sess.run(list(init))
         self.sess.run(tf.global_variables_initializer())
         logger.debug('Done initializing variables')
 
@@ -105,11 +107,11 @@ class Network:
         @ sess: the session to use
         usage: load model
     '''
-    def restore_model(self):
+    def restore_model(self,check_point_path):
         if self.load_model_path is not None:
             logger.debug('Loading Model...')
             try:
-                ckpt = tf.train.get_checkpoint_state(flags.load_model_path)
+                ckpt = tf.train.get_checkpoint_state(check_point_path)
                 self.saver.restore(self.sess, ckpt.model_checkpoint_path)
                 logger.debug('Loading Model Succeeded...')
             except:
@@ -122,7 +124,7 @@ class Network:
         usage: save model
     '''
     def save_model(self,name:float):
-        self.saver.save(self.sess,f'./savedmodels/model-{name}.ckpt',\
+        self.saver.save(self.sess,f'./savedmodels/large20/model-{name}.ckpt',\
                         global_step=sess.run(self.model.global_step))
 
     '''
@@ -148,7 +150,7 @@ class Network:
          @ direction: reinforcement direction
          @ use_sparse: use sparse softmax to compute cross entropy
     '''
-    def train(self, training_data, direction=1.0, use_sparse=True, lrn_rate=1e-2):
+    def train(self, training_data, direction=1.0, use_sparse=True, lrn_rate=1e-3):
         logger.debug('Training model...')
         self.num_iter = training_data.data_size // self.batch_num
 
@@ -173,11 +175,12 @@ class Network:
                              self.model.lrn_rate: lrn_rate} # scheduled learning rate
 
                 try:
-                    _,_, l, ac, result_ac,summary, lr,temp, global_norm = \
+                    _, l, ac, result_ac,summary, lr,temp, global_norm = \
                     self.sess.run([self.model.train_op, self.model.cost,self.model.acc,\
                                    self.model.result_acc , self.summary, self.model.lrn_rate,\
                                    self.model.temp,self.model.norm], feed_dict=feed_dict)
                 except KeyboardInterrupt:
+                    self.close()
                     sys.exit()
                 except tf.errors.InvalidArgumentError:
                     logger.debug(f'Step {i+1} contains NaN gradients. Discard.')
@@ -187,7 +190,7 @@ class Network:
                     self.train_writer.add_summary(summary,global_step)
                     self.sess.run(self.model.increase_global_step)
                 '''
-                if i % 50 == 0:
+                if i % 1 == 0:
                     with open("result.txt","a") as f:
                         f.write('Training...\n')
                         logger.debug(f'Step {i} | Training loss {l:.2f} | Temperature {temp:.2f} | Magnitude of global norm {global_norm:.2f} | Total step {global_step} | Play move accuracy {ac:.4f} | Game outcome accuracy {result_ac:.2f}',file=f)

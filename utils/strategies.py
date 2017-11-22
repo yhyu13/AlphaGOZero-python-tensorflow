@@ -24,7 +24,7 @@ import utils.load_data_sets as load_data_sets
 # Draw moves from policy net until this threshold, then play moves randomly.
 # This speeds up the simulation, and it also provides a logical cutoff
 # for which moves to include for reinforcement learning.
-POLICY_CUTOFF_DEPTH = int(go.N * go.N * 0.75) # 270 moves for a 19x19
+POLICY_CUTOFF_DEPTH = int(go.N * go.N * 0.7) # 250 moves for a 19x19
 # However, some situations end up as "dead, but only with correct play".
 # Random play can destroy the subtlety of these situations, so we'll play out
 # a bunch more moves from a smart network before playing out random moves.
@@ -163,25 +163,26 @@ def simulate_game_mcts(policy, position, playouts=1600,resignThreshold=-0.8,no_r
     false_positive = False
     who_should_lose = 1
 
-    def resign_condition():
-        return mc_root.Q < resignThreshold
+    def resign_condition(q:float)->bool:
+        return q < resignThreshold
 
-    def game_end_condition():
-        if len(position.recent)>=2:
-            return not (position.recent[-2].move is None and position.recent[-1].move is None)
+    def game_end_condition()->bool:
+        if position.n>=2:
+            return position.n < POLICY_CUTOFF_DEPTH and not (position.recent[-2].move is None and position.recent[-1].move is None)
         else:
             return True
 
     while game_end_condition():
 
         move = mc_root.suggest_move(position)
+        Q_value = mc_root.Q(position,move)
         position.play_move(move, mutate=True, move_prob=mc_root.move_prob(key=None,position=position))
         logger.debug(f'Move at step {position.n} is {move}')
         # uncomment to run profile
         # raise
 
         # check resign
-        if resign_condition():
+        if resign_condition(Q_value):
             agent_resigned = True
             who_should_lose = 'W' if position.to_play==1 else 'B'
             if no_resign:

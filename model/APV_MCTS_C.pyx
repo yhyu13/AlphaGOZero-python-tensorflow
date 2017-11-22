@@ -29,7 +29,7 @@ from utils.utilities import flatten_coords,unflatten_coords
 # Exploration constant
 c_PUCT = 5
 virtual_loss = 3
-cut_off_depth = 5
+cut_off_depth = 30
 QueueItem = namedtuple("QueueItem", "feature future")
 CounterKey = namedtuple("CounterKey", "board to_play depth")
 
@@ -58,6 +58,7 @@ class MCTSPlayerMixin(object):
         self.loop = asyncio.get_event_loop()
         self.running_simulation_num = 0
         self.playouts = num_playouts # the more playouts the better
+        self.position = None
 
         self.lookup = {v:k for k,v in enumerate(['W','U','N','Q','P'])}
 
@@ -69,6 +70,7 @@ class MCTSPlayerMixin(object):
     """MCTS main functions
 
        The Asynchronous Policy Value Monte Carlo Tree Search:
+       @ Q
        @ suggest_move
        @ suggest_move_mcts
        @ tree_search
@@ -77,8 +79,18 @@ class MCTSPlayerMixin(object):
        @ push_queue
     """
 
+    def Q(self,position:go.Position,move:tuple)->float:
+        if self.position is not None and move is not None:
+            k = self.counter_key(position)
+            q = self.hash_table[k][self.lookup['Q']][flatten_coords(move)]
+            return q
+        else:
+            return 0
+
     #@profile
-    def suggest_move(self, position:go.Position, inference=True)->tuple:
+    def suggest_move(self, position:go.Position, inference=False)->tuple:
+    
+        self.position = position
         """Compute move prob"""
         if inference:
             """Use direct NN predition (pretty weak)"""
@@ -107,16 +119,15 @@ class MCTSPlayerMixin(object):
             """Use direct NN value prediction (almost always 50/50)"""
             win_rate = value[0,0]/2+0.5
         else:
-            key = self.counter_key(position)
             """Use MCTS guided by NN average win ratio"""
-
-            win_rate = self.hash_table[key][self.lookup['Q']][flatten_coords(move)]/2+0.5
+            win_rate = self.Q(position,move)/2+0.5
         logger.info(f'Win rate for player {player} is {win_rate:.4f}')
 
         return move
+        
 
     #@profile
-    def suggest_move_mcts(self, position:go.Position, fixed_depth=False)->np.ndarray:
+    def suggest_move_mcts(self, position:go.Position, fixed_depth=True)->np.ndarray:
         """Async tree search controller"""
         start = time.time()
 
@@ -136,8 +147,11 @@ class MCTSPlayerMixin(object):
         if fixed_depth:
             """Limit tree search depth (not size)"""
             self.prune_hash_map_by_depth(lower_bound=position.n-1,upper_bound=position.n+cut_off_depth)
+        else:
+            """Barely prune the parent nodes"""
+            self.prune_hash_map_by_depth(lower_bound=position.n-1,upper_bound=10e6)
 
-        logger.debug(f"Searched for {(time.time() - start):.5f} seconds")
+        #logger.debug(f"Searched for {(time.time() - start):.5f} seconds")
         return self.move_prob(key)
 
     async def tree_search(self,position:go.Position)->float:
@@ -235,7 +249,7 @@ class MCTSPlayerMixin(object):
                 await asyncio.sleep(1e-3)
                 continue
             item_list = [q.get_nowait() for _ in range(q.qsize())]  # type: list[QueueItem]
-            logger.debug(f"predicting {len(item_list)} items")
+            #logger.debug(f"predicting {len(item_list)} items")
             bulk_features = np.asarray([item.feature for item in item_list])
             policy_ary, value_ary = self.run_many(bulk_features)
             for p, v, item in zip(policy_ary, value_ary, item_list):
@@ -269,10 +283,11 @@ class MCTSPlayerMixin(object):
         return CounterKey(tuple(np.ndarray.flatten(position.board)),position.to_play,position.n)
 
     def prune_hash_map_by_depth(self,lower_bound=0,upper_bound=5)->None:
-        targets = (key for key in self.hash_table if key.depth < lower_bound or key.depth > upper_bound)
+        targets = [key for key in self.hash_table if key.depth < lower_bound or key.depth > upper_bound]
         for t in targets:
             self.expanded.discard(t)
             self.hash_table.pop(t,None)
+        logger.debug(f'Prune tree nodes smaller than {lower_bound}')
 
     def env_action(self,position:go.Position,action_t:int)->go.Position:
         """Evolve the game board, and return current position"""
