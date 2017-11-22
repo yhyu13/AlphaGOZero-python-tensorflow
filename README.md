@@ -10,6 +10,17 @@ Pure RL has outperformed supervised learning+RL agent
 
 ![](/figure/rl_vs_sl.png)
 
+
+# Nov20 SL evaluation
+
+![](/figure/Nov20large20eval.png)
+
+## Download trained model
+
+1. [https://drive.google.com/drive/folders/1Xs8Ly3wjMmXjH2agrz25Zv2e5-yqQKaP?usp=sharing](https://drive.google.com/drive/folders/1Xs8Ly3wjMmXjH2agrz25Zv2e5-yqQKaP?usp=sharing)
+
+2. Place under ./savedmodels/large20/
+
 ---
 
 # Set up

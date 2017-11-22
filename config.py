@@ -21,7 +21,7 @@ parser.add_argument('--model_type',dest='model',default='full',\
                     help='choose residual block architecture {original,elu,full}')
 parser.add_argument('--optimizer',dest='opt',default='adam')
 parser.add_argument('--gtp_policy',dest='gpt_policy',default='mctspolicy',help='choose gtp bot player')#random,mctspolicy
-parser.add_argument('--num_playouts',type=int,dest='num_playouts',default=1600,help='The number of MC search per move, the more the better.')
+parser.add_argument('--num_playouts',type=int,dest='num_playouts',default=1000,help='The number of MC search per move, the more the better.')
 parser.add_argument('--mode',dest='MODE', default='train',help='among selfplay, gtp and train')
 
 
