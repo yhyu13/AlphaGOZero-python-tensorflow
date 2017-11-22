@@ -1,4 +1,4 @@
-#!/home/hangyu5/anaconda2/envs/py3dl/bin/python
+# -*- coding: future_fstrings -*-
 import argparse
 import argh
 from time import time
@@ -95,7 +95,7 @@ def selfplay(flags=FLAGS,hps=HPS):
     net = Network(flags,hps)
     Worker = SelfPlayWorker(net,flags)
 
-    def train(epoch:int):
+    def train(epoch):
         lr = schedule_lrn_rate(epoch)
         Worker.run(lr=lr)
 
@@ -167,7 +167,7 @@ def train(flags=FLAGS,hps=HPS):
                 """Evaluate"""
                 if global_step % 1 == 0:
                     with timer("test set evaluation"):
-                        net.test(test_dataset,proportion=0.25,force_save_model=global_step % 10 == 0)
+                        net.test(test_dataset,proportion=0.25,force_save_model=global_step % 25 == 0)
 
                 logger.info(f'Global step {global_step} finshed.')
             logger.info(f'Global epoch {g_epoch} finshed.')

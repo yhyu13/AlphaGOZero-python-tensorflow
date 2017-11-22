@@ -7,14 +7,14 @@ parser = argparse.ArgumentParser(description='Define parameters.')
 """Network hyperparameters"""
 parser.add_argument('--n_epoch', type=int, default=1)
 parser.add_argument('--global_epoch', type=int, default=10)
-parser.add_argument('--n_batch', type=int, default=16)
+parser.add_argument('--n_batch', type=int, default=2048)
 parser.add_argument('--n_img_row', type=int, default=19)
 parser.add_argument('--n_img_col', type=int, default=19)
 parser.add_argument('--n_img_channels', type=int, default=17)
 parser.add_argument('--n_classes', type=int, default=19**2+1)
-parser.add_argument('--lr', type=float, default=1e-3)
+parser.add_argument('--lr', type=float, default=1e-4)
 parser.add_argument('--n_resid_units', type=int, default=19)
-parser.add_argument('--n_gpu', type=int, default=1)
+parser.add_argument('--n_gpu', type=int, default=4)
 parser.add_argument('--dataset', dest='processed_dir',default='./processed_data')
 parser.add_argument('--model_path',dest='load_model_path',default='./savedmodels/large20')#'./savedmodels'
 parser.add_argument('--model_type',dest='model',default='full',\

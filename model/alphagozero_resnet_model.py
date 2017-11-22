@@ -1,3 +1,4 @@
+# -*- coding: future_fstrings -*-
 from model.resnet_model import *
 
 import logging
@@ -125,8 +126,8 @@ class AlphaGoZeroResNet(ResNet):
 
             self.global_step = tf.Variable(0, trainable=False, name='global_step')
             self.increase_global_step = self.global_step.assign_add(1)
-
-            self.lrn_rate = tf.maximum(tf.train.exponential_decay(self.hps.lrn_rate,self.global_step,1e3,0.66),1.)
+            
+            self.lrn_rate = tf.maximum(tf.train.exponential_decay(self.hps.lrn_rate,self.global_step,5e3,0.8),1e-6)
             # self.lrn_rate = tf.Variable(self.hps.lrn_rate, dtype=tf.float32, trainable=False)
             tf.summary.scalar('learning_rate', self.lrn_rate)
             self.reinforce_dir = tf.Variable(1., dtype=tf.float32, trainable=False)

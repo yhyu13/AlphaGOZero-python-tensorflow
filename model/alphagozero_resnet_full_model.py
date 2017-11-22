@@ -1,9 +1,10 @@
+# -*- coding: future_fstrings -*-
 from model.alphagozero_resnet_model import *
 
 class AlphaGoZeroResNetFULL(AlphaGoZeroResNet):
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(AlphaGoZeroResNetFULL,self).__init__(*args, **kwargs)
 
     # override _residual block to be full pre-activation residual block
     # https://arxiv.org/pdf/1603.05027.pdf

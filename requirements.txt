@@ -3,6 +3,7 @@ numpy
 cython
 daiquiri
 pygtp>=0.4
+future-fstrings
 sgf==0.5
 profilehooks
 protobuf==3.1.0.post1

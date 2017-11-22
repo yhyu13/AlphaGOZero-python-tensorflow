@@ -1,3 +1,4 @@
+# -*- coding: future_fstrings -*-
 import itertools
 import gzip
 import numpy as np

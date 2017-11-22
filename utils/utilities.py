@@ -1,3 +1,4 @@
+# -*- coding: future_fstrings -*-
 '''
 From MuGo:https://github.com/yhyu13/MuGo
 '''

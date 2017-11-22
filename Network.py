@@ -1,3 +1,4 @@
+# -*- coding: future_fstrings -*-
 import tensorflow as tf
 import numpy as np
 import os
@@ -31,12 +32,12 @@ class Network:
         g = tf.Graph()
 
         config = tf.ConfigProto(
-                inter_op_parallelism_threads = 4,
-                intra_op_parallelism_threads = 4)
+                inter_op_parallelism_threads = 16,
+                intra_op_parallelism_threads = 16)
         config.gpu_options.allow_growth = True
         config.allow_soft_placement = True
         """Assign a Session that excute the network"""
-        config.gpu_options.per_process_gpu_memory_fraction = 0.4
+        #config.gpu_options.per_process_gpu_memory_fraction = 0.4
         self.sess = tf.Session(config=config,graph=g)
 
         # Basic info
@@ -97,9 +98,9 @@ class Network:
         usage: load model
     '''
     def initialize(self):
-        #init = (var.initializer for var in tf.global_variables())
-        #self.sess.run(list(init))
-        self.sess.run(tf.global_variables_initializer())
+        init = (var.initializer for var in tf.global_variables())
+        self.sess.run(list(init))
+        #self.sess.run(tf.global_variables_initializer())
         logger.debug('Done initializing variables')
 
     '''
@@ -111,8 +112,8 @@ class Network:
         if self.load_model_path is not None:
             logger.debug('Loading Model...')
             try:
-                ckpt = tf.train.get_checkpoint_state(check_point_path)
-                self.saver.restore(self.sess, ckpt.model_checkpoint_path)
+                #ckpt = tf.train.get_checkpoint_state(check_point_path)
+                self.saver.restore(self.sess, './savedmodels/large20/model-0.4162.ckpt-19200')
                 logger.debug('Loading Model Succeeded...')
             except:
                 logger.debug('Loading Model Failed')
@@ -123,7 +124,7 @@ class Network:
         @ sess: the session to use
         usage: save model
     '''
-    def save_model(self,name:float):
+    def save_model(self,name):
         self.saver.save(self.sess,f'./savedmodels/large20/model-{name}.ckpt',\
                         global_step=sess.run(self.model.global_step))
 
@@ -171,8 +172,8 @@ class Network:
                              self.results: batch[2],
                              self.model.reinforce_dir: direction, # +1 or -1 only used for self-play data, trivial in SL
                              self.model.use_sparse_sotfmax: 1 if use_sparse else -1, # +1 in SL, -1 in RL
-                             self.model.training: True,
-                             self.model.lrn_rate: lrn_rate} # scheduled learning rate
+                             self.model.training: True}
+                             #self.model.lrn_rate: lrn_rate} # scheduled learning rate
 
                 try:
                     _, l, ac, result_ac,summary, lr,temp, global_norm = \
@@ -187,14 +188,15 @@ class Network:
                     continue
                 else:
                     global_step = self.sess.run(self.model.global_step)
-                    self.train_writer.add_summary(summary,global_step)
+                    if i % 2 == 0:
+                        self.train_writer.add_summary(summary,global_step)
                     self.sess.run(self.model.increase_global_step)
                 '''
                 if i % 1 == 0:
                     with open("result.txt","a") as f:
                         f.write('Training...\n')
                         logger.debug(f'Step {i} | Training loss {l:.2f} | Temperature {temp:.2f} | Magnitude of global norm {global_norm:.2f} | Total step {global_step} | Play move accuracy {ac:.4f} | Game outcome accuracy {result_ac:.2f}',file=f)
-                        logger.debug(f'Learning rate {"Adam" if self.optimizer_name=="adam" else lr}',file=f)
+                        logger.debug(f'Learning rate {lr}',file=f)
                 '''
     '''
     params:
@@ -245,4 +247,5 @@ class Network:
         if not no_save:
             if (tot_test_acc > 0.4 or force_save_model):
                 # save when test acc is bigger than 20% or  force save model
-                self.save_model(name=round(tot_test_acc,4))
+                self.saver.save(self.sess,f'./savedmodels/large20/model-{tot_test_acc:.4f}.ckpt',\
+                        global_step=sess.run(self.model.global_step))
