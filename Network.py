@@ -125,7 +125,7 @@ class Network:
     '''
     def save_model(self,name:float):
         self.saver.save(self.sess,f'./savedmodels/large20/model-{name}.ckpt',\
-                        global_step=sess.run(self.model.global_step))
+                        global_step=self.sess.run(self.model.global_step))
 
     '''
     params:
@@ -171,8 +171,8 @@ class Network:
                              self.results: batch[2],
                              self.model.reinforce_dir: direction, # +1 or -1 only used for self-play data, trivial in SL
                              self.model.use_sparse_sotfmax: 1 if use_sparse else -1, # +1 in SL, -1 in RL
-                             self.model.training: True,
-                             self.model.lrn_rate: lrn_rate} # scheduled learning rate
+                             self.model.training: True}
+                             #self.model.lrn_rate: lrn_rate} # scheduled learning rate
 
                 try:
                     _, l, ac, result_ac,summary, lr,temp, global_norm = \
