@@ -90,3 +90,5 @@ add result to the headline of ```main.py``` with ```#!``` prefix.
 
 *Brain Lee
 *Ritchie Ng
+*Samuel Graván
+*森下 健
