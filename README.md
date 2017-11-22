@@ -86,9 +86,10 @@ add result to the headline of ```main.py``` with ```#!``` prefix.
 - [ ] Keras implementation
 - [ ] Distributed learning
 
-# Credit:
+# Credit (orderless):
 
 *Brain Lee
 *Ritchie Ng
 *Samuel Graván
 *森下 健
+*yuanfengpang
