@@ -1,11 +1,12 @@
 from model.alphagozero_resnet_model import *
 
+
 class AlphaGoZeroResNetELU(AlphaGoZeroResNet):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def _relu(self,x,leak=0):
+    def _relu(self, x, leak=0):
         """change relu to elu"""
         return tf.nn.elu(x)
 
@@ -13,7 +14,6 @@ class AlphaGoZeroResNetELU(AlphaGoZeroResNet):
     # https://arxiv.org/pdf/1604.04112.pdf
     def _residual(self, x, in_filter, out_filter, stride,
                   activate_before_residual=False):
-
         """split+conv+elu+conv+bach_norm+merge"""
         orig_x = x
 

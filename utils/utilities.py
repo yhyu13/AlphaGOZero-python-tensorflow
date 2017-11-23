@@ -16,14 +16,18 @@ import utils.go as go
 KGS_COLUMNS = 'ABCDEFGHJKLMNOPQRST'
 SGF_COLUMNS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
+
 def parse_sgf_to_flat(sgf):
     return flatten_coords(parse_sgf_coords(sgf))
+
 
 def flatten_coords(c):
     return go.N * c[0] + c[1]
 
+
 def unflatten_coords(f):
     return divmod(f, go.N)
+
 
 def parse_sgf_coords(s):
     'Interprets coords. aa is top left corner; sa is top right corner'
@@ -31,10 +35,12 @@ def parse_sgf_coords(s):
         return None
     return SGF_COLUMNS.index(s[1]), SGF_COLUMNS.index(s[0])
 
+
 def unparse_sgf_coords(c):
     if c is None:
         return ''
     return SGF_COLUMNS[c[1]] + SGF_COLUMNS[c[0]]
+
 
 def parse_kgs_coords(s):
     'Interprets coords. A1 is bottom left; A9 is top left.'
@@ -45,16 +51,19 @@ def parse_kgs_coords(s):
     row_from_bottom = int(s[1:]) - 1
     return go.N - row_from_bottom - 1, col
 
+
 def parse_pygtp_coords(vertex):
     'Interprets coords. (1, 1) is bottom left; (1, 9) is top left.'
     if vertex in (gtp.PASS, gtp.RESIGN):
         return None
     return go.N - vertex[1], vertex[0] - 1
 
+
 def unparse_pygtp_coords(c):
     if c is None:
         return gtp.PASS
     return c[1] + 1, go.N - c[0]
+
 
 def parse_game_result(result):
     if re.match(r'[bB]\+', result):
@@ -64,11 +73,14 @@ def parse_game_result(result):
     else:
         return None
 
+
 def product(numbers):
     return functools.reduce(operator.mul, numbers)
 
+
 def take_n(n, iterable):
     return list(itertools.islice(iterable, n))
+
 
 def iter_chunks(chunk_size, iterator):
     while True:
@@ -84,6 +96,7 @@ def iter_chunks(chunk_size, iterator):
                 break
         except:
             continue
+
 
 def shuffler(iterator, pool_size=10**5, refill_threshold=0.9):
     yields_between_refills = round(pool_size * (1 - refill_threshold))
@@ -101,19 +114,25 @@ def shuffler(iterator, pool_size=10**5, refill_threshold=0.9):
     for item in pool:
         yield item
 
+
 class timer(object):
     all_times = defaultdict(float)
+
     def __init__(self, label):
         self.label = label
+
     def __enter__(self):
         self.tick = time.time()
+
     def __exit__(self, type, value, traceback):
         self.tock = time.time()
         self.all_times[self.label] += self.tock - self.tick
+
     @classmethod
     def print_times(cls):
         for k, v in cls.all_times.items():
             print("%s: %.3f" % (k, v))
+
 
 '''
 From ThalNet: https://github.com/yhyu13/thalnet
@@ -124,6 +143,8 @@ from time import strftime
 import tensorflow as tf
 
 # lazy_property: no need for if $ not None logic
+
+
 def lazy_property(function):
     attribute = '_cache_' + function.__name__
 
@@ -136,10 +157,12 @@ def lazy_property(function):
 
     return decorator
 
+
 def timestamp():
     return strftime('%Y%m%d-%H%M%S')
 
 # from https://gist.github.com/danijar/8663d3bbfd586bffecf6a0094cd116f2:
+
 
 def doublewrap(function):
     """
@@ -193,7 +216,9 @@ def single(list):
 
     return first
 
+
 from multiprocessing import Pool
+
 
 def stupid_parallel(function, nprocesses=None):
     '''
@@ -228,7 +253,7 @@ def stupid_parallel(function, nprocesses=None):
     def apply(iterable_values, *args, **kwargs):
         args = list(args)
         p = Pool(nprocesses)
-        result = [p.apply_async(function, args=[value]+args,
+        result = [p.apply_async(function, args=[value] + args,
                                 kwds=kwargs)
                   for value in iterable_values]
         p.close()

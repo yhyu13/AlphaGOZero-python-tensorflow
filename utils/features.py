@@ -1,8 +1,8 @@
 '''
 Features used by AlphaGo, in approximate order of importance.
 Feature                 # Notes
-Stone colour            3 Player stones; oppo. stones; empty  
-Ones                    1 Constant plane of 1s 
+Stone colour            3 Player stones; oppo. stones; empty
+Ones                    1 Constant plane of 1s
     (Because of convolution w/ zero-padding, this is the only way the NN can know where the edge of the board is!!!)
 Turns since last move   8 How many turns since a move played
 Liberties               8 Number of liberties
@@ -14,8 +14,14 @@ Ladder escape           1 Whether a move is a successful ladder escape
 Sensibleness            1 Whether a move is legal + doesn't fill own eye
 Zeros                   1 Constant plane of 0s
 
-All features with 8 planes are 1-hot encoded, with plane i marked with 1 
+All features with 8 planes are 1-hot encoded, with plane i marked with 1
 only if the feature was equal to i. Any features >= 8 would be marked as 8.
+
+
+Features used by AlphaGo Zero 16+1:
+16: The last eight moves and their correspoding game board encodes player's stones and opponent's as 1 alternatively.
+Empty stone is always 0.
+1: The player's stone colour, 1 being black, and -1 being white. This is for the purpose of komi (W+6.5)
 '''
 
 import numpy as np
@@ -24,6 +30,7 @@ from utils.utilities import product
 
 # Resolution/truncation limit for one-hot features
 P = 8
+
 
 def make_onehot(feature, planes):
     onehot_features = np.zeros(feature.shape + (planes,), dtype=np.uint8)
@@ -37,11 +44,13 @@ def make_onehot(feature, planes):
     onehot_features.ravel()[nonzero_index_offsets] = 1
     return onehot_features
 
+
 def planes(num_planes):
     def deco(f):
         f.planes = num_planes
         return f
     return deco
+
 
 @planes(3)
 def stone_color_feature(position):
@@ -57,22 +66,26 @@ def stone_color_feature(position):
     features[board == go.EMPTY, 2] = 1
     return features
 
+
 @planes(1)
 def ones_feature(position):
     return np.ones([go.N, go.N, 1], dtype=np.uint8)
+
 
 @planes(P)
 def recent_move_feature(position):
     onehot_features = np.zeros([go.N, go.N, P], dtype=np.uint8)
     for i, player_move in enumerate(reversed(position.recent[-P:])):
-        _, move = player_move # unpack the info from position.recent
+        _, move = player_move  # unpack the info from position.recent
         if move is not None:
             onehot_features[move[0], move[1], i] = 1
     return onehot_features
 
+
 @planes(P)
 def liberty_feature(position):
     return make_onehot(position.get_liberties(), P)
+
 
 @planes(P)
 def would_capture_feature(position):
@@ -87,26 +100,31 @@ def would_capture_feature(position):
     return make_onehot(features, P)
 
 # AlphaGo Zero Features
+
+
 @planes(16)
 def player_opponent_recent_eight_move(position):
     state_features = np.zeros([go.N, go.N, 16], dtype=np.uint8)
     player_colour = position.to_play
     assert len(position.recent_board) <= 8
-    for i, board in enumerate(reversed(np.repeat(position.recent_board,repeats=2,axis=0))):
+    for i, board in enumerate(reversed(np.repeat(position.recent_board, repeats=2, axis=0))):
         if board is not None:
             board *= player_colour
-            state_features[board>0, i] = 1
-            #print(np.sum(onehot_features[:,:,i]))
-            #print(state_features[:,:,i])
+            state_features[board > 0, i] = 1
+            # print(np.sum(onehot_features[:,:,i]))
+            # print(state_features[:,:,i])
         player_colour *= -1
     return state_features
 
 # AlphaGo Zero Features
+
+
 @planes(1)
 def player_colour(position):
     # In principle, white=-1 and black=1, here, unint8 can't express -1.
     # So the conversion is left to train.py
-    return np.ones([go.N, go.N, 1], dtype=np.uint8)*(1 if position.to_play==go.BLACK else 0)
+    return np.ones([go.N, go.N, 1], dtype=np.uint8) * (1 if position.to_play == go.BLACK else 0)
+
 
 # AlphaGo Zero Features
 DEFAULT_FEATURES = [
@@ -114,12 +132,14 @@ DEFAULT_FEATURES = [
     player_colour,
 ]
 
-def extract_features(position, features=DEFAULT_FEATURES,dihedral=None):
+
+def extract_features(position, features=DEFAULT_FEATURES, dihedral=None):
     features = np.concatenate([feature(position) for feature in features], axis=2)
     if dihedral is not None:
-        return np.rot90(np.flip(features,axis=dihedral[0]),dihedral[1])
+        return np.rot90(np.flip(features, axis=dihedral[0]), dihedral[1])
     else:
         return features
+
 
 def bulk_extract_features(positions, features=DEFAULT_FEATURES):
     num_positions = len(positions)
@@ -128,4 +148,3 @@ def bulk_extract_features(positions, features=DEFAULT_FEATURES):
     for i, pos in enumerate(positions):
         output[i] = extract_features(pos, features=features)
     return output
-        

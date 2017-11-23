@@ -35,7 +35,7 @@ HParams = namedtuple('HParams',
 class ResNet(object):
     """ResNet model."""
 
-    def __init__(self, hps, images, labels,mode):
+    def __init__(self, hps, images, labels, mode):
         """ResNet constructor.
 
         Args:
@@ -305,9 +305,9 @@ class ResNet(object):
         """FullyConnected layer for final output."""
         x = tf.contrib.layers.flatten(x)
         w = tf.get_variable(
-            name+'DW', [x.get_shape()[1], out_dim],
-            initializer=tf.contrib.layers.variance_scaling_initializer(factor=1.0,mode='FAN_AVG',uniform=True))
-        b = tf.get_variable(name+'biases', [out_dim],
+            name + 'DW', [x.get_shape()[1], out_dim],
+            initializer=tf.contrib.layers.variance_scaling_initializer(factor=1.0, mode='FAN_AVG', uniform=True))
+        b = tf.get_variable(name + 'biases', [out_dim],
                             initializer=tf.constant_initializer())
         return tf.nn.xw_plus_b(x, w, b)
 
@@ -315,8 +315,8 @@ class ResNet(object):
         assert x.get_shape().ndims == 4
         return tf.reduce_mean(x, [1, 2])
 
-    def total_parameters(self,var_list=None):
+    def total_parameters(self, var_list=None):
         if var_list is None:
-            return np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()+[var for var in tf.global_variables() if 'bn' in var.name]]).astype(np.int32)
+            return np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables() + [var for var in tf.global_variables() if 'bn' in var.name]]).astype(np.int32)
         else:
             return np.sum([np.prod(v.get_shape().as_list()) for v in var_list]).astype(np.int32)

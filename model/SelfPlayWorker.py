@@ -1,5 +1,5 @@
 import utils.go as go
-from utils.strategies import simulate_game_mcts,simulate_many_games,get_winrate,extract_moves
+from utils.strategies import simulate_game_mcts, simulate_many_games, get_winrate, extract_moves
 
 import logging
 import daiquiri
@@ -9,6 +9,7 @@ logger = daiquiri.getLogger(__name__)
 
 from contextlib import contextmanager
 from time import time
+
 
 @contextmanager
 def timer(message):
@@ -20,7 +21,7 @@ def timer(message):
 
 class SelfPlayWorker(object):
 
-    def __init__(self,net,rl_flags):
+    def __init__(self, net, rl_flags):
         self.net = net
 
         self.N_moves_per_train = rl_flags.N_moves_per_train
@@ -30,14 +31,15 @@ class SelfPlayWorker(object):
         self.position = go.Position(to_play=go.BLACK)
         self.final_position_collections = []
 
-        self.dicard_game_threshold = rl_flags.dicard_game_threshold # number of moves that is considered to resign too early
+        # number of moves that is considered to resign too early
+        self.dicard_game_threshold = rl_flags.dicard_game_threshold
         self.game_cut_off_depth = rl_flags.game_cut_off_depth
 
-        self.resign_threshold = rl_flags.resign_threshold #-0.25
-        self.resign_delta = rl_flags.resign_delta #0.05
+        self.resign_threshold = rl_flags.resign_threshold  # -0.25
+        self.resign_delta = rl_flags.resign_delta  # 0.05
         self.total_resigned_games = 0
         self.total_false_resigned_games = 0
-        self.false_positive_resign_ratio = rl_flags.false_positive_resign_ratio #0.05
+        self.false_positive_resign_ratio = rl_flags.false_positive_resign_ratio  # 0.05
         self.no_resign_this_game = False
 
         self.num_games_to_evaluate = rl_flags.selfplay_games_against_best_model
@@ -59,14 +61,15 @@ class SelfPlayWorker(object):
             # increase false positive counts
             if false_positive:
                 self.total_false_resigned_games += 1
-                logger.debug(f'Total False Positive Resigned Games: {self.total_false_resigned_games}')
+                logger.debug(
+                    f'Total False Positive Resigned Games: {self.total_false_resigned_games}')
 
             # dynamically increase/decrease resign threshold
             if self.total_false_resigned_games / self.total_resigned_games > self.false_positive_resign_ratio:
-                self.resign_threshold  = max(-0.95,self.resign_threshold-self.resign_delta)
+                self.resign_threshold = max(-0.95, self.resign_threshold - self.resign_delta)
                 logger.debug(f'Decrease Resign Threshold to: {self.resign_threshold}')
             else:
-                self.resign_threshold  = min(-0.05,self.resign_threshold+self.resign_delta)
+                self.resign_threshold = min(-0.05, self.resign_threshold + self.resign_delta)
                 logger.debug(f'Increase Resign Threshold to: {self.resign_threshold}')
 
     '''
@@ -74,6 +77,7 @@ class SelfPlayWorker(object):
         @ lr: learning rate, controled by outer loop
         usage: run self play with search
     '''
+
     def run(self, lr=0.01):
 
         moves_counter = 0
@@ -82,8 +86,8 @@ class SelfPlayWorker(object):
             """self play with MCTS search"""
 
             with timer(f"Self-Play Simulation Game #{i+1}"):
-                final_position,agent_resigned,false_positive = simulate_game_mcts(self.net,self.position,\
-                playouts=self.playouts,resignThreshold=self.resign_threshold,no_resign=self.no_resign_this_game)
+                final_position, agent_resigned, false_positive = simulate_game_mcts(self.net, self.position,
+                                                                                    playouts=self.playouts, resignThreshold=self.resign_threshold, no_resign=self.no_resign_this_game)
 
                 logger.debug(f'Game #{i+1} Final Position:\n{final_position}')
 
@@ -100,29 +104,31 @@ class SelfPlayWorker(object):
             moves_counter += final_position.n
 
             # check resign statistics
-            self.check_resign_stat(agent_resigned,false_positive)
+            self.check_resign_stat(agent_resigned, false_positive)
 
-            if  moves_counter >= self.N_moves_per_train:
-                winners_training_samples, losers_training_samples = extract_moves(self.final_position_collections)
-                self.net.train(winners_training_samples, direction=1.,lrn_rate=lr)
-                self.net.train(losers_training_samples, direction=-1.,lrn_rate=lr)
+            if moves_counter >= self.N_moves_per_train:
+                winners_training_samples, losers_training_samples = extract_moves(
+                    self.final_position_collections)
+                self.net.train(winners_training_samples, direction=1., lrn_rate=lr)
+                self.net.train(losers_training_samples, direction=-1., lrn_rate=lr)
                 self.final_position_collections = []
                 moves_counter = 0
 
-    def evaluate_model(self,best_model):
+    def evaluate_model(self, best_model):
         self.reset_position()
-        final_positions = simulate_many_games(self.net,best_model,[self.position]*self.num_games_to_evaluate)
+        final_positions = simulate_many_games(
+            self.net, best_model, [self.position] * self.num_games_to_evaluate)
         win_ratio = get_winrate(final_positions)
         if win_ratio < 0.55:
-            logger.info(f'Previous Generation win by {win_ratio:.4f}% the game! 姜还是老得辣!')
+            logger.info(f'Previous Generation win by {win_ratio:.4f}% the game!')
             self.net.close()
             self.net = best_model
         else:
-            logger.info(f'Current Generation win by {win_ratio:.4f}% the game! 青出于蓝而胜于蓝!')
+            logger.info(f'Current Generation win by {win_ratio:.4f}% the game!')
             best_model.close()
-            #self.net.save_model(name=round(win_ratio,4))
+            # self.net.save_model(name=round(win_ratio,4))
         self.reset_position()
 
-    def evaluate_testset(self,test_dataset):
+    def evaluate_testset(self, test_dataset):
         with timer("test set evaluation"):
-            self.net.test(test_dataset,proportion=.1,no_save=True)
+            self.net.test(test_dataset, proportion=.1, no_save=True)

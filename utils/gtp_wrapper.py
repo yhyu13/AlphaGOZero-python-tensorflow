@@ -6,7 +6,8 @@ import utils.utilities as utils
 from Network import Network
 from utils.strategies import RandomPlayerMixin, GreedyPolicyPlayerMixin, RandomPolicyPlayerMixin
 """Using .pyx Cython or using .py CPython"""
-import pyximport; pyximport.install()
+import pyximport
+pyximport.install()
 from model.APV_MCTS_C import *
 
 import logging
@@ -15,6 +16,7 @@ import daiquiri
 daiquiri.setup(level=logging.DEBUG)
 logger = daiquiri.getLogger(__name__)
 
+
 def translate_gtp_colors(gtp_color):
     if gtp_color == gtp.BLACK:
         return go.BLACK
@@ -22,6 +24,7 @@ def translate_gtp_colors(gtp_color):
         return go.WHITE
     else:
         return go.EMPTY
+
 
 class GtpInterface(object):
     def __init__(self):
@@ -50,7 +53,7 @@ class GtpInterface(object):
         coords = utils.parse_pygtp_coords(vertex)
         self.accomodate_out_of_turn(color)
         try:
-            self.position.play_move(coords,mutate=True, color=translate_gtp_colors(color))
+            self.position.play_move(coords, mutate=True, color=translate_gtp_colors(color))
         except:
             return False
         return True
@@ -86,13 +89,25 @@ class GtpInterface(object):
         else:
             print('Please clear_board to reinitialize the game.')
 
-class RandomPlayer(RandomPlayerMixin, GtpInterface): pass
-class RandomPolicyPlayer(RandomPolicyPlayerMixin, GtpInterface): pass
-class GreedyPolicyPlayer(GreedyPolicyPlayerMixin, GtpInterface): pass
-class MCTSPlayer(MCTSPlayerMixin, GtpInterface): pass
 
-def make_gtp_instance(flags,hps):
-    n = Network(flags,hps)
+class RandomPlayer(RandomPlayerMixin, GtpInterface):
+    pass
+
+
+class RandomPolicyPlayer(RandomPolicyPlayerMixin, GtpInterface):
+    pass
+
+
+class GreedyPolicyPlayer(GreedyPolicyPlayerMixin, GtpInterface):
+    pass
+
+
+class MCTSPlayer(MCTSPlayerMixin, GtpInterface):
+    pass
+
+
+def make_gtp_instance(flags, hps):
+    n = Network(flags, hps)
     strategy_name = flags.gpt_policy
     if strategy_name == 'random':
         instance = RandomPlayer()
@@ -101,7 +116,7 @@ def make_gtp_instance(flags,hps):
     elif strategy_name == 'randompolicy':
         instance = RandomPolicyPlayer(n)
     elif strategy_name == 'mctspolicy':
-        instance = MCTSPlayer(net=n,num_playouts=1600)
+        instance = MCTSPlayer(net=n, num_playouts=1600)
     else:
         return None
     gtp_engine = gtp.Engine(instance)

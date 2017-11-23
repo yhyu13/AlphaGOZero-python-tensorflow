@@ -15,12 +15,14 @@ CHUNK_SIZE = 4096
 CHUNK_HEADER_FORMAT = "iii?"
 CHUNK_HEADER_SIZE = struct.calcsize(CHUNK_HEADER_FORMAT)
 
+
 def make_onehot(coords):
     num_positions = len(coords)
-    output = np.zeros([num_positions, go.N ** 2+1], dtype=np.uint8)
+    output = np.zeros([num_positions, go.N ** 2 + 1], dtype=np.uint8)
     for i, coord in enumerate(coords):
         output[i, utils.flatten_coords(coord)] = 1
     return output
+
 
 def find_sgf_files(*dataset_dirs):
     for dataset_dir in dataset_dirs:
@@ -30,11 +32,13 @@ def find_sgf_files(*dataset_dirs):
             if os.path.isfile(f) and f.endswith(".sgf"):
                 yield f
 
+
 def get_positions_from_sgf(file):
     with open(file) as f:
         for position_w_context in replay_sgf(f.read()):
             if position_w_context.is_usable():
                 yield position_w_context
+
 
 def split_test_training(positions_w_context, est_num_positions):
     print("Estimated number of chunks: %s" % (est_num_positions // CHUNK_SIZE))
@@ -76,7 +80,8 @@ class DataSet(object):
             start = self._index_within_epoch
             end = start + batch_size
             self._index_within_epoch += batch_size
-            return self.pos_features[start:end], self.next_moves[start:end],self.results[start:end] # alphagozero sl batch: board history, next move, result
+            # alphagozero sl batch: board history, next move, result
+            return self.pos_features[start:end], self.next_moves[start:end], self.results[start:end]
         else:
             return self.pos_features, self.next_moves, self.results
 
@@ -89,13 +94,15 @@ class DataSet(object):
         else:
             encoded_moves = make_onehot(next_moves)
 
-        wrt_result =  [-1 if (positions[i].to_play == 1)^('B' in results[i].result) else 1 for i in range(len(results))]
+        wrt_result = [-1 if (positions[i].to_play == 1) ^
+                      ('B' in results[i].result) else 1 for i in range(len(results))]
 
         return DataSet(extracted_features, encoded_moves, wrt_result, is_test=is_test)
 
     def write(self, filename, first_time=True):
         try:
-            header_bytes = struct.pack(CHUNK_HEADER_FORMAT, self.data_size, self.board_size, self.input_planes, self.is_test)
+            header_bytes = struct.pack(CHUNK_HEADER_FORMAT, self.data_size,
+                                       self.board_size, self.input_planes, self.is_test)
             position_bytes = np.packbits(self.pos_features).tostring()
             next_move_bytes = np.packbits(self.next_moves).tostring()
             result_bytes = np.packbits(self.results).tostring()
@@ -106,7 +113,7 @@ class DataSet(object):
                     f.write(position_bytes)
                     f.write(next_move_bytes)
                     f.write(result_bytes)
-            else: # contune to write files with 'append binary'
+            else:  # contune to write files with 'append binary'
                 with gzip.open(filename, "ab", compresslevel=6) as f:
                     f.write(position_bytes)
                     f.write(next_move_bytes)
@@ -119,7 +126,8 @@ class DataSet(object):
     def read(filename):
         with gzip.open(filename, "rb") as f:
             header_bytes = f.read(CHUNK_HEADER_SIZE)
-            data_size, board_size, input_planes, is_test = struct.unpack(CHUNK_HEADER_FORMAT, header_bytes)
+            data_size, board_size, input_planes, is_test = struct.unpack(
+                CHUNK_HEADER_FORMAT, header_bytes)
 
             position_dims = data_size * board_size * board_size * input_planes
             next_move_dims = data_size * (board_size * board_size + 1)
@@ -133,20 +141,24 @@ class DataSet(object):
             # should have cleanly finished reading all bytes from file!
             assert len(f.read()) == 0
 
-            flat_position = np.unpackbits(np.fromstring(packed_position_bytes, dtype=np.uint8))[:position_dims]
-            flat_nextmoves = np.unpackbits(np.fromstring(packed_next_move_bytes, dtype=np.uint8))[:next_move_dims]
-            flat_results = np.unpackbits(np.fromstring(packed_result_bytes, dtype=np.uint8))[:result_dims]
+            flat_position = np.unpackbits(np.fromstring(
+                packed_position_bytes, dtype=np.uint8))[:position_dims]
+            flat_nextmoves = np.unpackbits(np.fromstring(
+                packed_next_move_bytes, dtype=np.uint8))[:next_move_dims]
+            flat_results = np.unpackbits(np.fromstring(
+                packed_result_bytes, dtype=np.uint8))[:result_dims]
 
             pos_features = flat_position.reshape(data_size, board_size, board_size, input_planes)
             next_moves = flat_nextmoves.reshape(data_size, board_size * board_size + 1)
-            results = flat_results.reshape(data_size,1)
+            results = flat_results.reshape(data_size, 1)
 
         return DataSet(pos_features, next_moves, results, is_test=is_test)
+
 
 def parse_data_sets(*data_sets):
     sgf_files = list(find_sgf_files(*data_sets))
     print("%s sgfs found." % len(sgf_files))
-    est_num_positions = len(sgf_files) * 200 # about 200 moves per game
+    est_num_positions = len(sgf_files) * 200  # about 200 moves per game
     positions_w_context = itertools.chain(*map(get_positions_from_sgf, sgf_files))
 
     test_chunk, training_chunks = split_test_training(positions_w_context, est_num_positions)

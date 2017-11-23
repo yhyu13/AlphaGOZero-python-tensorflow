@@ -246,7 +246,7 @@ class Engine(object):
             if self.vertex_in_range(vertex):
                 if self._game.make_move(color, vertex):
                     # modified by Hang Yu
-                    return gtp_move(color,vertex)
+                    return gtp_move(color, vertex)
         raise ValueError("illegal move")
 
     def cmd_genmove(self, arguments):
