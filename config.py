@@ -46,20 +46,20 @@ FLAGS = parser.parse_args()
 """ResNet hyperparameters"""
 HParams = namedtuple('HParams',
                      'batch_size, num_classes, min_lrn_rate, lrn_rate, '
-                     'num_residual_units, use_bottleneck, weight_decay_rate, '
-                     'relu_leakiness, optimizer, temperature, global_norm, num_gpu, '
-                     'name')
+                     'filters, cnn_kernel_size, '
+                     'num_capsules_units, use_standard, weight_decay_rate, '
+                     'relu_leakiness, optimizer, temperature, global_norm, ')
 
 HPS = HParams(batch_size=FLAGS.n_batch,
               num_classes=FLAGS.n_classes,
-              min_lrn_rate=0.0001,
-              lrn_rate=FLAGS.lr,
-              num_residual_units=FLAGS.n_resid_units,
-              use_bottleneck=False,
-              weight_decay_rate=0.0001,
-              relu_leakiness=0,
-              optimizer=FLAGS.opt,
+              min_lrn_rate=1e-5,
+              lrn_rate=1e-3,
+              filters=[1, 256, 32],
+              cnn_kernel_size=9,
+              num_capsules_units=3,
+              use_standard=True,
+              weight_decay_rate=1e-4,
+              relu_leakiness=0.0,
+              optimizer='adam',
               temperature=1.0,
-              global_norm=100,
-              num_gpu=FLAGS.n_gpu,
-              name='01')
+              global_norm=100)

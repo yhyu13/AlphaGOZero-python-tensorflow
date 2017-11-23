@@ -125,7 +125,7 @@ class AlphaGoZeroResNet(ResNet):
             self.increase_global_step = self.global_step.assign_add(1)
 
             self.lrn_rate = tf.maximum(tf.train.exponential_decay(
-                self.hps.lrn_rate, self.global_step, 1e3, 0.66), 1.)
+                self.hps.lrn_rate, self.global_step, 1e3, 0.66), 1e-5)
             # self.lrn_rate = tf.Variable(self.hps.lrn_rate, dtype=tf.float32, trainable=False)
             tf.summary.scalar('learning_rate', self.lrn_rate)
             self.reinforce_dir = tf.Variable(1., dtype=tf.float32, trainable=False)
