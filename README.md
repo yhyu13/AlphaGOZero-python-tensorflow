@@ -1,7 +1,7 @@
 # AlphaGOZero (python tensorflow implementation)
 This is a trial implementation of DeepMind's Oct19th publication: [Mastering the Game of Go without Human Knowledge](https://www.nature.com/articles/nature24270.epdf?author_access_token=VJXbVjaSHxFoctQQ4p2k4tRgN0jAjWel9jnR3ZoTv0PVW4gB86EEpGqTRDtpIz-2rmo8-KG06gqVobU5NSCFeHILHcVFUeMsbvwS-lxjqQGg98faovwjxeTUgZAUMnRQ).
 
->**This repository has single purpose of education only**
+**DeepMind release [AlphaZero Teaching Go](https://alphagoteach.deepmind.com)**. It's a lot of fun!
 
 ---
 # From Paper
