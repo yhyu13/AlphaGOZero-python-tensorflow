@@ -61,7 +61,7 @@ python main.py --mode=train
 ## Play Against An A.I. (currently only random A.I. is available)
 
 ```
-python main.py --mode=gtp —-policy=randompolicy --model_path='./savedmodels/model--0.0.ckpt'
+python main.py --mode=gtp —-gtp_poliy=mctspolicy --model_path='./savedmodels/your_model.ckpt'
 ```
 
 ## Play in Sabaki
@@ -78,13 +78,12 @@ add result to the headline of ```main.py``` with ```#!``` prefix.
 
 # TODO:
 - [x] AlphaGo Zero Architecture
-- [ ] Supervised Training
+- [x] Supervised Training
 - [x] Self Play pipeline
 - [x] Go Text Protocol
 - [x] Sabaki Engine enabled
-- [ ] *Tabula rasa*
-- [ ] Keras implementation
-- [ ] Distributed learning
+- [ ] *Tabula rasa* (failed)
+- [x] Distributed learning
 
 # Credit (orderless):
 
