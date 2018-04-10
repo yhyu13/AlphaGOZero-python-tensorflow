@@ -74,8 +74,7 @@ class Network:
 
             self.model = models[flags.model]()
             self.model.build_graph()
-            var_to_save = tf.trainable_variables() + [var for var in tf.global_variables()
-                                                      if ('bn' in var.name) and ('Adam' not in var.name) and ('Momentum' not in var.name) or ('global_step' in var.name)]
+            var_to_save = tf.trainable_variables() + [var for var in tf.global_variables() if ('bn' in var.name) and ('Adam' not in var.name) and ('Momentum' not in var.name) or ('global_step' in var.name)] # tf 1.7.0 would complain duplicate batch norm variables, so if you are using tf 1.7.0, pls comment out the second part of var_to_save
             logger.debug(
                 f'Building Model Complete...Total parameters: {self.model.total_parameters(var_list=var_to_save)}')
 
