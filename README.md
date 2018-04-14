@@ -11,7 +11,7 @@ Pure RL has outperformed supervised learning+RL agent
 ![](/figure/rl_vs_sl.png)
 
 
-# Nov20 SL evaluation
+# SL evaluation
 
 ![](/figure/Nov20large20eval.png)
 
@@ -58,7 +58,7 @@ python preprocess.py preprocess ./data/SGFs/kgs-*
 python main.py --mode=train
 ```
 
-## Play Against An A.I. (currently only random A.I. is available)
+## Play Against An A.I.
 
 ```
 python main.py --mode=gtp —-gtp_poliy=mctspolicy --model_path='./savedmodels/your_model.ckpt'
