@@ -116,7 +116,7 @@ def make_gtp_instance(flags, hps):
     elif strategy_name == 'randompolicy':
         instance = RandomPolicyPlayer(n)
     elif strategy_name == 'mctspolicy':
-        instance = MCTSPlayer(net=n, num_playouts=1600)
+        instance = MCTSPlayer(net=n, num_playouts=flags.num_playouts)
     else:
         return None
     gtp_engine = gtp.Engine(instance)

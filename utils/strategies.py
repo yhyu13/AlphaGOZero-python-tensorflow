@@ -250,8 +250,9 @@ class GreedyPolicyPlayerMixin:
         super().__init__()
 
     def suggest_move(self, position):
-        move_probabilities = self.policy_network.run(position)
-        return select_most_likely(position, move_probabilities)
+        move_probabilities = self.policy_network.run_many(bulk_extract_features([position]))[0][0]
+        on_board_move_prob = np.reshape(move_probabilities[:-1], (go.N, go.N))
+        return select_most_likely(position, on_board_move_prob)
 
 
 class RandomPolicyPlayerMixin:
@@ -260,5 +261,6 @@ class RandomPolicyPlayerMixin:
         super().__init__()
 
     def suggest_move(self, position):
-        move_probabilities = self.policy_network.run(position)
-        return select_weighted_random(position, move_probabilities)
+        move_probabilities = self.policy_network.run_many(bulk_extract_features([position]))[0][0]
+        on_board_move_prob = np.reshape(move_probabilities[:-1], (go.N, go.N))
+        return select_weighted_random(position, on_board_move_prob)
