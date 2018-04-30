@@ -61,7 +61,7 @@ python main.py --mode=train
 ## Play Against An A.I.
 
 ```
-python main.py --mode=gtp —-gtp_poliy=mctspolicy --model_path='./savedmodels/your_model.ckpt'
+python main.py --mode=gtp —-gtp_poliy=greedypolicy --model_path='./savedmodels/your_model.ckpt'
 ```
 
 ## Play in Sabaki
