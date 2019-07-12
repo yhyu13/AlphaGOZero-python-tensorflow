@@ -28,7 +28,7 @@ Pure RL has outperformed supervised learning+RL agent
 ## Install requirement
 
 python 3.6
-tensorflow/tensorflow-gpu
+tensorflow/tensorflow-gpu (version 1.4, version >= 1.5 can't load trained models)
 
 ```
 pip install -r requirement.txt
