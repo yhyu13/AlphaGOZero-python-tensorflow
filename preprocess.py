@@ -41,10 +41,10 @@ def preprocess(*data_sets, processed_dir="processed_data", one_big_training_chun
         """write all training data into one big chunck"""
         if one_big_training_chunck:
             train_filename = os.path.join(processed_dir, "train0.chunk.gz")
-            train_dataset.write(train_filename, firts_time=i == 0)
+            train_dataset.write(train_filename, first_time=i == 0)
         else:
             train_filename = os.path.join(processed_dir, "train%s.chunk.gz" % i)
-            train_dataset.write(train_filename, firts_time=True)
+            train_dataset.write(train_filename, first_time=True)
 
     print("%s chunks written" % (i + 1))
 
