@@ -5,5 +5,5 @@ daiquiri
 pygtp>=0.4
 sgf==0.5
 profilehooks
-protobuf==3.1.0.post1
+protobuf==3.15.0
 six==1.10.0
